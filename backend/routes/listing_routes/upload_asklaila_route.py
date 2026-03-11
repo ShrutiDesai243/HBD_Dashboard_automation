@@ -1,32 +1,55 @@
-from flask import Flask,request,jsonify,Blueprint
-from tasks.listings_task.upload_asklaila_task import process_asklaila_task
-from werkzeug.utils import secure_filename
-from utils.storage import get_upload_base_dir
+from flask import Blueprint, request, jsonify
+from extensions import db
+from model.asklaila import Asklaila  # Importing the model we created
 
-import os 
+# Define the Blueprint
+asklaila_bp = Blueprint('asklaila_bp', __name__)
 
-asklaila_bp = Blueprint("asklaila_bp",__name__)
-@asklaila_bp.route("/upload/asklaila-data",methods=["POST"])
-def upload_asklaila_route():
-    files = request.files.getlist("files")
-    if not files:
-        return jsonify({"error":"No files provided"}),400
-    
-    UPLOAD_DIR = get_upload_base_dir()/"asklaila"
-    UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
-    paths = []
-    for f in files:
-        filename = secure_filename(f.filename)
-        filepath = UPLOAD_DIR/filename
-        f.save(filepath)
-        paths.append(str(filepath))
-
+# --- FETCH DATA ROUTE (For the Table) ---
+@asklaila_bp.route('/fetch-data', methods=['GET'])
+def fetch_asklaila_data():
     try:
-        task = process_asklaila_task.delay(paths)
+        # Get query parameters from the frontend
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        search = request.args.get('search', '')
+        city_filter = request.args.get('city', '')
+
+        # Start the query
+        query = Asklaila.query
+
+        # Apply Search Filter (Business Name)
+        if search:
+            query = query.filter(Asklaila.name.ilike(f"%{search}%"))
+        
+        # Apply City Filter
+        if city_filter:
+            query = query.filter(Asklaila.city.ilike(f"%{city_filter}%"))
+
+        # Apply Sorting (Newest first) and Pagination
+        pagination = query.order_by(Asklaila.id.desc()).paginate(
+            page=page, 
+            per_page=limit, 
+            error_out=False
+        )
+        
+        # Return JSON response
         return jsonify({
-            "status":"files_accepted",
-            "task_id": task.id
-            }), 202
-    
+            "data": [item.to_dict() for item in pagination.items],
+            "total_pages": pagination.pages,
+            "total_count": pagination.total,
+            "current_page": page
+        }), 200
+
     except Exception as e:
+        # Log the error and return 500
+        print(f"Error fetching Asklaila data: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
+# --- (OPTIONAL) EXISTING UPLOAD ROUTE ---
+# If you had an upload route here before, you can paste it below this line.
+# Example:
+# @asklaila_bp.route('/upload', methods=['POST'])
+# def upload_csv():
+#     ...

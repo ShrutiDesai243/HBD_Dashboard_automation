@@ -12,9 +12,14 @@ import {
   XCircleIcon,
   DocumentTextIcon,
   ArrowUpTrayIcon,
+  ChartBarIcon,
+  
 } from "@heroicons/react/24/solid";
 
-import MasterDataRegistry from "./componunts/masterdata/MasterDataRegistry";
+
+
+import MasterDataUploader from "./componunts/data import/MasterDataUploader";
+import MasterData from "./componunts/masterdata/Masterdata";
 import { Home } from "./pages/dashboard/home";
 import { Profile } from "./pages/dashboard/profile";
 import { Tables } from "./pages/dashboard/tables";
@@ -22,20 +27,20 @@ import { Notifications } from "./pages/dashboard/notifications";
 import ZomatoData from "./componunts/product master data/ZomatoData";
 import CitiesReports from "./componunts/Reports/cities_reports";
 import CategoriesReports from "./componunts/Reports/categories_reports";
-// --- NEW REPORT IMPORTS ---
+
 import CitiesPendingReport from "./componunts/Reports/CitiesPendingReport";
 import CategoriesPendingReport from "./componunts/Reports/CategoriesPendingReport";
-// --------------------------
+
 import BusinessCategory from "./componunts/masterdata/BusinessCategory";
 import ServiceCategory from "./componunts/masterdata/ServiceCategory";
-import HeyPlacesData from "./componunts/listing master data/HeyPlacesData.jsx";
-import BankData from "./componunts/listing master data/BankData";
+import HeyPlacesData from "./componunts/Source Wise data/HeyPlacesData.jsx";
+import BankData from "./componunts/Source Wise data/BankData";
 import ProductCategory from "./componunts/masterdata/ProductCategory";
-import ListingComplete from "./componunts/listing master data/ListingComplate";
-import ListingIncomplate from "./componunts/listing master data/ListingIncomplate";
+import ListingComplete from "./componunts/Source Wise data/ListingComplate";
+import ListingIncomplate from "./componunts/Source Wise data/ListingIncomplate";
 import ProductComplete from "./componunts/product master data/ProductComplate";
 import ProductIncomplate from "./componunts/product master data/ProductIncomplate";
-import AmazonData from "./componunts/product master data/AmazonData";
+import AmazonData from "./componunts/product master data/AmazonData"; 
 import FlipkartData from "./componunts/product master data/FlipkartData";
 import BigBasketData from "./componunts/product master data/BigBasket";
 import ServiceComplate from "./componunts/service master data/ServiceComplate";
@@ -56,18 +61,18 @@ import State from "./componunts/masterdata/location msater/State";
 import Country from "./componunts/masterdata/location msater/Country";
 import Area from "./componunts/masterdata/location msater/Area";
 import City from "./componunts/masterdata/location msater/City";
-import GoogleData from "./componunts/listing master data/ShikshaData";
-import GoogleMapData from "./componunts/listing master data/GoogleMapData";
-import CollegeDuniaData from "./componunts/listing master data/CollegeDuniaData";
-import MagicPinData from "./componunts/listing master data/MagicPinData";
-import AsklailaData from "./componunts/listing master data/AsklailaData";
-import AtmData from "./componunts/listing master data/AtmData";
-import JustDialData from "./componunts/listing master data/JustDialData";
-import POIndiaData from "./componunts/listing master data/POIndiaData";
-import NearBuyData from "./componunts/listing master data/NearBuyData";
-import SchoolgisData from "./componunts/listing master data/SchoolgisData";
-import YellowPagesData from "./componunts/listing master data/YellowPagesData";
-import PindaData from "./componunts/listing master data/PindaData";
+import GoogleData from "./componunts/Source Wise data/GoogleData";
+import GoogleMapData from "./componunts/Source Wise data/GoogleMapData";
+import CollegeDuniaData from "./componunts/Source Wise data/CollegeDuniaData";
+import MagicPinData from "./componunts/Source Wise data/MagicPinData";
+import AsklailaData from "./componunts/Source Wise data/AsklailaData";
+import AtmData from "./componunts/Source Wise data/AtmData";
+import JustDialData from "./componunts/Source Wise data/JustDialData";
+import POIndiaData from "./componunts/Source Wise data/POIndiaData";
+import NearBuyData from "./componunts/Source Wise data/NearBuyData";
+import SchoolgisData from "./componunts/Source Wise data/SchoolgisData";
+import YellowPagesData from "./componunts/Source Wise data/YellowPagesData";
+import PindaData from "./componunts/Source Wise data/PindaData";
 import GoogleUploader from "./componunts/data import/listing import/GoogleUploader";
 import BankDataUploader from "./componunts/data import/listing import/BankDataUploader";
 import CollegeDuniaUploader from "./componunts/data import/listing import/CollegeDuniaUploader";
@@ -83,8 +88,8 @@ import JustdialUploader from "./componunts/data import/listing import/JustdialUp
 import FreelistingUploader from "./componunts/data import/listing import/FreelistingUploader";
 import PostOfficeUploader from "./componunts/data import/listing import/PostOfficeUploader";
 import ShikshaUploader from "./componunts/data import/listing import/ShikshaUploader";
-import DuplicateData from "./componunts/listing master data/DuplicateData";
-import ShikshaData from "./componunts/listing master data/ShikshaData";
+import DuplicateData from "./componunts/Source Wise data/DuplicateData";
+import ShikshaData from "./componunts/Source Wise data/ShikshaData";
 import FlipkartScrapper from "./componunts/scrapper/FlipkartScrapper";
 import IndiamartScrapper from "./componunts/scrapper/IndiamartScrapper";
 import BlinkitScrapper from "./componunts/scrapper/BlinkitScrapper";
@@ -107,10 +112,11 @@ import JioMartUploader from "./componunts/data import/product import/JioMartUplo
 import ZeptoUploader from "./componunts/data import/product import/ZeptoUploader";
 import { ScraperManager } from "./layouts/Scrapper_manager";
 import ZomatoUploader from "./componunts/data import/product import/ZomatoUploader";
-import RawCleanedData from "./componunts/masterdata/RawCleanedData";
-import ValidationDashboard from "./componunts/masterdata/ValidationDashboard";
-import ValidationReport from "./componunts/masterdata/ValidationReport";
-
+import { SignIn } from "./pages/auth/sign-in";
+import { SignUp } from "./pages/auth/sign-up";
+import MasterDataDashboard from "./componunts/MasterDataDashboard";
+import { element } from "prop-types";
+import LocationMasterData from "./componunts/masterdata/LocationMasterData";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -162,6 +168,12 @@ export const routes = [
         name: "Data Report",
         path: "/home2",
         element: <ReportDashboard />,
+       
+      }, {
+        icon: <ChartBarIcon {...icon}/>,
+        name: "Master Dashboard",
+        path: "/masterdata/dashboard",
+        element: <MasterDataDashboard />,
       },
       // ... (Rest of your code remains unchanged)
       {
@@ -174,6 +186,12 @@ export const routes = [
         icon: <ArrowUpTrayIcon {...icon} />,
         name: "Upload Data",
         children: [
+          {
+            icon: <ServerStackIcon {...icon} />, 
+            name: "Master Data Uploader",
+            path: "/data-imports/master-data-uploader",
+            element: <MasterDataUploader />,
+          },
           {
             icon: <ArrowUpTrayIcon {...icon} />,
             name: "Listing Data",
@@ -342,7 +360,8 @@ export const routes = [
         icon: <TableCellsIcon {...icon} />,
         name: "Clean Master Data",
         children: [
-          {
+         
+           {
             icon: <TableCellsIcon {...icon} />,
             name: "Listing Master",
             path: "/masterdata/clean-listing-master",
@@ -354,7 +373,7 @@ export const routes = [
             path: "/masterdata/clean-product-master",
             element: <CleanProductMaster />,
           },
-        ],
+        ],    
       },
       {
         icon: <TableCellsIcon {...icon} />,
@@ -362,39 +381,15 @@ export const routes = [
         children: [
           {
             icon: <TableCellsIcon {...icon} />,
-            name: "Master Data Registry",
+            name: "Master Data Table",
             path: "/masterdata/master-registry",
-            element: <MasterDataRegistry />,
+            element: <MasterData />,
           },
           {
-            icon: <TableCellsIcon {...icon} />,
+            icon: <MapPinIcon {...icon} />,
             name: "Location Master",
-            children: [
-              {
-                icon: <TableCellsIcon {...icon} />,
-                name: "Country",
-                path: "/masterdata/location/country",
-                element: <Country />,
-              },
-              {
-                icon: <TableCellsIcon {...icon} />,
-                name: "State",
-                path: "/masterdata/location/state",
-                element: <State />,
-              },
-              {
-                icon: <TableCellsIcon {...icon} />,
-                name: "City",
-                path: "/masterdata/location/city",
-                element: <City />,
-              },
-              {
-                icon: <TableCellsIcon {...icon} />,
-                name: "Area",
-                path: "/masterdata/location/area",
-                element: <Area />,
-              },
-            ],
+            path: "/masterdata/location-master",
+            element: <LocationMasterData />,
           },
           {
             icon: <TableCellsIcon {...icon} />,
@@ -425,30 +420,12 @@ export const routes = [
             name: "Duplicate Data",
             path: "/masterdata/duplicate-data",
             element: <DuplicateData />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
-            name: "Raw Cleaned Data",
-            path: "/masterdata/raw-cleaned-data",
-            element: <RawCleanedData />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
-            name: "Validation Dashboard",
-            path: "/masterdata/validation-dashboard",
-            element: <ValidationDashboard />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
-            name: "Validation Report",
-            path: "/masterdata/validation-report",
-            element: <ValidationReport />,
           }
         ],
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Listing Master Data",
+        name: "Source Wise data",
         children: [
           {
             icon: <CheckCircleIcon {...icon} />,
@@ -479,13 +456,13 @@ export const routes = [
             name: "College Dunia Data",
             path: "listing-master-data/college-dunia-data",
             element: <CollegeDuniaData />,
-          },
+          }, 
           {
             icon: <TableCellsIcon {...icon} />,
             name: "Duplicate Data",
             path: "listing-master-data/duplicate-data",
             element: <DuplicateData />,
-          },
+          }, 
           {
             icon: <TableCellsIcon {...icon} />,
             name: "Google Data",
@@ -503,7 +480,7 @@ export const routes = [
             name: "Hey Places Data",
             path: "listing-master-data/hey-places-data",
             element: <HeyPlacesData />,
-          },
+          }, 
           {
             icon: <TableCellsIcon {...icon} />,
             name: "Just Dial Data",
@@ -539,7 +516,7 @@ export const routes = [
             name: "Schoolgis Data",
             path: "listing-master-data/schoolgis-data",
             element: <SchoolgisData />,
-          },
+          }, 
           {
             icon: <TableCellsIcon {...icon} />,
             name: "Shiksha Data",
@@ -696,6 +673,24 @@ export const routes = [
       },
     ],
   },
+  {
+    title: "auth pages",
+    layout: "auth",
+    pages: [
+      {
+        icon: <ServerStackIcon {...icon} />,
+        name: "sign in",
+        path: "/sign-in",
+        element: <SignIn />,
+      },
+      {
+        icon: <RectangleStackIcon {...icon} />,
+        name: "sign up",
+        path: "/sign-up",
+        element: <SignUp />,
+      },
+    ],
+  }
 ];
 
 export default routes;

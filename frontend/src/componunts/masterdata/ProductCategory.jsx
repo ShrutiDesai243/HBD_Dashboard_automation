@@ -3,109 +3,88 @@ import {
   CardBody,
   CardHeader,
   Typography,
-  Input,
-  Select,
-  Option,
   Button,
+  Spinner
 } from "@material-tailwind/react";
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../utils/Api"; 
 
 /* ---------------- CONFIG ---------------- */
-
 const TABLE_HEADERS = [
-  "ASIN",
-  "Product_name",
-  "price",
+  "id",
+  "source",
+  "business_name",
+  "category",
+  "sub_category",
+  "owner_name",
+  "mobile",
+  "phone",
+  "email",
+  "website",
+  "city",
+  "state",
+  "pincode",
+  "area",
   "rating",
-  "Number_of_ratings",
-  "Brand",
-  "Seller",
-  "category",
-  "subcategory",
-  "colour",
-  "Author",
-  "Manufacturer_Name",
-];
-
-const SEARCH_FIELDS = [
-  "ASIN",
-  "Product_name",
-  "Brand",
-  "Seller",
-  "category",
-  "subcategory",
+  "review_count"
 ];
 
 /* ---------------- COMPONENT ---------------- */
 
 const ProductCategory = () => {
-  const [loading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // New Individual Search States
+  const [searchName, setSearchName] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [searchSubcategory, setSearchSubcategory] = useState("");
+  
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [error, setError] = useState(null);
 
-  const limit = 8;
+  const limit = 10; 
 
-  /* 🔹 Replace with API data */
-  const data = [];
+  /* ---------------- API FETCH ---------------- */
+  // Added the new search states to the dependency array
+  useEffect(() => {
+    fetchData();
+  }, [currentPage, searchName, searchCategory, searchSubcategory]);
 
-  /* ---------------- SEARCH + FILTER ---------------- */
-  const filteredData = useMemo(() => {
-    return data.filter((item) => {
-      const matchesSearch = SEARCH_FIELDS.some((field) =>
-        String(item[field] ?? "")
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      );
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get("/product-master/fetch-data", {
+        params: {
+          page: currentPage,
+          limit: limit,
+          name: searchName,
+          category: searchCategory,
+          sub_category: searchSubcategory,
+        },
+      });
 
-      const matchesCategory =
-        categoryFilter === "all" ||
-        item.category === categoryFilter;
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [data, search, categoryFilter]);
-
-  /* ---------------- SORTING ---------------- */
-  const sortedData = useMemo(() => {
-    if (!sortBy) return filteredData;
-
-    return [...filteredData].sort((a, b) => {
-      const aVal = a[sortBy];
-      const bVal = b[sortBy];
-
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-
-      if (typeof aVal === "number") {
-        return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
-      }
-
-      return sortOrder === "asc"
-        ? String(aVal).localeCompare(String(bVal))
-        : String(bVal).localeCompare(String(aVal));
-    });
-  }, [filteredData, sortBy, sortOrder]);
-
-  /* ---------------- PAGINATION ---------------- */
-  const totalPages = Math.ceil(sortedData.length / limit);
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * limit,
-    currentPage * limit
-  );
-
-  /* ---------------- FILTER OPTIONS ---------------- */
-  const categoryOptions = useMemo(() => {
-    return ["all", ...new Set(data.map((d) => d.category).filter(Boolean))];
-  }, [data]);
+      const result = response.data;
+      setData(result.data || []);
+      setTotalPages(result.total_pages || 1);
+      setTotalRecords(result.total_count || 0);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setError("Failed to fetch product master data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ---------------- CSV EXPORT ---------------- */
   const exportCSV = () => {
-    const rows = [TABLE_HEADERS, ...sortedData.map((row) =>
-      TABLE_HEADERS.map((h) => `"${row[h] ?? ""}"`)
-    )];
+    const rows = [
+      TABLE_HEADERS,
+      ...data.map((row) => TABLE_HEADERS.map((h) => `"${row[h] ?? ""}"`)),
+    ];
 
     const csv = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -113,40 +92,82 @@ const ProductCategory = () => {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "products.csv";
+    a.download = "product_master.csv";
     a.click();
   };
 
   return (
     <div className="mt-8 px-4">
       <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+        
         {/* ---------- HEADER ---------- */}
         <CardHeader
-  floated={false}
-  shadow={false}
-  className="bg-gray-100 border-b border-gray-300 px-6 py-4 rounded-t-xl"
->
-  <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-    {/* Title */}
-    <div>
-      <Typography
-        variant="h5"
-        className="text-gray-800 font-semibold leading-tight"
-      >
-        Product Category
-      </Typography>
-    </div>
-  </div>
-</CardHeader>
+          floated={false}
+          shadow={false}
+          className="bg-gray-100 border-b border-gray-300 px-6 py-4 rounded-t-xl"
+        >
+          <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-4">
+            <div>
+              <Typography variant="h5" className="text-gray-800 font-semibold leading-tight">
+                Product Master Data
+              </Typography>
+              <Typography color="gray" className="mt-1 font-normal text-sm">
+                Showing {data.length} of {totalRecords} records
+              </Typography>
+            </div>
+            
+            <Button onClick={exportCSV} color="green" size="sm" className="whitespace-nowrap">
+              Export CSV
+            </Button>
+          </div>
 
+          {/* ---------- 3-COLUMN MULTI-SEARCH BARS ---------- */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+              type="text"
+              placeholder="Search by Name..."
+              className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchName}
+              onChange={(e) => {
+                setSearchName(e.target.value);
+                setCurrentPage(1); 
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search by Category..."
+              className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchCategory}
+              onChange={(e) => {
+                setSearchCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search by Subcategory..."
+              className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchSubcategory}
+              onChange={(e) => {
+                setSearchSubcategory(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+        </CardHeader>
 
+        {/* ---------- ERROR STATE ---------- */}
+        {error && <div className="p-4 text-red-500 font-medium text-center">{error}</div>}
 
         {/* ---------- TABLE ---------- */}
         <CardBody className="px-0 pt-0 pb-2 overflow-x-auto">
           {loading ? (
-            <p className="text-center py-10 text-blue-600 font-medium">
-              Loading...
-            </p>
+            <div className="flex flex-col justify-center py-20 items-center gap-3">
+              <Spinner className="h-10 w-10 text-blue-500" />
+              <Typography className="animate-pulse text-gray-600 font-medium">
+                Loading Data...
+              </Typography>
+            </div>
           ) : (
             <table className="w-full min-w-max table-auto text-left">
               <thead className="sticky top-0 bg-gray-50 z-10">
@@ -154,48 +175,31 @@ const ProductCategory = () => {
                   {TABLE_HEADERS.map((head) => (
                     <th
                       key={head}
-                      onClick={() => {
-                        setSortBy(head);
-                        setSortOrder(
-                          sortOrder === "asc" ? "desc" : "asc"
-                        );
-                      }}
-                      className="cursor-pointer px-4 py-3 border-b text-xs font-semibold uppercase text-gray-600 hover:bg-gray-100"
+                      className="px-4 py-3 border-b text-xs font-semibold uppercase text-gray-600 bg-gray-100"
                     >
-                      <div className="flex items-center gap-1">
-                        {head}
-                        {sortBy === head && (
-                          <span>{sortOrder === "asc" ? "▲" : "▼"}</span>
-                        )}
-                      </div>
+                      {head.replace(/_/g, " ")} 
                     </th>
                   ))}
                 </tr>
               </thead>
 
               <tbody>
-                {paginatedData.length === 0 ? (
+                {data.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={TABLE_HEADERS.length}
-                      className="text-center py-10 text-gray-400"
-                    >
+                    <td colSpan={TABLE_HEADERS.length} className="text-center py-10 text-gray-400">
                       No records found
                     </td>
                   </tr>
                 ) : (
-                  paginatedData.map((item, idx) => (
-                    <tr
-                      key={item.ASIN || idx}
-                      className="hover:bg-gray-50 transition"
-                    >
+                  data.map((item, idx) => (
+                    <tr key={item.id || idx} className="hover:bg-gray-50 transition border-b">
                       {TABLE_HEADERS.map((key) => (
                         <td
                           key={key}
                           title={item[key]}
                           className="px-4 py-3 text-sm text-gray-700 max-w-[180px] truncate"
                         >
-                          {item[key] ?? "-"}
+                          {item[key] !== null && item[key] !== undefined ? item[key] : "-"}
                         </td>
                       ))}
                     </tr>
@@ -207,9 +211,9 @@ const ProductCategory = () => {
         </CardBody>
       </Card>
 
-      {/* ---------- PAGINATION ---------- */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6 flex-wrap">
+      {/* ---------- SERVER-SIDE PAGINATION ---------- */}
+      {!loading && totalPages > 0 && (
+        <div className="flex justify-center items-center gap-2 mt-6 flex-wrap pb-6">
           <Button
             size="sm"
             variant="outlined"
@@ -219,20 +223,9 @@ const ProductCategory = () => {
             Prev
           </Button>
 
-          {Array.from({ length: totalPages }, (_, i) => (
-            <Button
-              key={i}
-              size="sm"
-              onClick={() => setCurrentPage(i + 1)}
-              className={
-                currentPage === i + 1
-                  ? "bg-blue-600"
-                  : "bg-white text-gray-700 border"
-              }
-            >
-              {i + 1}
-            </Button>
-          ))}
+          <span className="text-sm text-gray-600 px-4 font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
 
           <Button
             size="sm"

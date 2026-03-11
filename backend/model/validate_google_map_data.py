@@ -4,21 +4,18 @@ from sqlalchemy import create_engine, text
 from urllib.parse import quote_plus
 import os
 from dotenv import load_dotenv
-from model.normalizer import UniversalNormalizer
-
-# Compatibility helper
-normalize_phone = UniversalNormalizer.normalize_phone
 
 # Load environment variables
 load_dotenv('.env') 
 
 DB_USER = os.getenv('DB_USER')
-DB_PASS = quote_plus(os.getenv('DB_PASSWORD_PLAIN') or '')
+DB_PASS = getattr(config, "DB_PASSWORD", "")
+# DB_PASS = quote_plus(os.getenv('DB_PASSWORD_PLAIN') or '')  # REFACTORED: Now using config.py
 DB_HOST = os.getenv('DB_HOST')
 DB_NAME = os.getenv('DB_NAME')
 
 DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
-engine = create_engine(DATABASE_URI)
+engine = create_engine(config.DATABASE_URI)
 
 # --- NORMALIZATION SETTINGS --- #
 

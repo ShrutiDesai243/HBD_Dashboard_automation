@@ -51,7 +51,7 @@ export function SignIn() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/login", {
+      const res = await api.post("/auth/login", {
         email,
         password,
       });
@@ -73,7 +73,7 @@ export function SignIn() {
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      const res = await api.post("/google-login", {
+      const res = await api.post("/auth/google-login", {
         token: credentialResponse.credential,
       });
 

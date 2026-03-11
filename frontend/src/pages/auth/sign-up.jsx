@@ -48,7 +48,7 @@ export function SignUp() {
     e.preventDefault();
     console.log(email, password);
     try {
-      const res = await api.post("/signup", {
+      const res = await api.post("/auth/signup", {
         name,
         email,
         password,

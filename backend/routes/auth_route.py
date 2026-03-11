@@ -13,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 auth_bp = Blueprint("auth", __name__)
 
 # Signup
-@auth_bp.route("/signup", methods=["POST"])
+@auth_bp.route("/signup", methods=["POST"], strict_slashes=False)
 def signup():
     data = request.json
     email = data.get("email")
@@ -41,30 +41,36 @@ def signup():
 
 
 # Login
-@auth_bp.route("/login", methods=["POST"])
+@auth_bp.route("/login", methods=["POST"], strict_slashes=False)
 def login():
     data = request.json
     email = data.get("email")
     password = data.get("password")
 
+    # Correctly queries the DB using the updated model
     user = User.query.filter_by(email=email).first()
 
+    # Uses the plain-text check we defined in model/user.py
     if not user or not user.check_password(password):
         return jsonify({"message": "Invalid email or password"}), 401
 
+    # Generates the real token for the logged-in user
     token = create_access_token(identity=str(user.id))
-    return jsonify({"token": token}), 200
+    
+    return jsonify({
+        "message": "Login successful",
+        "token": token
+    }), 200
 
-@auth_bp.route("/google-login", methods=["POST"])
+
+# Google Login
+@auth_bp.route("/google-login", methods=["POST"], strict_slashes=False)
 def google_login():
     data = request.json
     token = data.get("token")
     
     try:
         # Verify the token
-        # Replace 'YOUR_GOOGLE_CLIENT_ID' with your actual client ID or get it from env
-        # For now we might just verify it's a valid google token without checking audience specific to app if client_id is None
-        # But best practice is to check client_id
         client_id = os.getenv("GOOGLE_CLIENT_ID") 
         id_info = id_token.verify_oauth2_token(token, google_requests.Request(), client_id)
         
@@ -125,7 +131,9 @@ def google_login():
         traceback.print_exc()
         return jsonify({"message": "Google login failed", "error": str(e)}), 500
 
-@auth_bp.route("/protected", methods=["GET"])
+
+# Protected Route
+@auth_bp.route("/protected", methods=["GET"], strict_slashes=False)
 @jwt_required()
 def protected():
     current_user = get_jwt_identity()
