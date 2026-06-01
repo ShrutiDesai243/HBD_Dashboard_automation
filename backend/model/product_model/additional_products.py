@@ -26,6 +26,27 @@ class Blinkit(db.Model):
             "description": self.description
         }
 
+class DMartCategory(db.Model):
+    __tablename__ = 'dmart_categories'
+    category_id = db.Column(db.Integer, primary_key=True)
+    category_name = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('dmart_categories.category_id', ondelete='SET NULL'), nullable=True)
+    category_level = db.Column(db.Integer, nullable=True)
+    category_path = db.Column(db.String(512), nullable=True)
+
+    parent = db.relationship('DMartCategory', remote_side=[category_id], backref='children')
+
+    def to_dict(self):
+        return {
+            "category_id": self.category_id,
+            "category_name": self.category_name,
+            "slug": self.slug,
+            "parent_id": self.parent_id,
+            "category_level": self.category_level,
+            "category_path": self.category_path
+        }
+
 class DMart(db.Model):
     __tablename__ = 'dmart_products'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,17 +57,12 @@ class DMart(db.Model):
     stars = db.Column('rating', db.String(50))
     reviews = db.Column('Number_of_ratings', db.String(50))
     price = db.Column('price', db.String(100))
+    listPrice = db.Column('listPrice', db.String(100), nullable=True)
     categoryName = db.Column('category', db.String(255))
     brand = db.Column('Brand', db.String(255))
     description = db.Column('description', db.Text)
-
-    @property
-    def listPrice(self):
-        return self.price
-
-    @listPrice.setter
-    def listPrice(self, value):
-        self.price = value
+    category_id = db.Column(db.Integer, db.ForeignKey('dmart_categories.category_id', ondelete='SET NULL'), nullable=True)
+    quantity = db.Column('quantity', db.String(100), nullable=True)
 
     @property
     def isBestSeller(self):
@@ -74,6 +90,8 @@ class DMart(db.Model):
             "stars": self.stars,
             "reviews": self.reviews,
             "category": self.categoryName,
+            "category_id": self.category_id,
+            "quantity": self.quantity,
             "link": self.productUrl
         }
 

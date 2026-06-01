@@ -63,11 +63,14 @@ def get_random_viewport() -> dict:
 
 
 # ── Scroll & Timing Settings ──────────────────────────────────
-SCROLL_PAUSE_MS = 800           # ms to wait between scroll steps (tuned faster)
-SCROLL_TIMEOUT_MS = 3500        # ms with no height change = done (tuned faster)
+SCROLL_PAUSE_MS = 500           # ms to wait between scroll steps (tuned faster)
+SCROLL_TIMEOUT_MS = 2000        # ms with no height change = done (tuned faster)
 MAX_SCROLL_ATTEMPTS = 150       # safety cap on scroll iterations
 NETWORK_IDLE_TIMEOUT_MS = 15000 # max ms to wait for network idle
 PAGE_LOAD_TIMEOUT_MS = 60000    # max ms for initial page load
+
+# ── Concurrency & Parallelization ──────────────────────────────
+CONCURRENT_CATEGORIES = 3       # number of concurrent tabs running in parallel
 
 # ── Retry & Resilience ────────────────────────────────────────
 MAX_RETRIES = 3                 # retries per category on failure

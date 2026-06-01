@@ -197,20 +197,13 @@ class SitemapRunner:
                                 logger.warning(f"Garbage data rejected from {url}")
                                 break # Do not retry garbage data
                                 
-                            # Handle Category Hierarchy
-                            cat_hierarchy = raw_data.get('category', 'Uncategorized').split(' > ')
-                            cat_id = None
+                            # Handle Category Hierarchy dynamically
+                            category_path = raw_data.get('category', 'Uncategorized')
                             
                             # Async lock for DB and file writes
                             async with db_lock:
                                 with db:
-                                    if len(cat_hierarchy) == 3:
-                                        cat_id = db.resolve_category_hierarchy(cat_hierarchy[0], cat_hierarchy[1], cat_hierarchy[2])
-                                    elif len(cat_hierarchy) == 2:
-                                        cat_id = db.resolve_category_hierarchy(cat_hierarchy[0], cat_hierarchy[1])
-                                    else:
-                                        cat_id = db.upsert_category(cat_hierarchy[0])
-                                        
+                                    cat_id = db.resolve_category_path(category_path)
                                     db.upsert_product(clean_data, cat_id)
                                     
                                 # Stream to JSONL

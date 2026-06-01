@@ -97,6 +97,7 @@ class DMartScraper:
 
         # Resumability & Incremental processing state
         self.current_category_id: Optional[int] = None
+        self.current_category_name: Optional[str] = None
         self.current_jsonl_path: Optional[Path] = None
         self.scraped_skus: set = set()
         self.scraped_names: set = set()
@@ -230,20 +231,17 @@ class DMartScraper:
 
     # ── API Response Interception ─────────────────────────────
 
-    async def _on_response(self, response: Response):
+    async def _on_response(self, response: Response, page: Optional[Page] = None):
         """
         Intercept DMart's internal API responses to capture
         structured JSON product data directly.
         
         Targets:
             - /api/v1/clp/   (Category Listing Page)
-            - /api/v1/search (Search results)
-            - /api/v2/pdp/   (Product Detail Page)
+            - /api/v1/search (Search Result Page)
         """
         url = response.url
-
-        # Only intercept JSON API responses
-        if not any(pattern in url for pattern in ['/api/', '/clp/', '/search']):
+        if "/api/v" not in url.lower() and "clp" not in url.lower() and "search" not in url.lower():
             return
 
         # Ignore promotional components and non-product data
@@ -277,7 +275,12 @@ class DMartScraper:
                             self._api_categories.extend(categories)
 
                     if products:
-                        self._api_products.extend(products)
+                        target_page = page if page is not None else self._page
+                        if target_page and hasattr(target_page, 'api_products'):
+                            target_page.api_products.extend(products)
+                        else:
+                            self._api_products.extend(products)
+                            
                         self.stats['api_responses_captured'] += 1
                         logger.info(
                             f"API intercepted: {len(products)} products from {url[:80]}"
@@ -289,7 +292,7 @@ class DMartScraper:
 
     # ── Pincode Injection ─────────────────────────────────────
 
-    async def _handle_pincode_popup(self):
+    async def _handle_pincode_popup(self, page: Optional[Page] = None):
         """
         Handle DMart's location gating popup.
         
@@ -297,12 +300,13 @@ class DMartScraper:
             1. Inject localStorage/cookies directly (fastest)
             2. Interact with the pincode popup UI (fallback)
         """
+        active_page = page if page is not None else self._page
         logger.info(f"Handling pincode injection: {self.pincode}")
 
         try:
             # ── Strategy 1: Direct storage injection ──
             # Set localStorage values that DMart uses for location
-            await self._page.evaluate(f"""
+            await active_page.evaluate(f"""
                 localStorage.setItem('pincode', '{self.pincode}');
                 localStorage.setItem('userPincode', '{self.pincode}');
                 localStorage.setItem('selectedPincode', '{self.pincode}');
@@ -342,25 +346,25 @@ class DMartScraper:
             logger.info("Pincode injected via localStorage + cookies.")
 
             # Reload page to apply the location change
-            await self._page.reload(wait_until='domcontentloaded')
-            await self._page.wait_for_timeout(2000)
+            await active_page.reload(wait_until='domcontentloaded')
+            await active_page.wait_for_timeout(2000)
 
             # ── Strategy 2: UI interaction (fallback) ──
             # Check if the popup is still visible
             popup_visible = False
             for selector in SELECTORS['pincode_input'].split(', '):
                 try:
-                    locator = self._page.locator(selector)
+                    locator = active_page.locator(selector)
                     if await locator.count() > 0 and await locator.first.is_visible():
                         popup_visible = True
                         # Type pincode into the input
                         await locator.first.fill(self.pincode)
-                        await self._page.wait_for_timeout(500)
+                        await active_page.wait_for_timeout(500)
 
                         # Click submit button
                         for btn_sel in SELECTORS['pincode_submit'].split(', '):
                             try:
-                                btn = self._page.locator(btn_sel)
+                                btn = active_page.locator(btn_sel)
                                 if await btn.count() > 0 and await btn.first.is_visible():
                                     await btn.first.click()
                                     logger.info("Pincode submitted via UI popup.")
@@ -368,7 +372,7 @@ class DMartScraper:
                             except Exception:
                                 continue
 
-                        await self._page.wait_for_timeout(3000)
+                        await active_page.wait_for_timeout(3000)
                         break
                 except Exception:
                     continue
@@ -378,7 +382,7 @@ class DMartScraper:
 
             # Final wait for page to settle with new location
             try:
-                await self._page.wait_for_load_state('networkidle', timeout=NETWORK_IDLE_TIMEOUT_MS)
+                await active_page.wait_for_load_state('networkidle', timeout=NETWORK_IDLE_TIMEOUT_MS)
             except Exception:
                 logger.debug("Network idle timeout after pincode — continuing.")
 
@@ -553,17 +557,17 @@ class DMartScraper:
 
     # ── Infinite Scroll ───────────────────────────────────────
 
-    async def _scroll_to_load_all(self):
+    async def _scroll_to_load_all(self, page: Optional[Page] = None):
         """
         Robust infinite scroll implementation.
         
         Algorithm:
             1. Scroll to page bottom
-            2. Wait for network activity to settle
-            3. Compare page height before/after scroll
-            4. Repeat until height is unchanged for SCROLL_TIMEOUT_MS
-            5. Safety cap at MAX_SCROLL_ATTEMPTS iterations
+            2. Compare page height and product card counts before/after scroll
+            3. Repeat until height is unchanged or product counts stagnate
+            4. Safety cap at MAX_SCROLL_ATTEMPTS iterations
         """
+        active_page = page if page is not None else self._page
         logger.info("Starting infinite scroll to load all products...")
 
         prev_height = 0
@@ -571,11 +575,41 @@ class DMartScraper:
         scroll_count = 0
         max_no_change = 3  # How many times height can stay same before stopping
 
+        # Smart Stagnation Check tracking variables
+        last_card_count = 0
+        stagnant_scroll_count = 0
+
         while scroll_count < MAX_SCROLL_ATTEMPTS:
             scroll_count += 1
 
             # Get current page height
-            curr_height = await self._page.evaluate("document.body.scrollHeight")
+            curr_height = await active_page.evaluate("document.body.scrollHeight")
+
+            # ── Smart Card Stagnation Check ──
+            card_count = await self._count_product_cards(active_page)
+            api_has_items = False
+            if active_page is not None:
+                api_products_list = getattr(active_page, 'api_products', None)
+                if api_products_list:
+                    api_has_items = True
+            else:
+                if self._api_products:
+                    api_has_items = True
+
+            if card_count > 0 and card_count == last_card_count:
+                stagnant_scroll_count += 1
+                # If product card count remains completely identical for 2 consecutive scrolls,
+                # and no new intercepted API products are pending, exit early.
+                if stagnant_scroll_count >= 2 and not api_has_items:
+                    logger.info(
+                        f"Smart scroll exit: product card count remained stagnant at {card_count} "
+                        f"for 2 consecutive scrolls and no new API products are intercepted."
+                    )
+                    break
+            else:
+                stagnant_scroll_count = 0
+
+            last_card_count = card_count
 
             if curr_height == prev_height:
                 no_change_count += 1
@@ -591,14 +625,14 @@ class DMartScraper:
             prev_height = curr_height
 
             # Scroll to bottom with smooth behavior
-            await self._page.evaluate(
+            await active_page.evaluate(
                 "window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })"
             )
 
             # Check for 'Load More' button and click if present
             for selector in SELECTORS['load_more_button'].split(', '):
                 try:
-                    locator = self._page.locator(selector)
+                    locator = active_page.locator(selector)
                     if await locator.count() > 0 and await locator.first.is_visible():
                         await locator.first.click()
                         logger.info("Clicked 'Load More' button to continue scrolling.")
@@ -608,11 +642,15 @@ class DMartScraper:
                     continue
 
             # Pause for React rendering (Network idle wait eliminated for maximum speed)
-            await self._page.wait_for_timeout(SCROLL_PAUSE_MS)
+            await active_page.wait_for_timeout(SCROLL_PAUSE_MS)
 
             # ── Incremental Saving ──
             # Process any intercepted API products immediately to free up memory and save progress
-            if self._api_products:
+            if active_page is not None and getattr(active_page, 'api_products', None):
+                api_saved = await self._process_and_save_api_products(active_page)
+                if api_saved > 0:
+                    logger.info(f"Incrementally saved {api_saved} new products from API interception.")
+            elif active_page is None and self._api_products:
                 api_saved = await self._process_and_save_api_products()
                 if api_saved > 0:
                     logger.info(f"Incrementally saved {api_saved} new products from API interception.")
@@ -620,12 +658,12 @@ class DMartScraper:
             # If no API products have been captured, and DOM fallback is likely active, 
             # process DOM products periodically (every 5 scrolls)
             elif scroll_count % 5 == 0:
-                dom_saved = await self._process_and_save_dom_products()
+                dom_saved = await self._process_and_save_dom_products(active_page)
                 if dom_saved > 0:
                     logger.info(f"Incrementally saved {dom_saved} new products from DOM fallback.")
 
             if scroll_count % 10 == 0:
-                product_count = await self._count_product_cards()
+                product_count = await self._count_product_cards(active_page)
                 logger.info(
                     f"Scroll #{scroll_count}: {product_count} products loaded, "
                     f"height={curr_height}px"
@@ -633,11 +671,12 @@ class DMartScraper:
 
         logger.info(f"Infinite scroll finished after {scroll_count} iterations.")
 
-    async def _count_product_cards(self) -> int:
+    async def _count_product_cards(self, page: Optional[Page] = None) -> int:
         """Count the number of product cards currently in the DOM."""
+        active_page = page if page is not None else self._page
         for selector in SELECTORS['product_card'].split(', '):
             try:
-                count = await self._page.locator(selector).count()
+                count = await active_page.locator(selector).count()
                 if count > 0:
                     return count
             except Exception:
@@ -646,7 +685,7 @@ class DMartScraper:
 
     # ── Product Extraction ────────────────────────────────────
 
-    async def _extract_products_from_dom(self) -> List[dict]:
+    async def _extract_products_from_dom(self, page: Optional[Page] = None) -> List[dict]:
         """
         Extract product data from DOM elements on the current page.
         
@@ -656,13 +695,14 @@ class DMartScraper:
         Returns:
             List of raw product dictionaries.
         """
+        active_page = page if page is not None else self._page
         products = []
 
         # Find product cards using multiple selector strategies
         cards = []
         for selector in SELECTORS['product_card'].split(', '):
             try:
-                found = await self._page.query_selector_all(selector.strip())
+                found = await active_page.query_selector_all(selector.strip())
                 if found:
                     cards = found
                     logger.info(f"Found {len(cards)} product cards via '{selector.strip()}'")
@@ -672,7 +712,7 @@ class DMartScraper:
 
         if not cards:
             logger.warning("No product cards found in DOM. Dumping HTML for debugging.")
-            html = await self._page.content()
+            html = await active_page.content()
             with open(EXPORT_DIR / "debug_dom.html", "w", encoding="utf-8") as f:
                 f.write(html)
             return products
@@ -805,16 +845,22 @@ class DMartScraper:
 
         return raw if raw.get('product_name') or raw.get('product_url') else None
 
-    def _extract_products_from_api(self) -> List[dict]:
+    def _extract_products_from_api(self, page: Optional[Page] = None) -> List[dict]:
         """
         Process products captured via API response interception.
         
         Returns:
             List of raw product dictionaries from API JSON.
         """
+        api_products_list = []
+        if page is not None:
+            api_products_list = getattr(page, 'api_products', [])
+        else:
+            api_products_list = self._api_products
+
         # Flatten product variants
         flattened_items = []
-        for item in self._api_products:
+        for item in api_products_list:
             skus = item.get('sKUs') or item.get('skus') or [item]
             for sku in skus:
                 # Merge root properties with SKU properties (SKU overrides)
@@ -906,18 +952,30 @@ class DMartScraper:
 
         return products
 
-    async def _process_and_save_api_products(self) -> int:
+    async def _process_and_save_api_products(self, page: Optional[Page] = None) -> int:
         """
         Process and save newly intercepted API products incrementally.
         
         Returns:
             Number of new unique products processed and saved in this batch.
         """
-        if not self._api_products:
+        api_products_list = []
+        if page is not None:
+            api_products_list = getattr(page, 'api_products', [])
+        else:
+            api_products_list = self._api_products
+
+        if not api_products_list:
             return 0
 
-        raw_products = self._extract_products_from_api()
-        self._api_products.clear() # Clear so they are not re-processed
+        raw_products = self._extract_products_from_api(page)
+        api_products_list.clear() # Clear so they are not re-processed
+
+        scraped_skus_set = page.scraped_skus if page is not None else self.scraped_skus
+        scraped_names_set = page.scraped_names if page is not None else self.scraped_names
+        current_jsonl_path_val = page.current_jsonl_path if page is not None else self.current_jsonl_path
+        current_category_name_val = page.current_category_name if page is not None else self.current_category_name
+        current_category_id_val = page.current_category_id if page is not None else self.current_category_id
 
         new_saved = 0
         for raw in raw_products:
@@ -935,7 +993,7 @@ class DMartScraper:
                 name_key = (str(p_name).strip().lower(), str(p_size).strip().lower() if p_size else "")
 
                 # Check double-layered resumability cache
-                if sku_key in self.scraped_skus or name_key in self.scraped_names:
+                if sku_key in scraped_skus_set or name_key in scraped_names_set:
                     continue
 
                 cleaned = DataCleaner.clean_product_data(raw)
@@ -954,14 +1012,27 @@ class DMartScraper:
                     cleaned_size = cleaned.get('pack_size')
                     cleaned_name_key = (str(cleaned_name).strip().lower(), str(cleaned_size).strip().lower() if cleaned_size else "")
 
-                    if self.current_jsonl_path:
-                        self._stream_to_jsonl(cleaned, self.current_jsonl_path)
+                    if current_jsonl_path_val:
+                        self._stream_to_jsonl(cleaned, current_jsonl_path_val)
+
+                    # Dynamically resolve category path in real-time
+                    product_cat_path = cleaned.get('category_name') or raw.get('category_name')
+                    if isinstance(product_cat_path, list):
+                        product_cat_path = " > ".join(product_cat_path)
+                    if not product_cat_path:
+                        product_cat_path = current_category_name_val or "Uncategorized"
+
+                    try:
+                        cat_id = self.db.resolve_category_path(product_cat_path)
+                    except Exception as cat_err:
+                        logger.error(f"Failed to resolve product category path '{product_cat_path}': {cat_err}")
+                        cat_id = current_category_id_val
 
                     # Insert into SQLite (which has secondary name+pack deduplication)
-                    self.db.upsert_product(cleaned, self.current_category_id)
+                    self.db.upsert_product(cleaned, cat_id)
 
-                    self.scraped_skus.add(cleaned_sku)
-                    self.scraped_names.add(cleaned_name_key)
+                    scraped_skus_set.add(cleaned_sku)
+                    scraped_names_set.add(cleaned_name_key)
                     new_saved += 1
                 else:
                     self.stats['products_failed'] += 1
@@ -971,7 +1042,10 @@ class DMartScraper:
                 logger.warning(f"Incremental API product processing failed: {e}")
                 self.stats['products_failed'] += 1
 
-        self._category_products_scraped += new_saved
+        if page is not None:
+            page.category_products_scraped += new_saved
+        else:
+            self._category_products_scraped += new_saved
         return new_saved
 
     async def _get_card_sku(self, card) -> Optional[str]:
@@ -1001,18 +1075,20 @@ class DMartScraper:
                 continue
         return None
 
-    async def _process_and_save_dom_products(self) -> int:
+    async def _process_and_save_dom_products(self, page: Optional[Page] = None) -> int:
         """
         Process and save products from DOM elements, skipping cached ones.
         
         Returns:
             Number of new unique products processed and saved in this batch.
         """
+        active_page = page if page is not None else self._page
+
         # Find product cards using multiple selector strategies
         cards = []
         for selector in SELECTORS['product_card'].split(', '):
             try:
-                found = await self._page.query_selector_all(selector.strip())
+                found = await active_page.query_selector_all(selector.strip())
                 if found:
                     cards = found
                     break
@@ -1022,12 +1098,18 @@ class DMartScraper:
         if not cards:
             return 0
 
+        scraped_skus_set = page.scraped_skus if page is not None else self.scraped_skus
+        scraped_names_set = page.scraped_names if page is not None else self.scraped_names
+        current_jsonl_path_val = page.current_jsonl_path if page is not None else self.current_jsonl_path
+        current_category_name_val = page.current_category_name if page is not None else self.current_category_name
+        current_category_id_val = page.current_category_id if page is not None else self.current_category_id
+
         new_saved = 0
         for idx, card in enumerate(cards):
             try:
                 # Fast-skip: extract only SKU first
                 sku_id = await self._get_card_sku(card)
-                if sku_id and sku_id in self.scraped_skus:
+                if sku_id and sku_id in scraped_skus_set:
                     continue
 
                 # If not skipped, perform full card extraction
@@ -1045,7 +1127,7 @@ class DMartScraper:
                 sku_key = sku_id
                 name_key = (str(p_name).strip().lower(), str(p_size).strip().lower() if p_size else "")
 
-                if sku_key in self.scraped_skus or name_key in self.scraped_names:
+                if sku_key in scraped_skus_set or name_key in scraped_names_set:
                     continue
 
                 cleaned = DataCleaner.clean_product_data(raw)
@@ -1064,13 +1146,26 @@ class DMartScraper:
                     cleaned_size = cleaned.get('pack_size')
                     cleaned_name_key = (str(cleaned_name).strip().lower(), str(cleaned_size).strip().lower() if cleaned_size else "")
 
-                    if self.current_jsonl_path:
-                        self._stream_to_jsonl(cleaned, self.current_jsonl_path)
+                    if current_jsonl_path_val:
+                        self._stream_to_jsonl(cleaned, current_jsonl_path_val)
 
-                    self.db.upsert_product(cleaned, self.current_category_id)
+                    # Dynamically resolve category path in real-time
+                    product_cat_path = cleaned.get('category_name') or raw.get('category_name')
+                    if isinstance(product_cat_path, list):
+                        product_cat_path = " > ".join(product_cat_path)
+                    if not product_cat_path:
+                        product_cat_path = current_category_name_val or "Uncategorized"
 
-                    self.scraped_skus.add(cleaned_sku)
-                    self.scraped_names.add(cleaned_name_key)
+                    try:
+                        cat_id = self.db.resolve_category_path(product_cat_path)
+                    except Exception as cat_err:
+                        logger.error(f"Failed to resolve product category path '{product_cat_path}': {cat_err}")
+                        cat_id = current_category_id_val
+
+                    self.db.upsert_product(cleaned, cat_id)
+
+                    scraped_skus_set.add(cleaned_sku)
+                    scraped_names_set.add(cleaned_name_key)
                     new_saved += 1
                 else:
                     self.stats['products_failed'] += 1
@@ -1078,7 +1173,10 @@ class DMartScraper:
                 logger.warning(f"Incremental DOM card parsing failed at index {idx}: {e}")
                 self.stats['products_failed'] += 1
 
-        self._category_products_scraped += new_saved
+        if page is not None:
+            page.category_products_scraped += new_saved
+        else:
+            self._category_products_scraped += new_saved
         return new_saved
 
     # ── Streaming Data Pipeline ───────────────────────────────
@@ -1184,6 +1282,7 @@ class DMartScraper:
         category_name: str,
         category_slug: str,
         category_id: Optional[int] = None,
+        page: Optional[Page] = None,
     ) -> int:
         """
         Scrape all products from a single category page.
@@ -1198,6 +1297,7 @@ class DMartScraper:
             category_name: Display name for logging.
             category_slug: URL slug for file naming.
             category_id: FK for database insertion.
+            page: Optional Playwright Page tab for parallel execution.
             
         Returns:
             Number of products scraped from this category.
@@ -1207,18 +1307,44 @@ class DMartScraper:
         logger.info(f"URL: {category_url}")
         logger.info(f"{'='*60}")
 
+        active_page = page if page is not None else self._page
+
         # Clear API buffer for this category
-        self._api_products.clear()
+        if active_page is not None:
+            if not hasattr(active_page, 'api_products'):
+                active_page.api_products = []
+            active_page.api_products.clear()
+        else:
+            self._api_products.clear()
 
         jsonl_path = self._get_jsonl_path(category_slug)
         csv_path = self._get_csv_path(category_slug)
         
         # Initialize category state variables
-        self.current_category_id = category_id
-        self.current_jsonl_path = jsonl_path
-        self._category_products_scraped = 0
-        self.scraped_skus.clear()
-        self.scraped_names.clear()
+        if active_page is not None:
+            active_page.current_category_id = category_id
+            active_page.current_category_name = category_name
+            active_page.current_jsonl_path = jsonl_path
+            active_page.category_products_scraped = 0
+            if not hasattr(active_page, 'scraped_skus'):
+                active_page.scraped_skus = set()
+            if not hasattr(active_page, 'scraped_names'):
+                active_page.scraped_names = set()
+            active_page.scraped_skus.clear()
+            active_page.scraped_names.clear()
+            
+            scraped_skus_set = active_page.scraped_skus
+            scraped_names_set = active_page.scraped_names
+        else:
+            self.current_category_id = category_id
+            self.current_category_name = category_name
+            self.current_jsonl_path = jsonl_path
+            self._category_products_scraped = 0
+            self.scraped_skus.clear()
+            self.scraped_names.clear()
+            
+            scraped_skus_set = self.scraped_skus
+            scraped_names_set = self.scraped_names
 
         # Pre-load SQLite and JSONL caches
         existing_products = self.db.get_existing_products_for_category(category_id)
@@ -1227,9 +1353,9 @@ class DMartScraper:
             name = p.get('product_name')
             size = p.get('pack_size')
             if sku:
-                self.scraped_skus.add(sku)
+                scraped_skus_set.add(sku)
             if name:
-                self.scraped_names.add((str(name).strip().lower(), str(size).strip().lower() if size else ""))
+                scraped_names_set.add((str(name).strip().lower(), str(size).strip().lower() if size else ""))
 
         if jsonl_path.exists():
             try:
@@ -1243,22 +1369,22 @@ class DMartScraper:
                                 name = data.get('product_name')
                                 size = data.get('pack_size')
                                 if sku:
-                                    self.scraped_skus.add(sku)
+                                    scraped_skus_set.add(sku)
                                 if name:
-                                    self.scraped_names.add((str(name).strip().lower(), str(size).strip().lower() if size else ""))
+                                    scraped_names_set.add((str(name).strip().lower(), str(size).strip().lower() if size else ""))
                             except json.JSONDecodeError as je:
                                 logger.warning(f"Skipping malformed/corrupted JSONL line {line_num} in {jsonl_path.name}: {je}")
             except Exception as e:
                 logger.warning(f"Error reading existing JSONL for resumability caches: {e}")
 
         logger.info(
-            f"Pre-loaded resumability caches | Unique SKUs: {len(self.scraped_skus)} | Unique Names: {len(self.scraped_names)}"
+            f"Pre-loaded resumability caches | Unique SKUs: {len(scraped_skus_set)} | Unique Names: {len(scraped_names_set)}"
         )
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 # Navigate to category page
-                response = await self._page.goto(
+                response = await active_page.goto(
                     category_url,
                     wait_until='domcontentloaded',
                     timeout=PAGE_LOAD_TIMEOUT_MS
@@ -1276,38 +1402,45 @@ class DMartScraper:
 
                 # Wait for initial products to appear in the DOM (blindingly fast wait)
                 try:
-                    await self._page.wait_for_selector(SELECTORS['product_card'].split(', ')[0], timeout=5000)
+                    await active_page.wait_for_selector(SELECTORS['product_card'].split(', ')[0], timeout=5000)
                 except Exception:
                     # Fallback to a quick 1-second delay if cards aren't visible immediately (e.g. empty category)
-                    await self._page.wait_for_timeout(1000)
+                    await active_page.wait_for_timeout(1000)
 
                 # Random delay to mimic human behavior
                 delay = random.uniform(*REQUEST_DELAY_RANGE)
-                await self._page.wait_for_timeout(int(delay * 1000))
+                await active_page.wait_for_timeout(int(delay * 1000))
 
                 # Load all products via infinite scroll (incremental processing occurs inside)
-                await self._scroll_to_load_all()
+                await self._scroll_to_load_all(active_page)
 
                 # ── Final Sweep: Process remaining items ──
-                if self._api_products:
-                    logger.info(f"Final sweep: processing {len(self._api_products)} remaining API products.")
-                    await self._process_and_save_api_products()
+                api_products_list = []
+                if active_page is not None:
+                    api_products_list = getattr(active_page, 'api_products', [])
+                else:
+                    api_products_list = self._api_products
+
+                if api_products_list:
+                    logger.info(f"Final sweep: processing {len(api_products_list)} remaining API products.")
+                    await self._process_and_save_api_products(active_page)
                 else:
                     logger.info("Final sweep: performing final DOM product sweep.")
-                    await self._process_and_save_dom_products()
+                    await self._process_and_save_dom_products(active_page)
 
                 # ── Stage 2: Generate CSV report ──
                 self._jsonl_to_csv(jsonl_path, csv_path)
 
                 # ── Stage 3: Write Strict Completion Checkpoint File ──
                 completion_path = self._get_completion_path(category_slug)
+                products_scraped_count = active_page.category_products_scraped if active_page is not None else self._category_products_scraped
                 try:
                     completion_data = {
                         "category_name": category_name,
                         "category_slug": category_slug,
                         "pincode": self.pincode,
                         "completed_at": datetime.now().isoformat(),
-                        "products_scraped_this_run": self._category_products_scraped
+                        "products_scraped_this_run": products_scraped_count
                     }
                     with open(completion_path, 'w', encoding='utf-8') as cf:
                         json.dump(completion_data, cf, indent=2)
@@ -1315,12 +1448,12 @@ class DMartScraper:
                 except Exception as ce:
                     logger.warning(f"Failed to write completion marker for '{category_name}': {ce}")
 
-                self.stats['products_scraped'] += self._category_products_scraped
+                self.stats['products_scraped'] += products_scraped_count
                 self.stats['categories_scraped'] += 1
 
                 logger.info(
                     f"Category '{category_name}' complete: "
-                    f"{self._category_products_scraped} products scraped."
+                    f"{products_scraped_count} products scraped."
                 )
                 break  # Success — exit retry loop
 
@@ -1334,12 +1467,22 @@ class DMartScraper:
                     logger.error(f"All retries exhausted for '{category_name}'.")
 
         # Tear down state variables on exit
-        products_scraped = self._category_products_scraped
-        self.current_category_id = None
-        self.current_jsonl_path = None
-        self._category_products_scraped = 0
-        self.scraped_skus.clear()
-        self.scraped_names.clear()
+        if active_page is not None:
+            products_scraped = active_page.category_products_scraped
+            active_page.current_category_id = None
+            active_page.current_category_name = None
+            active_page.current_jsonl_path = None
+            active_page.category_products_scraped = 0
+            active_page.scraped_skus.clear()
+            active_page.scraped_names.clear()
+        else:
+            products_scraped = self._category_products_scraped
+            self.current_category_id = None
+            self.current_category_name = None
+            self.current_jsonl_path = None
+            self._category_products_scraped = 0
+            self.scraped_skus.clear()
+            self.scraped_names.clear()
 
         return products_scraped
 
@@ -1396,42 +1539,66 @@ class DMartScraper:
         category_map = {}  # slug → category_id
         for cat in categories:
             try:
-                cat_id = self.db.upsert_category(
-                    name=cat['name'],
-                    slug=cat['slug'],
-                    parent_id=None,
-                    level=cat.get('level', 1),
-                )
+                cat_id = self.db.resolve_category_path(cat['name'])
                 category_map[cat['slug']] = cat_id
             except Exception as e:
                 logger.error(f"Failed to register category '{cat['name']}': {e}")
 
-        # Step 3: Scrape each category
-        for idx, cat in enumerate(categories, 1):
-            logger.info(f"\n[{idx}/{len(categories)}] Processing: {cat['name']}")
+        # Step 3: Scrape categories concurrently using a worker pool
+        from .config import CONCURRENT_CATEGORIES
+        sem = asyncio.Semaphore(CONCURRENT_CATEGORIES)
 
-            cat_id = category_map.get(cat['slug'])
-            
-            # ── Checkpoint Resumability (Strict Marker File Verification) ──
-            completion_path = self._get_completion_path(cat['slug'])
-            if completion_path.exists():
-                logger.info(f"[Skip] Category '{cat['name']}' already fully scraped. Skipping...")
-                continue
+        async def worker(cat: Dict[str, Any], idx: int):
+            async with sem:
+                completion_path = self._get_completion_path(cat['slug'])
+                if completion_path.exists():
+                    logger.info(f"[Skip] Category '{cat['name']}' already fully scraped. Skipping...")
+                    return
 
-            try:
-                await self.scrape_category(
-                    category_url=cat['url'],
-                    category_name=cat['name'],
-                    category_slug=cat['slug'],
-                    category_id=cat_id,
-                )
-            except Exception as e:
-                logger.error(f"Failed to scrape category '{cat['name']}': {e}")
+                # Stagger startup delay to prevent simultaneous navigation bursts
+                stagger_delay = random.uniform(0.1, 1.5)
+                logger.info(f"Staggering worker startup by {stagger_delay:.2f}s for category '{cat['name']}'...")
+                await asyncio.sleep(stagger_delay)
 
-            # Random delay between categories (tuned faster)
-            delay = random.uniform(0.5, 1.5)
-            logger.info(f"Pausing {delay:.1f}s before next category...")
-            await asyncio.sleep(delay)
+                cat_id = category_map.get(cat['slug'])
+
+                # Dynamically allocate an isolated page tab for this worker
+                page = await self._context.new_page()
+                page.set_default_timeout(PAGE_LOAD_TIMEOUT_MS)
+                page.set_default_navigation_timeout(PAGE_LOAD_TIMEOUT_MS)
+
+                # Initialize state variables on page object to preserve task isolation
+                page.api_products = []
+                page.category_products_scraped = 0
+                page.scraped_skus = set()
+                page.scraped_names = set()
+                page.current_category_id = cat_id
+                page.current_category_name = cat['name']
+                page.current_jsonl_path = self._get_jsonl_path(cat['slug'])
+
+                # Register page-scoped API response interceptor
+                page.on('response', lambda response: asyncio.create_task(self._on_response(response, page)))
+
+                try:
+                    logger.info(f"[{idx}/{len(categories)}] Starting concurrent scrape for category: {cat['name']}")
+                    await self.scrape_category(
+                        category_url=cat['url'],
+                        category_name=cat['name'],
+                        category_slug=cat['slug'],
+                        category_id=cat_id,
+                        page=page
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to scrape category '{cat['name']}' concurrently: {e}")
+                finally:
+                    try:
+                        await page.close()
+                    except Exception as ce:
+                        logger.warning(f"Error closing worker page for '{cat['name']}': {ce}")
+
+        # Run the worker pool using asyncio.gather
+        tasks = [worker(cat, i) for i, cat in enumerate(categories, 1)]
+        await asyncio.gather(*tasks)
 
         # Final summary
         logger.info("\n" + "=" * 60)

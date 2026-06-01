@@ -49,7 +49,10 @@ class DatabaseManager:
         # Category cache: maps (name, parent_id) → category_id
         # Prevents repeated DB lookups for the same category
         self._category_cache: Dict[tuple, int] = {}
+        self.on_category_saved = None
         self.on_product_saved = None
+        self._ref_mapping = {}
+        self._load_reference_mapping()
 
     def __enter__(self):
         """Context manager entry: open connection and init schema."""
@@ -92,6 +95,9 @@ class DatabaseManager:
             # Initialize schema if provided
             if self.schema_path and self.schema_path.exists():
                 self._init_schema()
+                self._migrate_sqlite_columns()
+                # No pre-seeding directly from CSV on boot as per User request.
+                # Category entries are created dynamically during runs using runtime lookup.
 
             logger.info(f"Database connected: {self.db_path}")
 
@@ -109,6 +115,295 @@ class DatabaseManager:
         except (sqlite3.Error, FileNotFoundError) as e:
             logger.error(f"Schema initialization failed: {e}")
             raise
+
+    def _migrate_sqlite_columns(self):
+        """Idempotently add missing columns in SQLite tables."""
+        try:
+            self.cursor.execute("PRAGMA table_info(dmart_category_master)")
+            columns = [col[1] for col in self.cursor.fetchall()]
+            if columns and "category_path" not in columns:
+                logger.info("⚠️ Column `category_path` missing in SQLite `dmart_category_master`. Migrating now...")
+                self.cursor.execute("ALTER TABLE dmart_category_master ADD COLUMN category_path TEXT")
+                self.conn.commit()
+                logger.info("✅ Column `category_path` successfully added to SQLite.")
+        except sqlite3.Error as e:
+            logger.error(f"SQLite dynamic column migration failed: {e}")
+
+    def seed_reference_categories(self):
+        """Idempotently seed the dmart_category_master table with the reference mapping CSV."""
+        try:
+            import csv
+            import os
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            csv_path = os.path.abspath(os.path.join(cur_dir, "..", "..", "..", "resources", "dmart_db_mapping.csv"))
+            
+            if not os.path.exists(csv_path):
+                logger.warning(f"Category mapping CSV not found at: {csv_path}. Skipping automatic SQLite seeding.")
+                return
+                
+            logger.info("Idempotently seeding SQLite dmart_category_master with reference mapping...")
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    cat_id = int(row['Category ID'])
+                    name = row['Category Name'].strip()
+                    slug = row['Slug'].strip() if row['Slug'].strip() else None
+                    parent_id = int(row['Parent ID']) if (row['Parent ID'].strip() and row['Parent ID'].strip().isdigit()) else None
+                    level = int(row['Category Level']) if (row['Category Level'].strip() and row['Category Level'].strip().isdigit()) else None
+                    
+                    self.cursor.execute(
+                        """INSERT OR REPLACE INTO dmart_category_master
+                           (category_id, category_name, slug, parent_id, category_level)
+                           VALUES (?, ?, ?, ?, ?)""",
+                        (cat_id, name, slug, parent_id, level)
+                    )
+            self.conn.commit()
+            logger.info("SQLite dmart_category_master seeded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to seed reference categories in SQLite: {e}")
+
+    def _load_reference_mapping(self):
+        """Load and normalize the dmart_db_mapping.csv reference file into memory."""
+        try:
+            import csv
+            import os
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            csv_path = os.path.abspath(os.path.join(cur_dir, "..", "..", "..", "resources", "dmart_db_mapping.csv"))
+            
+            if not os.path.exists(csv_path):
+                logger.warning(f"Category mapping CSV not found at: {csv_path}. Dynamic reference mapping is disabled.")
+                return
+                
+            def clean_cat_name(name: str) -> str:
+                if not name:
+                    return ""
+                return name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+
+            self._ref_mapping = {}
+            self._ref_leaf_mapping = {}
+            
+            raw_rows = []
+            path_to_id = {}
+            
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    path_val = row.get('Full Category Path (For Mapping)')
+                    if not path_val:
+                        continue
+                    path = path_val.strip()
+                    if not path:
+                        continue
+                    
+                    cat_id_val = row.get('Category ID')
+                    if not cat_id_val or not str(cat_id_val).strip().isdigit():
+                        continue
+                    cat_id = int(cat_id_val)
+                    
+                    # Normalize path parts by cleaning emojis/punctuation/pipes
+                    parts = [clean_cat_name(p) for p in path.split('>') if p.strip()]
+                    normalized = " > ".join([p.lower() for p in parts])
+                    
+                    path_to_id[normalized] = cat_id
+                    
+                    cat_name_val = row.get('Category Name')
+                    cat_name = clean_cat_name(cat_name_val)
+                    
+                    slug_val = row.get('Slug')
+                    slug = slug_val.strip() if (slug_val and slug_val.strip()) else None
+                    
+                    raw_rows.append({
+                        'cat_id': cat_id,
+                        'cat_name': cat_name,
+                        'slug': slug,
+                        'parts': parts,
+                        'normalized': normalized,
+                        'path': path
+                    })
+            
+            # Second pass: Compute parent_id dynamically based on path structure to fix CSV typos
+            for item in raw_rows:
+                parts = item['parts']
+                normalized = item['normalized']
+                cat_id = item['cat_id']
+                cat_name = item['cat_name']
+                slug = item['slug']
+                
+                level = len(parts)
+                
+                if level > 1:
+                    parent_parts = parts[:-1]
+                    parent_norm = " > ".join([p.lower() for p in parent_parts])
+                    parent_id = path_to_id.get(parent_norm)
+                else:
+                    parent_id = None
+                
+                self._ref_mapping[normalized] = {
+                    'category_id': cat_id,
+                    'category_name': cat_name,
+                    'slug': slug,
+                    'parent_id': parent_id,
+                    'category_level': level
+                }
+                
+                # Also build leaf to full path lookup mapping
+                leaf_name = cat_name.lower()
+                if leaf_name:
+                    self._ref_leaf_mapping[leaf_name] = item['path']
+                    
+            logger.info(f"Loaded {len(self._ref_mapping)} reference category paths and {len(self._ref_leaf_mapping)} leaf mappings from CSV (with parent ID corrections applied).")
+        except Exception as e:
+            logger.error(f"Failed to load reference category mapping CSV: {e}")
+
+    def upsert_category_with_id(
+        self,
+        category_id: int,
+        name: str,
+        slug: Optional[str] = None,
+        parent_id: Optional[int] = None,
+        level: Optional[int] = None,
+        category_path: Optional[str] = None
+    ) -> int:
+        """
+        Idempotently insert or update a category using an explicit dedicated category_id.
+        """
+        # Clean trailing/leading pipes, slashes, backslashes, colons, semicolons
+        if name:
+            name = name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+        if slug:
+            slug = slug.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+
+        cache_key = (name, parent_id)
+        if cache_key in self._category_cache:
+            return self._category_cache[cache_key]
+
+        try:
+            # Check if category_id already exists
+            self.cursor.execute(
+                "SELECT category_name FROM dmart_category_master WHERE category_id = ?",
+                (category_id,)
+            )
+            row = self.cursor.fetchone()
+            
+            if row:
+                # Exists! Idempotently update slug, name, parent_id, level, and category_path if needed
+                self.cursor.execute(
+                    """UPDATE dmart_category_master 
+                       SET category_name = ?, slug = ?, parent_id = ?, category_level = ?, category_path = ?
+                       WHERE category_id = ?""",
+                    (name, slug, parent_id, level, category_path, category_id)
+                )
+                self.conn.commit()
+            else:
+                # Insert new category with explicit category_id
+                self.cursor.execute(
+                    """INSERT INTO dmart_category_master 
+                       (category_id, category_name, slug, parent_id, category_level, category_path)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (category_id, name, slug, parent_id, level, category_path)
+                )
+                self.conn.commit()
+                logger.info(
+                    f"Predefined Category mapped: '{name}' (ID={category_id}, parent={parent_id}, level={level}, path={category_path})"
+                )
+
+            # Trigger external sync callback to update MySQL categories
+            if self.on_category_saved:
+                try:
+                    self.on_category_saved({
+                        'category_id': category_id,
+                        'category_name': name,
+                        'slug': slug,
+                        'parent_id': parent_id,
+                        'category_level': level,
+                        'category_path': category_path
+                    })
+                except Exception as cb_err:
+                    logger.error(f"Category sync callback failed: {cb_err}")
+
+            self._category_cache[cache_key] = category_id
+            return category_id
+
+        except sqlite3.Error as e:
+            logger.error(f"Category upsert with ID failed for '{name}' (ID={category_id}): {e}")
+            raise
+
+    def resolve_category_path(self, path_str: str, slug_list: Optional[list] = None) -> int:
+        """
+        Dynamically resolves a category path of any length (e.g., L1 > L2 > L3)
+        to the database. Uses the reference mapping CSV if matched, otherwise
+        creates dynamic levels with proper parent IDs and auto-incremented IDs.
+        """
+        def clean_cat_name(name_str: str) -> str:
+            if not name_str:
+                return ""
+            return name_str.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+
+        parts = [clean_cat_name(p) for p in path_str.split('>') if p.strip()]
+        if not parts:
+            return self.upsert_category("Uncategorized", level=1)
+            
+        # ── Defensive Clean: Skip Home/DMart Root Breadcrumbs if present ──
+        if len(parts) > 1 and parts[0].lower() in ('home', 'dmart', 'online shopping', 'online shopping at dmart'):
+            parts = parts[1:]
+            
+        # ── Leaf Mapping check: If single category name, map it to the full reference path if known ──
+        if len(parts) == 1:
+            name_lower = parts[0].lower()
+            if hasattr(self, '_ref_leaf_mapping') and name_lower in self._ref_leaf_mapping:
+                ref_full_path = self._ref_leaf_mapping[name_lower]
+                parts = [p.strip() for p in ref_full_path.split('>') if p.strip()]
+
+        parent_id = None
+        current_id = None
+        
+        # We will build sub-paths to look up in the reference mapping
+        sub_path_parts = []
+        path_accum = []
+        
+        for idx, name in enumerate(parts):
+            level = idx + 1
+            path_accum.append(name)
+            current_path_str = " > ".join(path_accum)
+            
+            sub_path_parts.append(name.lower())
+            sub_path_str = " > ".join(sub_path_parts)
+            
+            # Check if this sub-path has a predefined reference mapping
+            ref_cat = self._ref_mapping.get(sub_path_str) if hasattr(self, '_ref_mapping') else None
+            
+            if ref_cat:
+                # Predefined category! Use the exact reference specs
+                c_id = ref_cat['category_id']
+                c_name = ref_cat['category_name']
+                c_slug = ref_cat['slug']
+                c_parent = ref_cat['parent_id']
+                c_level = ref_cat['category_level']
+                
+                # Upsert into database with the exact reference category_id, specs and category_path
+                current_id = self.upsert_category_with_id(
+                    category_id=c_id,
+                    name=c_name,
+                    slug=c_slug,
+                    parent_id=c_parent,
+                    level=c_level,
+                    category_path=current_path_str
+                )
+            else:
+                # Dynamic category (unknown/upcoming data)!
+                slug = slug_list[idx] if (slug_list and idx < len(slug_list)) else None
+                # Create category dynamically under the current parent_id with category_path
+                current_id = self.upsert_category(
+                    name=name,
+                    slug=slug,
+                    parent_id=parent_id,
+                    level=level,
+                    category_path=current_path_str
+                )
+                
+            parent_id = current_id
+            
+        return current_id
 
     def close(self):
         """Safely close the database connection."""
@@ -130,7 +425,8 @@ class DatabaseManager:
         name: str,
         slug: Optional[str] = None,
         parent_id: Optional[int] = None,
-        level: Optional[int] = None
+        level: Optional[int] = None,
+        category_path: Optional[str] = None
     ) -> int:
         """
         Insert a category or return its ID if it already exists.
@@ -144,10 +440,17 @@ class DatabaseManager:
             slug: URL slug for the category.
             parent_id: Parent category ID (None for root level).
             level: Hierarchy level (1=main, 2=sub, 3=leaf).
+            category_path: Full category path string.
             
         Returns:
             The category_id (existing or newly created).
         """
+        # Clean trailing/leading pipes, slashes, backslashes, colons, semicolons
+        if name:
+            name = name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+        if slug:
+            slug = slug.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+
         cache_key = (name, parent_id)
 
         # Check cache first to avoid DB round-trip
@@ -172,22 +475,41 @@ class DatabaseManager:
             row = self.cursor.fetchone()
 
             if row:
-                # Category exists — use existing ID
+                # Category exists — use existing ID and idempotently update category_path if provided
                 category_id = row[0]
+                self.cursor.execute(
+                    "UPDATE dmart_category_master SET category_path = ? WHERE category_id = ?",
+                    (category_path, category_id)
+                )
+                self.conn.commit()
             else:
                 # Insert new category
                 self.cursor.execute(
                     """INSERT INTO dmart_category_master 
-                       (category_name, slug, parent_id, category_level)
-                       VALUES (?, ?, ?, ?)""",
-                    (name, slug, parent_id, level)
+                       (category_name, slug, parent_id, category_level, category_path)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (name, slug, parent_id, level, category_path)
                 )
                 self.conn.commit()
                 category_id = self.cursor.lastrowid
                 logger.info(
                     f"New category inserted: '{name}' (ID={category_id}, "
-                    f"parent={parent_id}, level={level})"
+                    f"parent={parent_id}, level={level}, path={category_path})"
                 )
+
+                # Trigger external sync hook (e.g. MySQL)
+                if self.on_category_saved:
+                    try:
+                        self.on_category_saved({
+                            'category_id': category_id,
+                            'category_name': name,
+                            'slug': slug,
+                            'parent_id': parent_id,
+                            'category_level': level,
+                            'category_path': category_path
+                        })
+                    except Exception as cb_err:
+                        logger.error(f"Category sync callback failed: {cb_err}")
 
             # Cache the result
             self._category_cache[cache_key] = category_id

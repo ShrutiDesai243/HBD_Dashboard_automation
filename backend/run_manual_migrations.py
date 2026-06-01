@@ -6,6 +6,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ManualMigration")
 
 if __name__ == "__main__":
-    print("🚀 Running manual database migrations...")
+    print("[ManualMigrations] Running manual database migrations...")
     run_pending_migrations(app)
-    print("✅ Done!")
+    print("[ManualMigrations] Done!")

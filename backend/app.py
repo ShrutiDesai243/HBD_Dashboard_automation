@@ -133,6 +133,13 @@ with app.app_context():
         run_pending_migrations(app)
     except ImportError:
         pass
+    finally:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        finally:
+            db.session.remove()
 
 # --- GLOBAL JWT PROTECTION ---
 PUBLIC_ROUTES = [

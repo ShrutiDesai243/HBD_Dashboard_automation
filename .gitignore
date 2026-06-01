@@ -39,6 +39,8 @@ backend/output/*.db
 backend/output/exports/
 backend/logs/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 *.csv
