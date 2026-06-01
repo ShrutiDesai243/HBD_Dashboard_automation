@@ -82,6 +82,10 @@ def scrape_dmart_search(
         for idx, pin in enumerate(pincode_list, 1):
             logger.info(f"[{idx}/{len(pincode_list)}] Running scrape for pincode: {pin}")
 
+            import datetime
+            # Buffer by 5 minutes to prevent missing rows due to execution lag or time difference
+            run_start_time = (datetime.datetime.utcnow() - datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+
             if task:
                 try:
                     db.session.refresh(task)
@@ -332,8 +336,9 @@ def scrape_dmart_search(
                             mrp, dmart_price, availability,
                             category_name, product_url, image_url, description, category_id
                         FROM dmart_product_master
+                        WHERE scraped_at >= ?
                         ORDER BY scraped_at DESC
-                    """)
+                    """, (run_start_time,))
                     rows = sqlite_db.cursor.fetchall()
                 except Exception as e:
                     logger.error(f"SQLite read failed: {e}")
