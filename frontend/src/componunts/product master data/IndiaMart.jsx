@@ -148,26 +148,24 @@ export default function IndiaMartData() {
     else { setSortField(key); setSortDir("asc"); }
   };
 
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data.map(r => ({
-      ID: r.id,
-      "Product Code": r.asin,
-      "Product Name": r.name,
-      Category: r.category,
-      "Sub-Category": r.sub_category,
-      "Price (Raw)": r.price_str,
-      "Price (Numeric)": r.price,
-      Rating: r.stars,
-      Reviews: r.reviews,
-      Manufacturer: r.manufacturer,
-      Location: r.location,
-      "Contact Number": r.contact_number,
-      Badges: r.badges,
-      Link: r.link,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "IndiaMart");
-    XLSX.writeFile(wb, `IndiaMart_Products_${Date.now()}.xlsx`);
+  const [exporting, setExporting] = useState(false);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/product-report/export-csv?marketplace=IndiaMart');
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `IndiaMart_Products_Full_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert('Export failed: ' + e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const fmtPrice = (row) => {
@@ -184,15 +182,15 @@ export default function IndiaMartData() {
       <div className="imt-header">
         <div>
           <h1>🏭 IndiaMart Product Catalog</h1>
-          <p>Live data from database · {total.toLocaleString("en-IN")} total products</p>
+          <p>Local database · {total.toLocaleString("en-IN")} total products</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="imt-badge">🟢 Live DB</span>
+          <span className="imt-badge">🏭 Local DB</span>
           <button
             className="imt-btn imt-btn-ghost"
             style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }}
-            onClick={exportExcel}
-          >📥 Export Excel</button>
+            onClick={exportExcel} disabled={exporting}
+          >{exporting ? '⏳ Exporting…' : '📥 Export All (CSV)'}</button>
         </div>
       </div>
 

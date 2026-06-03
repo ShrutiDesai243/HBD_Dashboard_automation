@@ -137,16 +137,24 @@ export default function AmazonData() {
     else { setSortField(key); setSortDir("asc"); }
   };
 
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data.map(r => ({
-      ID: r.id, ASIN: r.asin, "Product Name": r.name, Category: r.category,
-      "Price (₹)": r.price, "MRP (₹)": r.list_price, Stars: r.stars,
-      Reviews: r.reviews, "Best Seller": r.is_best_seller ? "Yes" : "No",
-      "Bought Last Month": r.bought_in_last_month, Link: r.product_url,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Amazon");
-    XLSX.writeFile(wb, `Amazon_Products_${Date.now()}.xlsx`);
+  const [exporting, setExporting] = useState(false);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/product-report/export-csv?marketplace=Amazon');
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Amazon_Products_Full_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert('Export failed: ' + e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -157,12 +165,12 @@ export default function AmazonData() {
       <div className="amz-header">
         <div>
           <h1>📦 Amazon Product Master</h1>
-          <p>Live data from database · {total.toLocaleString("en-IN")} total products</p>
+          <p>Local database · {total.toLocaleString("en-IN")} total products</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="amz-badge">🟢 Live DB</span>
-          <button className="amz-btn amz-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel}>
-            📥 Export Excel
+          <span className="amz-badge">📦 Local DB</span>
+          <button className="amz-btn amz-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel} disabled={exporting}>
+            {exporting ? '⏳ Exporting…' : '📥 Export All (CSV)'}
           </button>
         </div>
       </div>
@@ -211,7 +219,7 @@ export default function AmazonData() {
             <div className="title">Product Data</div>
             <div className="sub">Showing {((page - 1) * LIMIT) + 1}–{Math.min(page * LIMIT, total)} of {total.toLocaleString("en-IN")} results</div>
           </div>
-          <button className="amz-btn amz-btn-ghost" onClick={exportExcel}>📥 Export</button>
+          <button className="amz-btn amz-btn-ghost" onClick={exportExcel} disabled={exporting}>📥 {exporting ? 'Exporting…' : 'Export All'}</button>
         </div>
 
         <div className="amz-table-wrap">

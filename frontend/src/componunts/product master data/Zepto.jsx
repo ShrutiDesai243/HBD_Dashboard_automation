@@ -139,15 +139,24 @@ export default function ZeptoData() {
     else { setSortField(key); setSortDir("asc"); }
   };
 
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data.map(r => ({
-      ID: r.sku_id, "Product Name": r.name, Category: r.category,
-      Subcategory: r.subcategory, "Price (₹)": r.price, "MRP (₹)": r.mrp,
-      Rating: r.rating, Reviews: r.review, Quantity: r.quantity, Link: r.product_url,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Zepto");
-    XLSX.writeFile(wb, `Zepto_Products_${Date.now()}.xlsx`);
+  const [exporting, setExporting] = useState(false);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/product-report/export-csv?marketplace=Zepto');
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Zepto_Products_Full_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert('Export failed: ' + e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const discount = (r) => {
@@ -164,12 +173,12 @@ export default function ZeptoData() {
       <div className="zep-header">
         <div>
           <h1>🛒 Zepto Product Master</h1>
-          <p>Live data from database · {total.toLocaleString("en-IN")} total products</p>
+          <p>Local database · {total.toLocaleString("en-IN")} total products</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="zep-badge">🟢 Live DB</span>
-          <button className="zep-btn zep-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel}>
-            📥 Export Excel
+          <span className="zep-badge">🟣 Local DB</span>
+          <button className="zep-btn zep-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel} disabled={exporting}>
+            {exporting ? '⏳ Exporting…' : '📥 Export All (CSV)'}
           </button>
         </div>
       </div>

@@ -137,15 +137,24 @@ export default function DMartData() {
     else { setSortField(key); setSortDir("asc"); }
   };
 
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data.map(r => ({
-      ID: r.id, ASIN: r.asin, "Product Name": r.name, Brand: r.brand,
-      Category: r.category, "Price (₹)": r.price, "MRP (₹)": r.list_price,
-      Quantity: r.quantity, "In Stock": r.availability ? "Yes" : "No", Link: r.link,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "DMart");
-    XLSX.writeFile(wb, `DMart_Products_${Date.now()}.xlsx`);
+  const [exporting, setExporting] = useState(false);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/product-report/export-csv?marketplace=DMart');
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `DMart_Products_Full_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert('Export failed: ' + e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const discount = (r) => {
@@ -162,12 +171,12 @@ export default function DMartData() {
       <div className="dmt-header">
         <div>
           <h1>🏪 DMart Product Catalog</h1>
-          <p>Live data from database · {total.toLocaleString("en-IN")} total products</p>
+          <p>Local database · {total.toLocaleString("en-IN")} total products</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="dmt-badge">🟢 Live DB</span>
-          <button className="dmt-btn dmt-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel}>
-            📥 Export Excel
+          <span className="dmt-badge">🎪 Local DB</span>
+          <button className="dmt-btn dmt-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel} disabled={exporting}>
+            {exporting ? '⏳ Exporting…' : '📥 Export All (CSV)'}
           </button>
         </div>
       </div>
@@ -217,7 +226,7 @@ export default function DMartData() {
             <div className="title">Product Data</div>
             <div className="sub">Showing {((page - 1) * LIMIT) + 1}–{Math.min(page * LIMIT, total)} of {total.toLocaleString("en-IN")} results</div>
           </div>
-          <button className="dmt-btn dmt-btn-ghost" onClick={exportExcel}>📥 Export</button>
+          <button className="dmt-btn dmt-btn-ghost" onClick={exportExcel} disabled={exporting}>📥 {exporting ? 'Exporting…' : 'Export All'}</button>
         </div>
 
         <div className="dmt-table-wrap">

@@ -1,8 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from sqlalchemy import text, create_engine
 from config import config
 import traceback
 import re
+import csv
+import io
 
 product_report_bp = Blueprint('product_report_bp', __name__)
 
@@ -2433,3 +2435,132 @@ def get_chart_data():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+
+@product_report_bp.route('/export-csv', methods=['GET'])
+def export_all_data_csv():
+    """
+    Stream ALL records for a marketplace directly from the DB as a downloadable CSV.
+    No page limit. ?marketplace=Amazon|Blinkit|BigBasket|Zepto|IndiaMart|DMart|All
+    """
+    marketplace = request.args.get('marketplace', 'All').strip()
+    mp_lower = marketplace.lower()
+
+    MARKETPLACE_QUERIES = {
+        'amazon': {
+            'query': "SELECT id, asin, title, categoryName, price, listPrice, stars, reviews, isBestSeller, boughtInLastMonth, imgUrl, productUrl FROM amazon_products ORDER BY id ASC",
+            'headers': ['ID', 'ASIN', 'Product Name', 'Category', 'Price (Rs)', 'MRP (Rs)', 'Stars', 'Reviews', 'Best Seller', 'Bought Last Month', 'Image URL', 'Product URL'],
+        },
+        'blinkit': {
+            'query': "SELECT product_id, product_name, brand, category, sub_category, price, mrp, quantity, availability, product_url, image_url FROM blinkit ORDER BY product_id ASC",
+            'headers': ['Product ID', 'Product Name', 'Brand', 'Category', 'Sub Category', 'Price (Rs)', 'MRP (Rs)', 'Quantity', 'Availability', 'Product URL', 'Image URL'],
+        },
+        'bigbasket': {
+            'query': "SELECT sku_id, product_name, main_category, subcategory, selling_price, mrp, rating, product_url FROM bigbasket ORDER BY sku_id ASC",
+            'headers': ['SKU ID', 'Product Name', 'Main Category', 'Subcategory', 'Selling Price (Rs)', 'MRP (Rs)', 'Rating', 'Product URL'],
+        },
+        'zepto': {
+            'query': "SELECT sku_id, product_name, main_category, subcategory, selling_price, mrp, quantity, rating, review, product_url, image_url FROM zepto ORDER BY sku_id ASC",
+            'headers': ['SKU ID', 'Product Name', 'Main Category', 'Subcategory', 'Selling Price (Rs)', 'MRP (Rs)', 'Quantity', 'Rating', 'Reviews', 'Product URL', 'Image URL'],
+        },
+        'indiamart': {
+            'query': "SELECT id, asin, product_name, manufacturer, category_name, sub_category_name, Price, price_numeric, stars, reviews, contact_number, location, gst_registration_date, badges, imgUrl, productUrl FROM indiamart_products ORDER BY id ASC",
+            'headers': ['ID', 'ASIN', 'Product Name', 'Manufacturer', 'Category', 'Sub Category', 'Price (Text)', 'Price (Numeric)', 'Stars', 'Reviews', 'Contact', 'Location', 'GST Date', 'Badges', 'Image URL', 'Product URL'],
+        },
+        'dmart': {
+            'query': "SELECT id, ASIN, Product_name, Brand, category, price, listPrice, quantity, availability, link FROM dmart_products ORDER BY id ASC",
+            'headers': ['ID', 'ASIN', 'Product Name', 'Brand', 'Category', 'Price (Rs)', 'MRP (Rs)', 'Quantity', 'Availability', 'Link'],
+        },
+    }
+
+    try:
+        if mp_lower == 'all':
+            def generate_all():
+                output = io.StringIO()
+                writer = csv.writer(output)
+                writer.writerow(['Marketplace', 'Product ID', 'ASIN', 'Product Name', 'Brand', 'Category', 'Sub Category', 'Price (Rs)', 'MRP (Rs)', 'Stars', 'Reviews', 'Best Seller', 'Availability', 'Image URL', 'Product URL'])
+                yield output.getvalue()
+                output.seek(0); output.truncate(0)
+                with engine.connect() as conn:
+                    result = conn.execute(text("SELECT marketplace_name, product_id, asin, product_name, brand, category_name, sub_category_name, price, list_price, stars, reviews, is_best_seller, availability, img_url, product_url FROM product_top_selling_report ORDER BY marketplace_name, ranking_score DESC"))
+                    for row in result:
+                        writer.writerow([str(v) if v is not None else '' for v in row])
+                        yield output.getvalue()
+                        output.seek(0); output.truncate(0)
+            return Response(generate_all(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=HBD_All_Marketplaces_Export.csv'})
+
+        if mp_lower not in MARKETPLACE_QUERIES:
+            return jsonify({'status': 'error', 'message': f'Unknown marketplace: {marketplace}'}), 400
+
+        cfg = MARKETPLACE_QUERIES[mp_lower]
+
+        def generate():
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(cfg['headers'])
+            yield output.getvalue()
+            output.seek(0); output.truncate(0)
+            with engine.connect() as conn:
+                result = conn.execute(text(cfg['query']))
+                for row in result:
+                    row_data = ['' if v is None else ('Yes' if v is True else ('No' if v is False else str(v))) for v in row]
+                    writer.writerow(row_data)
+                    yield output.getvalue()
+                    output.seek(0); output.truncate(0)
+
+        return Response(generate(), mimetype='text/csv', headers={'Content-Disposition': f'attachment; filename=HBD_{marketplace}_Full_Export.csv'})
+    except Exception as e:
+        print(f"[product_report] export-csv error: {traceback.format_exc()}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@product_report_bp.route('/mapping-report', methods=['GET'])
+def get_mapping_report():
+    """
+    Returns per-marketplace category mapping data from actual mapping tables in DB.
+    ?marketplace=All|Amazon|Blinkit|BigBasket|Zepto|IndiaMart|DMart
+    """
+    marketplace = request.args.get('marketplace', 'all').strip().lower()
+    try:
+        data = {}
+        with engine.connect() as conn:
+            if marketplace in ('all', 'blinkit'):
+                blinkit_total = conn.execute(text("SELECT COUNT(*) FROM blinkit")).scalar() or 0
+                blinkit_mapped = conn.execute(text("SELECT COUNT(*) FROM blinkit WHERE category IN (SELECT category_name FROM blinkit_mapping WHERE category_name IS NOT NULL)")).scalar() or 0
+                blinkit_cats = conn.execute(text("SELECT bm1.category_name AS main_category, COUNT(DISTINCT bm2.category_name) AS sub_count FROM blinkit_mapping bm1 LEFT JOIN blinkit_mapping bm2 ON bm2.parent_id = bm1.category_id AND bm2.category_level = 2 WHERE bm1.category_level = 1 GROUP BY bm1.category_name, bm1.category_id ORDER BY bm1.category_name")).mappings().fetchall()
+                data['blinkit'] = {'total_products': blinkit_total, 'mapped_products': blinkit_mapped, 'unmapped_products': blinkit_total - blinkit_mapped, 'mapping_pct': round((blinkit_mapped / blinkit_total * 100), 1) if blinkit_total > 0 else 0, 'categories': [{'main_category': r['main_category'], 'sub_count': int(r['sub_count'])} for r in blinkit_cats]}
+
+            if marketplace in ('all', 'bigbasket'):
+                bb_total = conn.execute(text("SELECT COUNT(*) FROM bigbasket")).scalar() or 0
+                bb_mapped = conn.execute(text("SELECT COUNT(*) FROM bigbasket WHERE LOWER(main_category) IN (SELECT LOWER(category_name) FROM bigbasket_dbmapping WHERE category_name IS NOT NULL)")).scalar() or 0
+                bb_cats = conn.execute(text("SELECT bdm.category_name AS main_category, COUNT(b.sku_id) AS products FROM bigbasket_dbmapping bdm LEFT JOIN bigbasket b ON LOWER(b.main_category) = LOWER(bdm.category_name) GROUP BY bdm.category_name ORDER BY products DESC")).mappings().fetchall()
+                data['bigbasket'] = {'total_products': bb_total, 'mapped_products': bb_mapped, 'unmapped_products': bb_total - bb_mapped, 'mapping_pct': round((bb_mapped / bb_total * 100), 1) if bb_total > 0 else 0, 'categories': [{'main_category': r['main_category'], 'products': int(r['products'])} for r in bb_cats]}
+
+            if marketplace in ('all', 'zepto'):
+                z_total = conn.execute(text("SELECT COUNT(*) FROM zepto")).scalar() or 0
+                z_mapped = conn.execute(text("SELECT COUNT(*) FROM zepto WHERE main_category IN (SELECT category FROM Zepto_db_mapping WHERE category IS NOT NULL AND category != 'All')")).scalar() or 0
+                z_cats = conn.execute(text("SELECT zdm.category AS main_category, COUNT(DISTINCT z.sku_id) AS products FROM Zepto_db_mapping zdm LEFT JOIN zepto z ON z.main_category = zdm.category WHERE zdm.`category level` = 1 AND zdm.category != 'All' GROUP BY zdm.category ORDER BY products DESC")).mappings().fetchall()
+                data['zepto'] = {'total_products': z_total, 'mapped_products': z_mapped, 'unmapped_products': z_total - z_mapped, 'mapping_pct': round((z_mapped / z_total * 100), 1) if z_total > 0 else 0, 'categories': [{'main_category': r['main_category'], 'products': int(r['products'])} for r in z_cats]}
+
+            if marketplace in ('all', 'indiamart'):
+                im_total = conn.execute(text("SELECT COUNT(*) FROM indiamart_products")).scalar() or 0
+                im_mapped = conn.execute(text("SELECT COUNT(*) FROM indiamart_products WHERE category_name IN (SELECT category_name FROM indiamart_mappings WHERE category_name IS NOT NULL)")).scalar() or 0
+                im_cats = conn.execute(text("SELECT imm.category_name AS main_category, COUNT(DISTINCT ip.id) AS products FROM indiamart_mappings imm LEFT JOIN indiamart_products ip ON ip.category_name = imm.category_name GROUP BY imm.category_name ORDER BY products DESC")).mappings().fetchall()
+                data['indiamart'] = {'total_products': im_total, 'mapped_products': im_mapped, 'unmapped_products': im_total - im_mapped, 'mapping_pct': round((im_mapped / im_total * 100), 1) if im_total > 0 else 0, 'categories': [{'main_category': r['main_category'], 'products': int(r['products'])} for r in im_cats]}
+
+            if marketplace in ('all', 'dmart'):
+                dm_total = conn.execute(text("SELECT COUNT(*) FROM dmart_products")).scalar() or 0
+                dm_mapped = conn.execute(text("SELECT COUNT(*) FROM dmart_products WHERE category IN (SELECT category_name FROM dmart_categories WHERE category_name IS NOT NULL)")).scalar() or 0
+                dm_cats = conn.execute(text("SELECT dc.category_name AS main_category, COUNT(DISTINCT dp.id) AS products FROM dmart_categories dc LEFT JOIN dmart_products dp ON dp.category = dc.category_name WHERE dc.category_level = 1 GROUP BY dc.category_name ORDER BY products DESC")).mappings().fetchall()
+                data['dmart'] = {'total_products': dm_total, 'mapped_products': dm_mapped, 'unmapped_products': dm_total - dm_mapped, 'mapping_pct': round((dm_mapped / dm_total * 100), 1) if dm_total > 0 else 0, 'categories': [{'main_category': r['main_category'], 'products': int(r['products'])} for r in dm_cats]}
+
+            if marketplace in ('all', 'amazon'):
+                am_row = conn.execute(text("SELECT total_products, mapped_products, unmapped_products FROM product_dashboard_report_summary WHERE LOWER(marketplace_name) = 'amazon' LIMIT 1")).mappings().fetchone()
+                if am_row:
+                    am_cats = conn.execute(text("SELECT DISTINCT categoryName AS main_category, COUNT(*) AS products FROM amazon_products WHERE categoryName IS NOT NULL GROUP BY categoryName ORDER BY products DESC LIMIT 20")).mappings().fetchall()
+                    tp = int(am_row['total_products'] or 0); mp2 = int(am_row['mapped_products'] or 0)
+                    data['amazon'] = {'total_products': tp, 'mapped_products': mp2, 'unmapped_products': int(am_row['unmapped_products'] or 0), 'mapping_pct': round((mp2 / tp * 100), 1) if tp > 0 else 0, 'categories': [{'main_category': r['main_category'], 'products': int(r['products'])} for r in am_cats]}
+
+        return jsonify({'status': 'success', 'data': data}), 200
+    except Exception as e:
+        print(f"[product_report] mapping-report error: {traceback.format_exc()}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500

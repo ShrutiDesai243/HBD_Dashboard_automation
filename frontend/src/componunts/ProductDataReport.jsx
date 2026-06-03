@@ -45,19 +45,19 @@ const GLOBAL_CSS = `
   .pdr-header-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; font-weight: 400; }
   .pdr-live-dot {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase;
-    letter-spacing: 1px; background: rgba(16,185,129,0.12);
-    padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(16,185,129,0.2);
+    font-size: 10px; font-weight: 700; color: #60a5fa; text-transform: uppercase;
+    letter-spacing: 1px; background: rgba(96,165,250,0.12);
+    padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(96,165,250,0.2);
     margin-bottom: 8px;
   }
   .pdr-live-dot span {
-    width: 6px; height: 6px; border-radius: 50%; background: #10b981;
-    box-shadow: 0 0 0 0 rgba(16,185,129,0.4); animation: liveBlip 1.8s infinite;
+    width: 6px; height: 6px; border-radius: 50%; background: #60a5fa;
+    box-shadow: 0 0 0 0 rgba(96,165,250,0.4); animation: liveBlip 1.8s infinite;
   }
   @keyframes liveBlip {
-    0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
-    70%  { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
-    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    0%   { box-shadow: 0 0 0 0 rgba(96,165,250,0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(96,165,250,0); }
+    100% { box-shadow: 0 0 0 0 rgba(96,165,250,0); }
   }
 
   /* ── Marketplace Cards ── */
@@ -631,6 +631,8 @@ export default function ProductDataReport() {
   const [unmappedCats, setUnmappedCats] = useState([]);
   const [unmappedProds, setUnmappedProds] = useState([]);
   const [mappingData, setMappingData] = useState([]);
+  const [mappingReport, setMappingReport] = useState({});
+  const [csvExporting, setCsvExporting] = useState(false);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
 
   // Load platform-specific category options for the dropdown
@@ -786,7 +788,11 @@ export default function ProductDataReport() {
     const mp = platform === "All" ? "all" : platform;
     const sq = appliedSearch ? encodeURIComponent(appliedSearch) : "";
     if (activeTab === "mapped") {
-      // Use new all-categories endpoint which covers all 5 platforms
+      // Fetch per-marketplace mapping report from actual DB mapping tables
+      const mpParam = platform === "All" ? "all" : platform.toLowerCase();
+      api.get(`/product-report/mapping-report?marketplace=${mpParam}`)
+        .then(r => setMappingReport(r.data?.data || {}))
+        .catch(() => {});
       fetchAllCatMapping(appliedSearch);
     } else if (activeTab === "unmapped") {
       api.get(`/product-report/unmapped-categories?marketplace=${mp}&search=${sq}`).then(r => setUnmappedCats(r.data?.data || [])).catch(() => {});
@@ -821,24 +827,25 @@ export default function ProductDataReport() {
     finally { setDrawerLoading(false); }
   };
 
-  /* ── CSV Export ── */
-  const exportCSV = () => {
-    const cols = ["Product Name","Brand","Category","Price","Stars","Reviews","Availability","Marketplace"];
-    const rows = filteredProducts.map(p => [
-      `"${(p.product_name || "").replace(/"/g,'""')}"`,
-      `"${p.brand || ""}"`,
-      `"${p.category_name || ""}"`,
-      p.price || "",
-      p.stars || "",
-      p.reviews || "",
-      `"${p.availability || ""}"`,
-      p.marketplace_name || ""
-    ].join(","));
-    const csv = [cols.join(","), ...rows].join("\n");
-    const a = document.createElement("a");
-    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = `HBD_${platform}_Report_${Date.now()}.csv`;
-    a.click();
+  /* ── CSV Export — fetches ALL records from backend (no page limit) ── */
+  const exportCSV = async () => {
+    setCsvExporting(true);
+    try {
+      const mp = platform === "All" ? "all" : platform;
+      const url = `/api/product-report/export-csv?marketplace=${encodeURIComponent(mp)}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Export failed");
+      const blob = await response.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `HBD_${platform}_Full_Export_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert("CSV export failed: " + e.message);
+    } finally {
+      setCsvExporting(false);
+    }
   };
 
   const simulateGenerate = () => {
@@ -1270,7 +1277,7 @@ export default function ProductDataReport() {
       <div className="pdr-header">
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <div className="pdr-live-dot"><span /> Live Analytics · {Object.keys(PLATFORMS).length - 1} Marketplaces Connected</div>
+            <div className="pdr-live-dot"><span /> 📦 Local DB Analytics · {Object.keys(PLATFORMS).length - 1} Marketplaces</div>
             <h1 className="pdr-header-title">Product Intelligence Dashboard</h1>
             <p className="pdr-header-sub">
               Real-time catalog analytics · {platform === "All" ? "All Platforms" : platform}
@@ -1527,8 +1534,8 @@ export default function ProductDataReport() {
                   </div>
                   <div className="pdr-analytics-sub">
                     {platform === "All"
-                      ? "Comparative analytics across all marketplaces · Only data-backed charts shown"
-                      : `Platform-specific charts based on ${platform} product master data`}
+                      ? "Comparative analytics across all marketplaces from local database"
+                      : `Platform-specific charts from local ${platform} database · Live queries`}
                   </div>
                 </div>
                 <div className="pdr-action-row">
@@ -2371,9 +2378,9 @@ export default function ProductDataReport() {
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button className="pdr-btn pdr-btn-ghost" onClick={exportCSV}>
+                  <button className="pdr-btn pdr-btn-ghost" onClick={exportCSV} disabled={csvExporting} style={{ opacity: csvExporting ? 0.6 : 1 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 15V3M8 11l4 4 4-4M5 21h14"/></svg>
-                    Export CSV
+                    {csvExporting ? "Preparing CSV…" : "Export All Records (CSV)"}
                   </button>
                 </div>
               </div>
@@ -2424,16 +2431,77 @@ export default function ProductDataReport() {
               ================================================================ */}
           {activeTab === "mapped" && (
             <div className="pdr-table-wrap" style={{ marginTop: 20 }}>
+              {/* Per-Marketplace Mapping Summary Cards */}
+              {Object.keys(mappingReport).length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 24 }}>
+                  {Object.entries(mappingReport).map(([mp, info]) => {
+                    const pct = info.mapping_pct || 0;
+                    const mpColor = PLATFORMS[mp.charAt(0).toUpperCase() + mp.slice(1)]?.accent || "#6366f1";
+                    return (
+                      <div key={mp} style={{ background: "#fff", borderRadius: 16, padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", borderLeft: `4px solid ${mpColor}` }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.8px", color: "#94a3b8", marginBottom: 6 }}>{mp.charAt(0).toUpperCase() + mp.slice(1)}</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                          <div style={{ fontSize: 22, fontWeight: 900, color: "#1a1d2e" }}>{Number(info.total_products).toLocaleString("en-IN")}</div>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: pct >= 90 ? "#22c55e" : pct >= 60 ? "#f59e0b" : "#ef4444" }}>{pct}%</div>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>total products</div>
+                        <div style={{ marginTop: 10, background: "#f1f5f9", borderRadius: 99, height: 6, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#22c55e" : pct >= 60 ? "#f59e0b" : "#ef4444", borderRadius: 99, transition: "width 0.8s" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 10, fontWeight: 600 }}>
+                          <span style={{ color: "#22c55e" }}>✓ {Number(info.mapped_products).toLocaleString("en-IN")} mapped</span>
+                          <span style={{ color: "#ef4444" }}>✗ {Number(info.unmapped_products).toLocaleString("en-IN")} unmapped</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Category breakdown table per marketplace */}
+              {Object.keys(mappingReport).length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 24 }}>
+                  {Object.entries(mappingReport).filter(([, info]) => info.categories?.length > 0).map(([mp, info]) => {
+                    const mpLabel = mp.charAt(0).toUpperCase() + mp.slice(1);
+                    const mpColor = PLATFORMS[mpLabel]?.accent || "#6366f1";
+                    return (
+                      <div key={mp} className="pdr-table-card">
+                        <div className="pdr-table-header">
+                          <span className="th-title" style={{ color: mpColor }}>{PLATFORMS[mpLabel]?.emoji || "📦"} {mpLabel} Categories ({info.categories.length})</span>
+                          <span className="th-count" style={{ color: info.mapping_pct >= 90 ? "#22c55e" : "#f59e0b" }}>{info.mapping_pct}% mapped</span>
+                        </div>
+                        <div style={{ overflowX: "auto" }}>
+                          <table className="pdr-table">
+                            <thead><tr><th>#</th><th>Category Name</th>{info.categories[0]?.sub_count !== undefined && <th>Sub-categories</th>}<th>Products Mapped</th></tr></thead>
+                            <tbody>
+                              {info.categories.map((cat, idx) => (
+                                <tr key={idx}>
+                                  <td style={{ color: "#94a3b8", fontSize: 11 }}>{idx + 1}</td>
+                                  <td style={{ fontWeight: 700, color: "#1a1d2e" }}>{cat.main_category}</td>
+                                  {cat.sub_count !== undefined && <td><span style={{ background: "#ede9fe", color: "#7c3aed", padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700 }}>{cat.sub_count} sub</span></td>}
+                                  <td style={{ fontWeight: 600 }}>{cat.products !== undefined ? Number(cat.products).toLocaleString("en-IN") : "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Original all-categories view */}
               <div className="pdr-controls" style={{ padding: "0 0 16px" }}>
                 <div className="pdr-search" style={{ maxWidth: 320 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                   <input value={search} onChange={e => { setSearch(e.target.value); setAppliedSearch(e.target.value); }} placeholder="Search categories…" />
                 </div>
-                <Badge label={`${mappedCats.length} mapped`} cls="badge-green" />
+                <Badge label={`${mappedCats.length} entries`} cls="badge-green" />
               </div>
               <div className="pdr-table-card">
                 <div className="pdr-table-header">
-                  <span className="th-title">✅ Mapped Category Hierarchy</span>
+                  <span className="th-title">✅ All Mapped Categories (DB Union View)</span>
                   <span className="th-count">{mappedCats.length} records</span>
                 </div>
                 <div style={{ overflowX: "auto" }}>

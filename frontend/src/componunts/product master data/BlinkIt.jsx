@@ -137,16 +137,24 @@ export default function BlinkitData() {
     else { setSortField(key); setSortDir("asc"); }
   };
 
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(data.map(r => ({
-      ID: r.product_id, "Product Name": r.name, Brand: r.brand,
-      Category: r.category, "Sub Category": r.sub_category, "Price (₹)": r.price,
-      "MRP (₹)": r.mrp, Quantity: r.quantity, "In Stock": r.availability ? "Yes" : "No",
-      Link: r.product_url,
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Blinkit");
-    XLSX.writeFile(wb, `Blinkit_Products_${Date.now()}.xlsx`);
+  const [exporting, setExporting] = useState(false);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/product-report/export-csv?marketplace=Blinkit');
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Blinkit_Products_Full_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      alert('Export failed: ' + e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const discount = (r) => {
@@ -163,12 +171,12 @@ export default function BlinkitData() {
       <div className="blk-header">
         <div>
           <h1>⚡ Blinkit Product Master</h1>
-          <p>Live data from database · {total.toLocaleString("en-IN")} total products</p>
+          <p>Local database · {total.toLocaleString("en-IN")} total products</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className="blk-badge">🟢 Live DB</span>
-          <button className="blk-btn blk-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel}>
-            📥 Export Excel
+          <span className="blk-badge">⚡ Local DB</span>
+          <button className="blk-btn blk-btn-ghost" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={exportExcel} disabled={exporting}>
+            {exporting ? '⏳ Exporting…' : '📥 Export All (CSV)'}
           </button>
         </div>
       </div>
