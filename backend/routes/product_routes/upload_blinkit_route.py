@@ -7,32 +7,48 @@ from utils.storage import get_upload_base_dir
 from model.product_model.additional_products import Blinkit
 
 blinkit_bp = Blueprint("blinkit_bp",__name__)
-
 @blinkit_bp.route('/fetch-data', methods=['GET'])
 def fetch_blinkit_data():
     try:
+
         page = request.args.get('page', 1, type=int)
-        limit = request.args.get('limit', 10, type=int)
-        search = request.args.get('search', '')
-        category = request.args.get('category', '')
+        limit = request.args.get('limit', 50, type=int)
+        search = request.args.get('search', '').strip()
+        category = request.args.get('category', '').strip()
+        sub_category = request.args.get('subcategory', '').strip()
 
         query = Blinkit.query
-        
+
         if search:
-            query = query.filter(Blinkit.product.ilike(f"%{search}%"))
+            query = query.filter(Blinkit.product_name.ilike(f"%{search}%"))
         if category:
             query = query.filter(Blinkit.category.ilike(f"%{category}%"))
-        
-        pagination = query.paginate(page=page, per_page=limit, error_out=False)
+        if sub_category:
+            query = query.filter(Blinkit.sub_category.ilike(f"%{sub_category}%"))
+
+        pagination = query.paginate(
+            page=page,
+            per_page=limit,
+            error_out=False
+        )
+
+        products = [item.to_dict() for item in pagination.items]
+
         return jsonify({
-            "status": "success",
-            "data": [item.to_dict() for item in pagination.items],
-            "total_pages": pagination.pages,
-            "total_count": pagination.total,
-            "current_page": page
+            "success": True,
+            "data": products,
+            "pagination": {
+                "current_page": page,
+                "total_pages": pagination.pages,
+                "total_records": pagination.total
+            }
         }), 200
+
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
 
 @blinkit_bp.route("/upload/blinkit-data",methods=["POST"])
 def upload_blinkit_route():

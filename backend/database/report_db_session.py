@@ -55,7 +55,7 @@ def get_report_db_session():
     Returns a new database session for the remote report database.
     Must close() manually after use in Flask routes.
     """
-    return report_db_session()
+    return ReportSessionLocal()
 
 
 def test_report_db_connection():
