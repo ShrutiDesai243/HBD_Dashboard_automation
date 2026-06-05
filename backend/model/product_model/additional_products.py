@@ -61,6 +61,7 @@ class DMart(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('dmart_categories.category_id', ondelete='SET NULL'), nullable=True)
     quantity = db.Column('quantity', db.String(100), nullable=True)
     availability = db.Column('availability', db.Integer, default=1)
+    scraped_at = db.Column('scraped_at', db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     @property
     def isBestSeller(self):
@@ -89,7 +90,8 @@ class DMart(db.Model):
             "category_id": self.category_id,
             "quantity": self.quantity,
             "availability": self.availability,
-            "link": self.productUrl
+            "link": self.productUrl,
+            "scraped_at": self.scraped_at.isoformat() if self.scraped_at else None
         }
 
 class JioMart(db.Model):

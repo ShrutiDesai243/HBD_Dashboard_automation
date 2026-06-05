@@ -265,6 +265,33 @@ def run_pending_migrations(app):
                             """))
                             logger.info("✅ Column `category_id` and foreign key constraint successfully migrated on `dmart_products`.")
 
+                        # Ensure ASIN column has a UNIQUE index to prevent duplicates at database level
+                        idx_check_asin = text("""
+                            SELECT COUNT(1) IndexIsThere 
+                            FROM INFORMATION_SCHEMA.STATISTICS 
+                            WHERE table_schema = DATABASE() 
+                            AND table_name = 'dmart_products' 
+                            AND index_name = 'idx_dmart_products_asin'
+                        """)
+                        if conn.execute(idx_check_asin).scalar() == 0:
+                            logger.info("⚠️ Unique index `idx_dmart_products_asin` missing on `dmart_products`. Preparing database constraint...")
+                            try:
+                                # First, deduplicate existing data (delete older duplicates of the same ASIN, keeping the latest one)
+                                logger.info("🧹 Deduplicating existing rows in `dmart_products` based on `ASIN`...")
+                                conn.execute(text("""
+                                    DELETE p1 FROM dmart_products p1
+                                    INNER JOIN dmart_products p2 
+                                    ON p1.ASIN = p2.ASIN AND p1.id < p2.id
+                                """))
+                                logger.info("✅ Table `dmart_products` successfully deduplicated.")
+                                
+                                # Second, add the UNIQUE index constraint
+                                logger.info("🔨 Creating UNIQUE index on `ASIN` column...")
+                                conn.execute(text("CREATE UNIQUE INDEX idx_dmart_products_asin ON dmart_products(ASIN)"))
+                                logger.info("✅ Unique constraint idx_dmart_products_asin successfully created on `dmart_products`.")
+                            except Exception as idx_err:
+                                logger.error(f"❌ Failed to create UNIQUE index on ASIN: {idx_err}")
+
                         # Ensure listPrice column exists in dmart_products
                         col_check_lp = text("""
                             SELECT COUNT(*) FROM information_schema.COLUMNS 
@@ -300,6 +327,18 @@ def run_pending_migrations(app):
                             logger.info("⚠️ Column `availability` missing in `dmart_products`. Adding column...")
                             conn.execute(text("ALTER TABLE dmart_products ADD COLUMN availability INT DEFAULT 1"))
                             logger.info("✅ Column `availability` successfully added to `dmart_products`.")
+
+                        # Ensure scraped_at column exists in dmart_products
+                        col_check_sa = text("""
+                            SELECT COUNT(*) FROM information_schema.COLUMNS 
+                            WHERE TABLE_SCHEMA = DATABASE() 
+                            AND TABLE_NAME = 'dmart_products' 
+                            AND COLUMN_NAME = 'scraped_at'
+                        """)
+                        if conn.execute(col_check_sa).scalar() == 0:
+                            logger.info("⚠️ Column `scraped_at` missing in `dmart_products`. Adding column...")
+                            conn.execute(text("ALTER TABLE dmart_products ADD COLUMN scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+                            logger.info("✅ Column `scraped_at` successfully added to `dmart_products`.")
 
                         # Drop redundant rating and description columns if present
                         for old_col in ["rating", "Number_of_ratings", "description"]:

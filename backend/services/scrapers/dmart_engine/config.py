@@ -126,15 +126,12 @@ LOG_FILE = OUTPUT_DIR / "scraper.log"
 # ── Master Pincode Loop List ──────────────────────────────────
 PINCODE_LIST = [
     "400001",  # Mumbai South
-    "400076",  # Mumbai Powai
-    "400601",  # Thane
-    "400703",  # Navi Mumbai
-    "411001",  # Pune
-    "560001",  # Bangalore
-    "560102",  # Bangalore HSR
-    "500032",  # Hyderabad Gachibowli
-    "380015",  # Ahmedabad
-    "395007",  # Surat
-    "452001",  # Indore
+    #"411001",  # Pune
+    #"560001",  # Bangalore
+    # "560102",  # Bangalore HSR
+    # "500032",  # Hyderabad Gachibowli
+    # "380015",  # Ahmedabad
+    #"395007",  # Surat
+    # "452001",  # Indore
 ]
 

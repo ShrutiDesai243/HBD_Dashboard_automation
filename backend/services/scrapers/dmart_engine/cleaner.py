@@ -56,7 +56,6 @@ class DataCleaner:
     def clean_product_name(name: Optional[str]) -> Optional[str]:
         """
         Clean product name: strip whitespace, newlines, and extra spaces.
-        Also removes the trailing quantity/pack size suffix (separated by ' : ').
         
         Args:
             name: Raw product name.
@@ -64,21 +63,7 @@ class DataCleaner:
         Returns:
             Cleaned product name string.
         """
-        cleaned = DataCleaner.clean_text(name)
-        if cleaned:
-            # Strip trailing colon pattern with quantity, e.g., "Active: 50 g" or "Active : 50g"
-            cleaned = re.sub(
-                r'\s*:\s*\d+(?:\.\d+)?\s*(?:kg|g|gm|gms|gram|grams|ml|l|ltr|litre|litres|liter|liters|pcs?|pieces?|units?|pack|sheets?|capsules?)\s*$',
-                '',
-                cleaned,
-                flags=re.IGNORECASE
-            )
-            # Fallback for any other colon separated suffix
-            if " : " in cleaned:
-                parts = cleaned.split(" : ")
-                if len(parts) > 1:
-                    cleaned = " : ".join(parts[:-1]).strip()
-        return cleaned
+        return DataCleaner.clean_text(name)
 
     @staticmethod
     def clean_brand(brand: Optional[str]) -> Optional[str]:

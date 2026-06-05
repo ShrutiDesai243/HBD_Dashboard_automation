@@ -15,6 +15,109 @@ import csv
 
 logger = logging.getLogger(__name__)
 
+STATIC_CATEGORY_MAPPING = {
+    'packaged food > ready to cook': {'category_id': 1, 'category_name': 'Ready To Cook', 'slug': 'ready-to-cook-aesc-readytocook', 'parent_id': 32, 'category_level': 2},
+    'dairy & beverages > beverages': {'category_id': 2, 'category_name': 'Beverages', 'slug': 'beverages-aesc-beverages', 'parent_id': 31, 'category_level': 2},
+    'packaged food > biscuits & cookies': {'category_id': 3, 'category_name': 'Biscuits & Cookies', 'slug': 'biscuits---cookies-aesc-biscuitsandcookies', 'parent_id': 32, 'category_level': 2},
+    'personal care & beauty > bath & body': {'category_id': 4, 'category_name': 'Bath & Body', 'slug': 'bath-body', 'parent_id': 36, 'category_level': 2},
+    'home & kitchen > detergent & fabric care': {'category_id': 5, 'category_name': 'Detergent & Fabric Care', 'slug': 'detergent---fabric-care-aesc-detergentsandfabriccare', 'parent_id': 34, 'category_level': 2},
+    'home & kitchen > cleaners': {'category_id': 6, 'category_name': 'Cleaners', 'slug': 'cleaners-aesc-cleaners', 'parent_id': 34, 'category_level': 2},
+    'dairy & beverages > dairy > milk': {'category_id': 7, 'category_name': 'Milk', 'slug': 'milk-aesc-milksc2', 'parent_id': 55, 'category_level': 3},
+    'dairy & beverages > dairy > cheese': {'category_id': 8, 'category_name': 'Cheese', 'slug': 'cheese-aesc-cheesesc2', 'parent_id': 55, 'category_level': 3},
+    'packaged food > ketchup & sauce': {'category_id': 9, 'category_name': 'Ketchup & Sauce', 'slug': 'ketchup---sauce-aesc-ketchupandsauces', 'parent_id': 32, 'category_level': 2},
+    'packaged food > pickles': {'category_id': 10, 'category_name': 'Pickles', 'slug': 'pickles-aesc-pickles', 'parent_id': 32, 'category_level': 2},
+    'grocery > dmart grocery > atta': {'category_id': 11, 'category_name': 'Atta', 'slug': 'atta-aesc-attasc2', 'parent_id': 94, 'category_level': 3},
+    'packaged food > chips & wafers': {'category_id': 12, 'category_name': 'Chips & Wafers', 'slug': 'chips---wafers-aesc-chips---waferssc2', 'parent_id': 32, 'category_level': 2},
+    'packaged food > oats': {'category_id': 13, 'category_name': 'Oats', 'slug': 'oats-aesc-oatssc2', 'parent_id': 32, 'category_level': 2},
+    'dairy & beverages > beverages > green tea': {'category_id': 14, 'category_name': 'Green Tea', 'slug': 'green-tea-aesc-green-teasc2', 'parent_id': 2, 'category_level': 3},
+    'dairy & beverages > beverages > cold drinks': {'category_id': 15, 'category_name': 'Cold Drinks', 'slug': 'soft-drinks-aesc-soft-drinkssc2', 'parent_id': 2, 'category_level': 3},
+    'personal care & beauty > skin care': {'category_id': 16, 'category_name': 'Skin Care', 'slug': 'skin-care-208510--1', 'parent_id': 36, 'category_level': 2},
+    'personal care & beauty > skin care > body lotions': {'category_id': 17, 'category_name': 'Body Lotions', 'slug': 'body-lotions-scrubs', 'parent_id': 16, 'category_level': 3},
+    'personal care & beauty > skin care > baby powder': {'category_id': 18, 'category_name': 'Baby Powder', 'slug': 'baby-powder-aesc-baby-powdersc2', 'parent_id': 16, 'category_level': 3},
+    'personal care & beauty > bath & body > bath soaps': {'category_id': 19, 'category_name': 'Bath Soaps', 'slug': 'soaps-aesc-soapssc2', 'parent_id': 4, 'category_level': 3},
+    'personal care & beauty > bath & body > hair shampoos': {'category_id': 20, 'category_name': 'Hair Shampoos', 'slug': 'hair-shampoos-aesc-hair-shampoossc2', 'parent_id': 4, 'category_level': 3},
+    'personal care & beauty > toothpaste': {'category_id': 21, 'category_name': 'Toothpaste', 'slug': 'toothpaste-aesc-toothpastesc2', 'parent_id': 36, 'category_level': 2},
+    'baby & kids > diapering > diapers': {'category_id': 22, 'category_name': 'Diapers', 'slug': 'diapers-aesc-diaperssc2', 'parent_id': 90, 'category_level': 3},
+    'home & kitchen > crockery set': {'category_id': 23, 'category_name': 'Crockery Set', 'slug': 'crockery-sets-aesc-crockery-sets-sc2', 'parent_id': 34, 'category_level': 2},
+    'home & kitchen > cookware > tawas & sauce pans': {'category_id': 24, 'category_name': 'Tawas & Sauce Pans', 'slug': 'tawas-sauce-pans', 'parent_id': 60, 'category_level': 3},
+    'home utility & organisers > jar container': {'category_id': 25, 'category_name': 'Jar Container', 'slug': 'jars---containers', 'parent_id': 41, 'category_level': 2},
+    'bags & more > trolley bags': {'category_id': 26, 'category_name': 'Trolley bags', 'slug': 'trolley-bags-201503--1', 'parent_id': 44, 'category_level': 2},
+    'home & kitchen > cleaners > bathroom cleaners': {'category_id': 27, 'category_name': 'Bathroom Cleaners', 'slug': 'bathroom-cleaners', 'parent_id': 6, 'category_level': 3},
+    'home & kitchen > detergent & fabric care > detergent powder': {'category_id': 28, 'category_name': 'Detergent Powder', 'slug': 'detergent-powder-aesc-detergent-powder-sc2', 'parent_id': 5, 'category_level': 3},
+    'home & kitchen > detergent & fabric care > dishwash liquids': {'category_id': 29, 'category_name': 'Dishwash Liquids', 'slug': 'dishwash-liquids--1', 'parent_id': 5, 'category_level': 3},
+    'stationery > stationery kits': {'category_id': 30, 'category_name': 'Stationery Kits', 'slug': 'stationery-kits', 'parent_id': 40, 'category_level': 2},
+    'dairy & beverages': {'category_id': 31, 'category_name': 'Dairy & Beverages', 'slug': 'dairy---beverages-aesc-dairyandbeveragescore', 'parent_id': None, 'category_level': 1},
+    'packaged food': {'category_id': 32, 'category_name': 'Packaged Food', 'slug': 'packaged-food-aesc-packagedfoodcore', 'parent_id': None, 'category_level': 1},
+    'fruits & vegetables': {'category_id': 33, 'category_name': 'Fruits & Vegetables', 'slug': 'fruits---vegetables-aesc-fruitsandvegetablescore', 'parent_id': None, 'category_level': 1},
+    'home & kitchen': {'category_id': 34, 'category_name': 'Home & Kitchen', 'slug': 'home---kitchen-aesc-homeandkitchencore', 'parent_id': None, 'category_level': 1},
+    'kitchen & dining': {'category_id': 35, 'category_name': 'Kitchen & Dining', 'slug': 'kitchen-dining', 'parent_id': None, 'category_level': 1},
+    'personal care & beauty': {'category_id': 36, 'category_name': 'Personal Care & Beauty', 'slug': 'personal-care-beauty', 'parent_id': None, 'category_level': 1},
+    'sports & fitness': {'category_id': 37, 'category_name': 'Sports & Fitness', 'slug': 'sports-and-fitness', 'parent_id': None, 'category_level': 1},
+    'baby & kids > baby care': {'category_id': 38, 'category_name': 'Baby Care', 'slug': 'baby-care', 'parent_id': 89, 'category_level': 2},
+    'books': {'category_id': 39, 'category_name': 'Books', 'slug': 'books-204003--1', 'parent_id': None, 'category_level': 1},
+    'stationery': {'category_id': 40, 'category_name': 'Stationery', 'slug': 'school-supplies', 'parent_id': None, 'category_level': 1},
+    'home utility & organisers': {'category_id': 41, 'category_name': 'Home Utility & Organisers', 'slug': 'home-utility-organisers', 'parent_id': None, 'category_level': 1},
+    'electronics & appliances': {'category_id': 42, 'category_name': 'Electronics & Appliances', 'slug': 'electronics-appliances', 'parent_id': None, 'category_level': 1},
+    'footwear': {'category_id': 43, 'category_name': 'Footwear', 'slug': 'aesc--footwear', 'parent_id': None, 'category_level': 1},
+    'bags & more': {'category_id': 44, 'category_name': 'Bags & More', 'slug': 'trolley-bags-handbags-more', 'parent_id': None, 'category_level': 1},
+    'gifting': {'category_id': 45, 'category_name': 'Gifting', 'slug': 'gifting-229002--1', 'parent_id': None, 'category_level': 1},
+    'seasonal & more': {'category_id': 46, 'category_name': 'Seasonal & More', 'slug': 'specials-seasonal', 'parent_id': None, 'category_level': 1},
+    'grocery > dmart grocery > dals': {'category_id': 47, 'category_name': 'Dals', 'slug': 'dals-aesc-dals', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > pulses': {'category_id': 48, 'category_name': 'Pulses', 'slug': 'pulses-aesc-pulses3', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > dry fruits': {'category_id': 49, 'category_name': 'Dry Fruits', 'slug': 'dry-fruits-aesc-dryfruits2', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > cooking oil': {'category_id': 50, 'category_name': 'Cooking Oil', 'slug': 'cooking-oil-aesc-cookingoil', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > ghee & vanaspati': {'category_id': 51, 'category_name': 'Ghee & Vanaspati', 'slug': 'ghee---vanaspati-aesc-gheeandvanaspati', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > flours & grains': {'category_id': 52, 'category_name': 'Flours & Grains', 'slug': 'flours---grains-aesc-floursandgrains4', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > rice & rice products': {'category_id': 53, 'category_name': 'Rice & Rice Products', 'slug': 'rice---rice-products-aesc-riceandriceproducts4', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > salt / sugar / jaggery': {'category_id': 54, 'category_name': 'Salt / Sugar / Jaggery', 'slug': 'salt---sugar---jaggery-aesc-saltsugarjaggery4', 'parent_id': 94, 'category_level': 3},
+    'dairy & beverages > dairy': {'category_id': 55, 'category_name': 'Dairy', 'slug': 'dairy-aesc-dairy', 'parent_id': 31, 'category_level': 2},
+    'fruits & vegetables > fresh fruits': {'category_id': 56, 'category_name': 'Fresh Fruits', 'slug': 'fresh-fruits-aesc-freshfruits', 'parent_id': 33, 'category_level': 2},
+    'fruits & vegetables > vegetables': {'category_id': 57, 'category_name': 'Vegetables', 'slug': 'vegetables-aesc-vegetables', 'parent_id': 33, 'category_level': 2},
+    'home & kitchen > cleaners > utensil cleaners': {'category_id': 58, 'category_name': 'Utensil Cleaners', 'slug': 'utensil-cleaners-aesc-utensilcleaners', 'parent_id': 6, 'category_level': 3},
+    'furniture & decor': {'category_id': 59, 'category_name': 'Furniture & Decor', 'slug': 'home-decor-216014--1', 'parent_id': None, 'category_level': 1},
+    'home & kitchen > cookware': {'category_id': 60, 'category_name': 'Cookware', 'slug': 'cookware-218510--1', 'parent_id': 34, 'category_level': 2},
+    'pooja needs': {'category_id': 61, 'category_name': 'Pooja Needs', 'slug': 'pooja-needs-aesc-poojaneeds', 'parent_id': None, 'category_level': 1},
+    'home & kitchen > cookware > cookware set': {'category_id': 62, 'category_name': 'Cookware Set', 'slug': 'serveware-218514--1', 'parent_id': 60, 'category_level': 3},
+    'home & kitchen > drinkware': {'category_id': 63, 'category_name': 'Drinkware', 'slug': 'drinkware', 'parent_id': 34, 'category_level': 2},
+    'shop by room': {'category_id': 64, 'category_name': 'Shop By Room', 'slug': 'shop-by-room', 'parent_id': None, 'category_level': 1},
+    'packaged food > snacks & farsans': {'category_id': 65, 'category_name': 'Snacks & Farsans', 'slug': 'snacks---farsans-aesc-snacksandfarsans', 'parent_id': 32, 'category_level': 2},
+    'packaged food > breakfast cereals': {'category_id': 66, 'category_name': 'Breakfast Cereals', 'slug': 'breakfast-cereals-aesc-breakfastcereals', 'parent_id': 32, 'category_level': 2},
+    'packaged food > chocolates & candies': {'category_id': 67, 'category_name': 'Chocolates & Candies', 'slug': 'chocolates---candies', 'parent_id': 32, 'category_level': 2},
+    'packaged food > pasta & noodles': {'category_id': 68, 'category_name': 'Pasta & Noodles', 'slug': 'pasta---noodles-aesc-pastaandnoodles', 'parent_id': 32, 'category_level': 2},
+    'packaged food > heathy food': {'category_id': 69, 'category_name': 'Heathy Food', 'slug': 'health-food-aesc-healthfood', 'parent_id': 32, 'category_level': 2},
+    'packaged food > bakery': {'category_id': 70, 'category_name': 'Bakery', 'slug': 'bakery-aesc-bakery', 'parent_id': 32, 'category_level': 2},
+    'packaged food > frozen food': {'category_id': 71, 'category_name': 'Frozen Food', 'slug': 'frozen-foods-aesc-frozenfoods', 'parent_id': 32, 'category_level': 2},
+    'packaged food > sweets': {'category_id': 72, 'category_name': 'Sweets', 'slug': 'sweets-aesc-sweets', 'parent_id': 32, 'category_level': 2},
+    'festive specials': {'category_id': 73, 'category_name': 'Festive Specials', 'slug': 'festive-specials', 'parent_id': None, 'category_level': 1},
+    'bed & bath': {'category_id': 74, 'category_name': 'Bed & Bath', 'slug': 'home-furnishing-decor', 'parent_id': None, 'category_level': 1},
+    'bed & bath > bedding': {'category_id': 75, 'category_name': 'Bedding', 'slug': 'bedsheets-more', 'parent_id': 74, 'category_level': 2},
+    'bed & bath > curtains': {'category_id': 76, 'category_name': 'Curtains', 'slug': 'curtains-216012--1', 'parent_id': 74, 'category_level': 2},
+    'bed & bath > bedroom storage': {'category_id': 78, 'category_name': 'Bedroom Storage', 'slug': 'storage-organizers', 'parent_id': 74, 'category_level': 2},
+    'bed & bath > bath accessories': {'category_id': 79, 'category_name': 'Bath Accessories', 'slug': 'bath-range', 'parent_id': 74, 'category_level': 2},
+    'electronics & accessories': {'category_id': 80, 'category_name': 'Electronics & Accessories', 'slug': 'computer-mobile-accessories', 'parent_id': None, 'category_level': 1},
+    'home appliances': {'category_id': 81, 'category_name': 'Home Appliances', 'slug': 'home-appliances-216003--1', 'parent_id': None, 'category_level': 1},
+    'home appliances > kitchen appliances': {'category_id': 82, 'category_name': 'Kitchen Appliances', 'slug': 'kitchen-appliances-216005--1', 'parent_id': 80, 'category_level': 2},
+    'electronics & appliances > personal care appliances': {'category_id': 83, 'category_name': 'Personal Care Appliances', 'slug': 'personal-care-appliances-216007--1', 'parent_id': 42, 'category_level': 2},
+    'clothing & accessories': {'category_id': 84, 'category_name': 'Clothing & Accessories', 'slug': 'clothing-accessories-aesc-clothingaccessories', 'parent_id': None, 'category_level': 1},
+    'clothing & accessories > men clothing': {'category_id': 85, 'category_name': 'Men Clothing', 'slug': 'mens-mens', 'parent_id': 83, 'category_level': 2},
+    'clothing & accessories > women clothing': {'category_id': 86, 'category_name': 'Women Clothing', 'slug': 'womens-womens', 'parent_id': 83, 'category_level': 2},
+    'clothing & accessories > accessories': {'category_id': 87, 'category_name': 'Accessories', 'slug': 'accessories--1', 'parent_id': 83, 'category_level': 2},
+    "footwear > men's footwear": {'category_id': 88, 'category_name': "Men's Footwear", 'slug': 'mens-footwear', 'parent_id': 43, 'category_level': 2},
+    "footwear > women's footwear": {'category_id': 89, 'category_name': "Women's Footwear", 'slug': 'womens-footwear', 'parent_id': 43, 'category_level': 2},
+    'baby & kids': {'category_id': 90, 'category_name': 'Baby & Kids', 'slug': 'baby---kids-aesc-babyandkidscore', 'parent_id': None, 'category_level': 1},
+    'baby & kids > diapering': {'category_id': 91, 'category_name': 'Diapering', 'slug': 'diapers---wipes-aesc-diapersandwipes', 'parent_id': 89, 'category_level': 2},
+    'baby & kids > baby food': {'category_id': 92, 'category_name': 'Baby Food', 'slug': 'baby-food-aesc-babyfood', 'parent_id': 89, 'category_level': 2},
+    'baby & kids > baby gear & furniture': {'category_id': 93, 'category_name': 'Baby Gear & Furniture', 'slug': 'baby-gear---furniture', 'parent_id': 89, 'category_level': 2},
+    'grocery': {'category_id': 94, 'category_name': 'Grocery', 'slug': 'grocery-aesc-grocerycore', 'parent_id': None, 'category_level': 1},
+    'grocery > dmart grocery': {'category_id': 95, 'category_name': 'DMart Grocery', 'slug': 'dmart-grocery-aesc-grocerycore2', 'parent_id': 93, 'category_level': 2},
+    'grocery > dmart grocery > grocery/dmart grocery/ dry fruits': {'category_id': 96, 'category_name': 'Grocery/DMart Grocery/ Dry Fruits', 'slug': None, 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > masala & spices': {'category_id': 97, 'category_name': 'Masala & Spices', 'slug': 'masala---spices-aesc-masalaandspices4', 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > masala & spices > chilli powder': {'category_id': 98, 'category_name': 'Chilli Powder', 'slug': None, 'parent_id': 96, 'category_level': 4},
+    'grocery > dmart grocery > masala & spices > spices': {'category_id': 99, 'category_name': 'Spices', 'slug': None, 'parent_id': 96, 'category_level': 4},
+    'grocery > dmart grocery > dals & pulses': {'category_id': 100, 'category_name': 'Dals & Pulses', 'slug': None, 'parent_id': 94, 'category_level': 3},
+    'grocery > dmart grocery > grocery/dmart grocery/ flours & grains': {'category_id': 101, 'category_name': 'Grocery/DMart Grocery/ Flours & Grains', 'slug': None, 'parent_id': 94, 'category_level': 3},
+}
+
 
 class DatabaseManager:
     """
@@ -51,8 +154,19 @@ class DatabaseManager:
         self._category_cache: Dict[tuple, int] = {}
         self.on_category_saved = None
         self.on_product_saved = None
-        self._ref_mapping = {}
-        self._load_reference_mapping()
+
+    def _get_deterministic_id(self, path_str: str) -> int:
+        """Get pre-defined ID from static mapping or fallback to deterministic path hash."""
+        import hashlib
+        normalized = " > ".join([p.strip().lower() for p in path_str.split('>') if p.strip()])
+        
+        # Check embedded static category mapping first to keep IDs consistent with original DB mapping
+        if normalized in STATIC_CATEGORY_MAPPING:
+            return STATIC_CATEGORY_MAPPING[normalized]['category_id']
+            
+        hash_md5 = hashlib.md5(normalized.encode('utf-8')).hexdigest()
+        val = int(hash_md5[:8], 16)
+        return val & 0x7FFFFFFF
 
     def __enter__(self):
         """Context manager entry: open connection and init schema."""
@@ -96,8 +210,6 @@ class DatabaseManager:
             if self.schema_path and self.schema_path.exists():
                 self._init_schema()
                 self._migrate_sqlite_columns()
-                # No pre-seeding directly from CSV on boot as per User request.
-                # Category entries are created dynamically during runs using runtime lookup.
 
             logger.info(f"Database connected: {self.db_path}")
 
@@ -119,220 +231,30 @@ class DatabaseManager:
     def _migrate_sqlite_columns(self):
         """Idempotently add missing columns in SQLite tables."""
         try:
+            # 1. Check dmart_category_master columns
             self.cursor.execute("PRAGMA table_info(dmart_category_master)")
-            columns = [col[1] for col in self.cursor.fetchall()]
-            if columns and "category_path" not in columns:
+            columns_cat = [col[1] for col in self.cursor.fetchall()]
+            if columns_cat and "category_path" not in columns_cat:
                 logger.info("⚠️ Column `category_path` missing in SQLite `dmart_category_master`. Migrating now...")
                 self.cursor.execute("ALTER TABLE dmart_category_master ADD COLUMN category_path TEXT")
                 self.conn.commit()
                 logger.info("✅ Column `category_path` successfully added to SQLite.")
+
+            # 2. Check dmart_product_master columns
+            self.cursor.execute("PRAGMA table_info(dmart_product_master)")
+            columns_prod = [col[1] for col in self.cursor.fetchall()]
+            if columns_prod and "pincodes" not in columns_prod:
+                logger.info("⚠️ Column `pincodes` missing in SQLite `dmart_product_master`. Migrating now...")
+                self.cursor.execute("ALTER TABLE dmart_product_master ADD COLUMN pincodes TEXT")
+                self.conn.commit()
+                logger.info("✅ Column `pincodes` successfully added to SQLite.")
         except sqlite3.Error as e:
             logger.error(f"SQLite dynamic column migration failed: {e}")
-
-    def seed_reference_categories(self):
-        """Idempotently seed the dmart_category_master table with the reference mapping CSV."""
-        try:
-            import csv
-            import os
-            cur_dir = os.path.dirname(os.path.abspath(__file__))
-            csv_path = os.path.abspath(os.path.join(cur_dir, "..", "..", "..", "resources", "dmart_db_mapping.csv"))
-            
-            if not os.path.exists(csv_path):
-                logger.warning(f"Category mapping CSV not found at: {csv_path}. Skipping automatic SQLite seeding.")
-                return
-                
-            logger.info("Idempotently seeding SQLite dmart_category_master with reference mapping...")
-            with open(csv_path, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    cat_id = int(row['Category ID'])
-                    name = row['Category Name'].strip()
-                    slug = row['Slug'].strip() if row['Slug'].strip() else None
-                    parent_id = int(row['Parent ID']) if (row['Parent ID'].strip() and row['Parent ID'].strip().isdigit()) else None
-                    level = int(row['Category Level']) if (row['Category Level'].strip() and row['Category Level'].strip().isdigit()) else None
-                    
-                    self.cursor.execute(
-                        """INSERT OR REPLACE INTO dmart_category_master
-                           (category_id, category_name, slug, parent_id, category_level)
-                           VALUES (?, ?, ?, ?, ?)""",
-                        (cat_id, name, slug, parent_id, level)
-                    )
-            self.conn.commit()
-            logger.info("SQLite dmart_category_master seeded successfully.")
-        except Exception as e:
-            logger.error(f"Failed to seed reference categories in SQLite: {e}")
-
-    def _load_reference_mapping(self):
-        """Load and normalize the dmart_db_mapping.csv reference file into memory."""
-        try:
-            import csv
-            import os
-            cur_dir = os.path.dirname(os.path.abspath(__file__))
-            csv_path = os.path.abspath(os.path.join(cur_dir, "..", "..", "..", "resources", "dmart_db_mapping.csv"))
-            
-            if not os.path.exists(csv_path):
-                logger.warning(f"Category mapping CSV not found at: {csv_path}. Dynamic reference mapping is disabled.")
-                return
-                
-            def clean_cat_name(name: str) -> str:
-                if not name:
-                    return ""
-                return name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
-
-            self._ref_mapping = {}
-            self._ref_leaf_mapping = {}
-            
-            raw_rows = []
-            path_to_id = {}
-            
-            with open(csv_path, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    path_val = row.get('Full Category Path (For Mapping)')
-                    if not path_val:
-                        continue
-                    path = path_val.strip()
-                    if not path:
-                        continue
-                    
-                    cat_id_val = row.get('Category ID')
-                    if not cat_id_val or not str(cat_id_val).strip().isdigit():
-                        continue
-                    cat_id = int(cat_id_val)
-                    
-                    # Normalize path parts by cleaning emojis/punctuation/pipes
-                    parts = [clean_cat_name(p) for p in path.split('>') if p.strip()]
-                    normalized = " > ".join([p.lower() for p in parts])
-                    
-                    path_to_id[normalized] = cat_id
-                    
-                    cat_name_val = row.get('Category Name')
-                    cat_name = clean_cat_name(cat_name_val)
-                    
-                    slug_val = row.get('Slug')
-                    slug = slug_val.strip() if (slug_val and slug_val.strip()) else None
-                    
-                    raw_rows.append({
-                        'cat_id': cat_id,
-                        'cat_name': cat_name,
-                        'slug': slug,
-                        'parts': parts,
-                        'normalized': normalized,
-                        'path': path
-                    })
-            
-            # Second pass: Compute parent_id dynamically based on path structure to fix CSV typos
-            for item in raw_rows:
-                parts = item['parts']
-                normalized = item['normalized']
-                cat_id = item['cat_id']
-                cat_name = item['cat_name']
-                slug = item['slug']
-                
-                level = len(parts)
-                
-                if level > 1:
-                    parent_parts = parts[:-1]
-                    parent_norm = " > ".join([p.lower() for p in parent_parts])
-                    parent_id = path_to_id.get(parent_norm)
-                else:
-                    parent_id = None
-                
-                self._ref_mapping[normalized] = {
-                    'category_id': cat_id,
-                    'category_name': cat_name,
-                    'slug': slug,
-                    'parent_id': parent_id,
-                    'category_level': level
-                }
-                
-                # Also build leaf to full path lookup mapping
-                leaf_name = cat_name.lower()
-                if leaf_name:
-                    self._ref_leaf_mapping[leaf_name] = item['path']
-                    
-            logger.info(f"Loaded {len(self._ref_mapping)} reference category paths and {len(self._ref_leaf_mapping)} leaf mappings from CSV (with parent ID corrections applied).")
-        except Exception as e:
-            logger.error(f"Failed to load reference category mapping CSV: {e}")
-
-    def upsert_category_with_id(
-        self,
-        category_id: int,
-        name: str,
-        slug: Optional[str] = None,
-        parent_id: Optional[int] = None,
-        level: Optional[int] = None,
-        category_path: Optional[str] = None
-    ) -> int:
-        """
-        Idempotently insert or update a category using an explicit dedicated category_id.
-        """
-        # Clean trailing/leading pipes, slashes, backslashes, colons, semicolons
-        if name:
-            name = name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
-        if slug:
-            slug = slug.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
-
-        cache_key = (name, parent_id)
-        if cache_key in self._category_cache:
-            return self._category_cache[cache_key]
-
-        try:
-            # Check if category_id already exists
-            self.cursor.execute(
-                "SELECT category_name FROM dmart_category_master WHERE category_id = ?",
-                (category_id,)
-            )
-            row = self.cursor.fetchone()
-            
-            if row:
-                # Exists! Idempotently update slug, name, parent_id, level, and category_path if needed
-                self.cursor.execute(
-                    """UPDATE dmart_category_master 
-                       SET category_name = ?, slug = ?, parent_id = ?, category_level = ?, category_path = ?
-                       WHERE category_id = ?""",
-                    (name, slug, parent_id, level, category_path, category_id)
-                )
-                self.conn.commit()
-            else:
-                # Insert new category with explicit category_id
-                self.cursor.execute(
-                    """INSERT INTO dmart_category_master 
-                       (category_id, category_name, slug, parent_id, category_level, category_path)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
-                    (category_id, name, slug, parent_id, level, category_path)
-                )
-                self.conn.commit()
-                logger.info(
-                    f"Predefined Category mapped: '{name}' (ID={category_id}, parent={parent_id}, level={level}, path={category_path})"
-                )
-
-            # Trigger external sync callback to update MySQL categories
-            if self.on_category_saved:
-                try:
-                    self.on_category_saved({
-                        'category_id': category_id,
-                        'category_name': name,
-                        'slug': slug,
-                        'parent_id': parent_id,
-                        'category_level': level,
-                        'category_path': category_path
-                    })
-                except Exception as cb_err:
-                    logger.error(f"Category sync callback failed: {cb_err}")
-
-            self._category_cache[cache_key] = category_id
-            return category_id
-
-        except sqlite3.Error as e:
-            logger.error(f"Category upsert with ID failed for '{name}' (ID={category_id}): {e}")
-            raise
 
     def resolve_category_path(self, path_str: str, slug_list: Optional[list] = None) -> int:
         """
         Dynamically resolves a category path of any length (e.g., L1 > L2 > L3)
-        to the database. Uses the reference mapping CSV if matched, otherwise
-        creates dynamic levels with proper parent IDs and auto-incremented IDs.
+        to the database using deterministic path hashing.
         """
         def clean_cat_name(name_str: str) -> str:
             if not name_str:
@@ -341,24 +263,14 @@ class DatabaseManager:
 
         parts = [clean_cat_name(p) for p in path_str.split('>') if p.strip()]
         if not parts:
-            return self.upsert_category("Uncategorized", level=1)
+            return self.upsert_category("Uncategorized", level=1, category_path="Uncategorized")
             
         # ── Defensive Clean: Skip Home/DMart Root Breadcrumbs if present ──
         if len(parts) > 1 and parts[0].lower() in ('home', 'dmart', 'online shopping', 'online shopping at dmart'):
             parts = parts[1:]
-            
-        # ── Leaf Mapping check: If single category name, map it to the full reference path if known ──
-        if len(parts) == 1:
-            name_lower = parts[0].lower()
-            if hasattr(self, '_ref_leaf_mapping') and name_lower in self._ref_leaf_mapping:
-                ref_full_path = self._ref_leaf_mapping[name_lower]
-                parts = [p.strip() for p in ref_full_path.split('>') if p.strip()]
 
         parent_id = None
         current_id = None
-        
-        # We will build sub-paths to look up in the reference mapping
-        sub_path_parts = []
         path_accum = []
         
         for idx, name in enumerate(parts):
@@ -366,41 +278,15 @@ class DatabaseManager:
             path_accum.append(name)
             current_path_str = " > ".join(path_accum)
             
-            sub_path_parts.append(name.lower())
-            sub_path_str = " > ".join(sub_path_parts)
+            slug = slug_list[idx] if (slug_list and idx < len(slug_list)) else None
             
-            # Check if this sub-path has a predefined reference mapping
-            ref_cat = self._ref_mapping.get(sub_path_str) if hasattr(self, '_ref_mapping') else None
-            
-            if ref_cat:
-                # Predefined category! Use the exact reference specs
-                c_id = ref_cat['category_id']
-                c_name = ref_cat['category_name']
-                c_slug = ref_cat['slug']
-                c_parent = ref_cat['parent_id']
-                c_level = ref_cat['category_level']
-                
-                # Upsert into database with the exact reference category_id, specs and category_path
-                current_id = self.upsert_category_with_id(
-                    category_id=c_id,
-                    name=c_name,
-                    slug=c_slug,
-                    parent_id=c_parent,
-                    level=c_level,
-                    category_path=current_path_str
-                )
-            else:
-                # Dynamic category (unknown/upcoming data)!
-                slug = slug_list[idx] if (slug_list and idx < len(slug_list)) else None
-                # Create category dynamically under the current parent_id with category_path
-                current_id = self.upsert_category(
-                    name=name,
-                    slug=slug,
-                    parent_id=parent_id,
-                    level=level,
-                    category_path=current_path_str
-                )
-                
+            current_id = self.upsert_category(
+                name=name,
+                slug=slug,
+                parent_id=parent_id,
+                level=level,
+                category_path=current_path_str
+            )
             parent_id = current_id
             
         return current_id
@@ -429,27 +315,20 @@ class DatabaseManager:
         category_path: Optional[str] = None
     ) -> int:
         """
-        Insert a category or return its ID if it already exists.
+        Insert or update a category using a deterministic path hash.
         
-        Uses (name, parent_id) as the composite lookup key since
-        category_name is NOT unique — "Accessories" can appear under
-        multiple parent categories.
-        
-        Args:
-            name: Category display name.
-            slug: URL slug for the category.
-            parent_id: Parent category ID (None for root level).
-            level: Hierarchy level (1=main, 2=sub, 3=leaf).
-            category_path: Full category path string.
-            
-        Returns:
-            The category_id (existing or newly created).
+        Uses (name, parent_id) as the composite cache lookup key,
+        but stores category using its unique deterministic hash ID.
         """
         # Clean trailing/leading pipes, slashes, backslashes, colons, semicolons
         if name:
             name = name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
         if slug:
             slug = slug.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
+
+        # Generate unique deterministic category_id from path
+        hash_src = category_path if category_path else name
+        category_id = self._get_deterministic_id(hash_src)
 
         cache_key = (name, parent_id)
 
@@ -458,65 +337,56 @@ class DatabaseManager:
             return self._category_cache[cache_key]
 
         try:
-            # Look up existing category with same name + parent
-            if parent_id is not None:
-                self.cursor.execute(
-                    """SELECT category_id FROM dmart_category_master 
-                       WHERE category_name = ? AND parent_id = ?""",
-                    (name, parent_id)
-                )
-            else:
-                self.cursor.execute(
-                    """SELECT category_id FROM dmart_category_master 
-                       WHERE category_name = ? AND parent_id IS NULL""",
-                    (name,)
-                )
-
+            # Check if category already exists by ID
+            self.cursor.execute(
+                "SELECT category_name FROM dmart_category_master WHERE category_id = ?",
+                (category_id,)
+            )
             row = self.cursor.fetchone()
 
             if row:
                 # Category exists — use existing ID and idempotently update category_path if provided
-                category_id = row[0]
                 self.cursor.execute(
-                    "UPDATE dmart_category_master SET category_path = ? WHERE category_id = ?",
-                    (category_path, category_id)
+                    """UPDATE dmart_category_master 
+                       SET category_name = ?, slug = ?, parent_id = ?, category_level = ?, category_path = ?
+                       WHERE category_id = ?""",
+                    (name, slug, parent_id, level, category_path, category_id)
                 )
                 self.conn.commit()
             else:
-                # Insert new category
+                # Insert new category with deterministic ID
                 self.cursor.execute(
                     """INSERT INTO dmart_category_master 
-                       (category_name, slug, parent_id, category_level, category_path)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (name, slug, parent_id, level, category_path)
+                       (category_id, category_name, slug, parent_id, category_level, category_path)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (category_id, name, slug, parent_id, level, category_path)
                 )
                 self.conn.commit()
-                category_id = self.cursor.lastrowid
                 logger.info(
                     f"New category inserted: '{name}' (ID={category_id}, "
                     f"parent={parent_id}, level={level}, path={category_path})"
                 )
 
-                # Trigger external sync hook (e.g. MySQL)
-                if self.on_category_saved:
-                    try:
-                        self.on_category_saved({
-                            'category_id': category_id,
-                            'category_name': name,
-                            'slug': slug,
-                            'parent_id': parent_id,
-                            'category_level': level,
-                            'category_path': category_path
-                        })
-                    except Exception as cb_err:
-                        logger.error(f"Category sync callback failed: {cb_err}")
+            # Trigger external sync hook (e.g. MySQL)
+            if self.on_category_saved:
+                try:
+                    self.on_category_saved({
+                        'category_id': category_id,
+                        'category_name': name,
+                        'slug': slug,
+                        'parent_id': parent_id,
+                        'category_level': level,
+                        'category_path': category_path
+                    })
+                except Exception as cb_err:
+                    logger.error(f"Category sync callback failed: {cb_err}")
 
             # Cache the result
             self._category_cache[cache_key] = category_id
             return category_id
 
         except sqlite3.Error as e:
-            logger.error(f"Category upsert failed for '{name}': {e}")
+            logger.error(f"Category upsert failed for '{name}' (ID={category_id}): {e}")
             raise
 
     def resolve_category_hierarchy(
@@ -558,22 +428,31 @@ class DatabaseManager:
 
     # ── Product Operations ─────────────────────────────────────
 
-    def upsert_product(self, product: dict, category_id: Optional[int] = None) -> bool:
+    def upsert_product(
+        self,
+        product: dict,
+        category_id: Optional[int] = None,
+        pincode: Optional[str] = None
+    ) -> bool:
         """
-        Insert or update a product using sku_id as the duplicate key.
+        Insert or update a product in SQLite.
         
-        If sku_id exists → UPDATE pricing, availability, timestamp.
-        If sku_id is new → INSERT the full product record.
-        
-        This mirrors the Amazon ASIN duplicate check methodology.
+        If the same SKU with identical pricing exists:
+            Update attributes and append the pincode to its pincodes JSON array.
+        If the SKU exists but has a DIFFERENT price:
+            Create a separate row in the database.
+        If the SKU is brand new:
+            Insert a new row with the pincode array.
         
         Args:
             product: Cleaned product dictionary.
             category_id: Foreign key to dmart_category_master.
+            pincode: Current scraping pincode.
             
         Returns:
             True if operation succeeded, False otherwise.
         """
+        import json
         sku_id = str(product.get('sku_id', '')).strip()
 
         # ── Secondary Deduplication (Name + Pack) ──
@@ -601,16 +480,64 @@ class DatabaseManager:
             logger.warning(f"Skipping product with no SKU: {product.get('product_name', 'unknown')}")
             return False
 
+        # Parse incoming prices for comparison
+        inc_price = product.get('dmart_price')
+        inc_mrp = product.get('mrp')
         try:
-            # Check if SKU already exists
+            inc_price_float = float(inc_price) if inc_price is not None else 0.0
+        except ValueError:
+            inc_price_float = 0.0
+        try:
+            inc_mrp_float = float(inc_mrp) if inc_mrp is not None else 0.0
+        except ValueError:
+            inc_mrp_float = 0.0
+
+        try:
+            # Query all rows with this sku_id to check their pricing
             self.cursor.execute(
-                "SELECT id FROM dmart_product_master WHERE sku_id = ?",
+                "SELECT id, dmart_price, mrp, pincodes FROM dmart_product_master WHERE sku_id = ?",
                 (sku_id,)
             )
-            existing = self.cursor.fetchone()
+            rows = self.cursor.fetchall()
 
-            if existing:
-                # ── UPDATE: Refresh pricing, availability, and timestamp ──
+            matched_id = None
+            existing_pincodes_str = None
+
+            for r in rows:
+                row_id, r_price, r_mrp, r_pincodes = r
+                try:
+                    r_price_float = float(r_price) if r_price is not None else 0.0
+                except ValueError:
+                    r_price_float = 0.0
+                try:
+                    r_mrp_float = float(r_mrp) if r_mrp is not None else 0.0
+                except ValueError:
+                    r_mrp_float = 0.0
+
+                # Check if price matches (float-safe comparison)
+                if abs(r_price_float - inc_price_float) < 0.01 and abs(r_mrp_float - inc_mrp_float) < 0.01:
+                    matched_id = row_id
+                    existing_pincodes_str = r_pincodes
+                    break
+
+            if matched_id is not None:
+                # ── UPDATE: Refresh pricing, availability, and pincodes list ──
+                pincodes_list = []
+                if existing_pincodes_str:
+                    try:
+                        pincodes_list = json.loads(existing_pincodes_str)
+                        if not isinstance(pincodes_list, list):
+                            pincodes_list = [str(pincodes_list)]
+                    except Exception:
+                        pincodes_list = [str(existing_pincodes_str)] if existing_pincodes_str else []
+
+                if pincode:
+                    pincode_str = str(pincode).strip()
+                    if pincode_str not in pincodes_list:
+                        pincodes_list.append(pincode_str)
+
+                pincodes_json = json.dumps(pincodes_list)
+
                 self.cursor.execute(
                     """UPDATE dmart_product_master SET
                         product_name = ?,
@@ -624,8 +551,9 @@ class DatabaseManager:
                         product_url = COALESCE(?, product_url),
                         image_url = COALESCE(?, image_url),
                         description = COALESCE(?, description),
+                        pincodes = ?,
                         scraped_at = CURRENT_TIMESTAMP
-                    WHERE sku_id = ?""",
+                    WHERE id = ?""",
                     (
                         product.get('product_name'),
                         product.get('brand'),
@@ -638,17 +566,21 @@ class DatabaseManager:
                         product.get('product_url'),
                         product.get('image_url'),
                         product.get('description'),
-                        sku_id,
+                        pincodes_json,
+                        matched_id,
                     )
                 )
-                logger.debug(f"Updated product: {sku_id}")
+                logger.debug(f"Updated product (same price): {sku_id} (ID={matched_id}, pincodes={pincodes_json})")
             else:
-                # ── INSERT: New product record ──
+                # ── INSERT: Create a new product row (new SKU or new price) ──
+                pincodes_list = [str(pincode).strip()] if pincode else []
+                pincodes_json = json.dumps(pincodes_list)
+
                 self.cursor.execute(
                     """INSERT INTO dmart_product_master 
                        (sku_id, product_name, brand, pack_size, mrp,
-                        dmart_price, availability, category_id, category_name, product_url, image_url, description)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        dmart_price, availability, category_id, category_name, product_url, image_url, description, pincodes)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         sku_id,
                         product.get('product_name'),
@@ -662,9 +594,10 @@ class DatabaseManager:
                         product.get('product_url'),
                         product.get('image_url'),
                         product.get('description'),
+                        pincodes_json,
                     )
                 )
-                logger.debug(f"Inserted product: {sku_id}")
+                logger.debug(f"Inserted product: {sku_id} (pincodes={pincodes_json})")
 
             self.conn.commit()
             if self.on_product_saved:

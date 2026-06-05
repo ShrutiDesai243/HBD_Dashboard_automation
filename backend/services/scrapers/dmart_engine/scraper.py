@@ -1015,12 +1015,12 @@ class DMartScraper:
                     if current_jsonl_path_val:
                         self._stream_to_jsonl(cleaned, current_jsonl_path_val)
 
-                    # Dynamically resolve category path in real-time
-                    product_cat_path = cleaned.get('category_name') or raw.get('category_name')
+                    # Dynamically resolve category path in real-time: prioritize specific page breadcrumbs over generic API category
+                    product_cat_path = current_category_name_val or cleaned.get('category_name') or raw.get('category_name')
                     if isinstance(product_cat_path, list):
                         product_cat_path = " > ".join(product_cat_path)
                     if not product_cat_path:
-                        product_cat_path = current_category_name_val or "Uncategorized"
+                        product_cat_path = "Uncategorized"
 
                     try:
                         cat_id = self.db.resolve_category_path(product_cat_path)
@@ -1029,7 +1029,7 @@ class DMartScraper:
                         cat_id = current_category_id_val
 
                     # Insert into SQLite (which has secondary name+pack deduplication)
-                    self.db.upsert_product(cleaned, cat_id)
+                    self.db.upsert_product(cleaned, cat_id, self.pincode)
 
                     scraped_skus_set.add(cleaned_sku)
                     scraped_names_set.add(cleaned_name_key)
@@ -1117,9 +1117,12 @@ class DMartScraper:
                 if not raw or not raw.get('product_name'):
                     continue
 
-                sku_id = str(raw.get('sku_id', '')).strip() or sku_id
-                p_name = raw.get('product_name')
-                p_size = raw.get('pack_size')
+                # Clean raw data first to resolve fields (like SKU from URL)
+                cleaned = DataCleaner.clean_product_data(raw)
+
+                sku_id = str(cleaned.get('sku_id', '')).strip() or sku_id
+                p_name = cleaned.get('product_name')
+                p_size = cleaned.get('pack_size')
 
                 if not sku_id or not p_name:
                     continue
@@ -1129,8 +1132,6 @@ class DMartScraper:
 
                 if sku_key in scraped_skus_set or name_key in scraped_names_set:
                     continue
-
-                cleaned = DataCleaner.clean_product_data(raw)
 
                 # Strict Garbage Data Prevention
                 is_valid = (
@@ -1149,12 +1150,12 @@ class DMartScraper:
                     if current_jsonl_path_val:
                         self._stream_to_jsonl(cleaned, current_jsonl_path_val)
 
-                    # Dynamically resolve category path in real-time
-                    product_cat_path = cleaned.get('category_name') or raw.get('category_name')
+                    # Dynamically resolve category path in real-time: prioritize specific page breadcrumbs over generic API category
+                    product_cat_path = current_category_name_val or cleaned.get('category_name') or raw.get('category_name')
                     if isinstance(product_cat_path, list):
                         product_cat_path = " > ".join(product_cat_path)
                     if not product_cat_path:
-                        product_cat_path = current_category_name_val or "Uncategorized"
+                        product_cat_path = "Uncategorized"
 
                     try:
                         cat_id = self.db.resolve_category_path(product_cat_path)
@@ -1162,7 +1163,7 @@ class DMartScraper:
                         logger.error(f"Failed to resolve product category path '{product_cat_path}': {cat_err}")
                         cat_id = current_category_id_val
 
-                    self.db.upsert_product(cleaned, cat_id)
+                    self.db.upsert_product(cleaned, cat_id, self.pincode)
 
                     scraped_skus_set.add(cleaned_sku)
                     scraped_names_set.add(cleaned_name_key)
@@ -1203,6 +1204,24 @@ class DMartScraper:
         if not path.exists():
             return False
         try:
+            # Check if it was an empty scrape (0 products) — if so, do not skip
+            is_empty = False
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if data.get('products_scraped_this_run', 0) == 0:
+                        is_empty = True
+            except Exception as e:
+                logger.warning(f"Error parsing completion file {path.name}: {e}")
+
+            if is_empty:
+                logger.info(f"Completion marker {path.name} has 0 products scraped. Deleting for re-run...")
+                try:
+                    path.unlink(missing_ok=True)
+                except Exception as del_err:
+                    logger.warning(f"Failed to delete empty completion marker {path.name}: {del_err}")
+                return False
+
             mtime = path.stat().st_mtime
             import time
             if (time.time() - mtime) > 86400:
@@ -1435,6 +1454,27 @@ class DMartScraper:
                 delay = random.uniform(*REQUEST_DELAY_RANGE)
                 await active_page.wait_for_timeout(int(delay * 1000))
 
+                # Try to extract breadcrumbs from the DOM to resolve full category path
+                try:
+                    breadcrumb_elements = await active_page.query_selector_all("nav[aria-label='breadcrumb'] li, .MuiBreadcrumbs-li")
+                    breadcrumbs = []
+                    for el in breadcrumb_elements:
+                        txt = (await el.inner_text()).strip()
+                        if txt and txt.lower() not in ('home', 'dmart', 'online shopping', 'online shopping at dmart'):
+                            breadcrumbs.append(txt)
+                    if breadcrumbs:
+                        full_path = " > ".join(breadcrumbs)
+                        resolved_id = self.db.resolve_category_path(full_path)
+                        if active_page is not None:
+                            active_page.current_category_id = resolved_id
+                            active_page.current_category_name = full_path
+                        else:
+                            self.current_category_id = resolved_id
+                            self.current_category_name = full_path
+                        logger.info(f"Dynamically updated category to '{full_path}' (ID={resolved_id}) via live page breadcrumbs.")
+                except Exception as b_err:
+                    logger.debug(f"Failed to dynamically parse breadcrumbs: {b_err}")
+
                 # Load all products via infinite scroll (incremental processing occurs inside)
                 await self._scroll_to_load_all(active_page)
 
@@ -1580,7 +1620,8 @@ class DMartScraper:
         category_map = {}  # slug → category_id
         for cat in categories:
             try:
-                cat_id = self.db.resolve_category_path(cat['name'])
+                # Pre-calculate deterministic ID in memory to avoid inserting temporary root-level categories
+                cat_id = self.db._get_deterministic_id(cat['name'])
                 category_map[cat['slug']] = cat_id
             except Exception as e:
                 logger.error(f"Failed to register category '{cat['name']}': {e}")

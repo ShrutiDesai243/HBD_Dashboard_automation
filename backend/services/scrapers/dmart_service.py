@@ -57,7 +57,7 @@ def scrape_dmart_search(
         task = None
         if task_id:
             try:
-                task = ScraperTask.query.get(task_id)
+                task = db.session.get(ScraperTask, task_id)
                 if task:
                     task.status = "RUNNING"
                     task.progress = 0
@@ -89,11 +89,11 @@ def scrape_dmart_search(
 
             import datetime
             # Buffer by 5 minutes to prevent missing rows due to execution lag or time difference
-            run_start_time = (datetime.datetime.utcnow() - datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+            run_start_time = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
 
             if task_id:
                 try:
-                    active_task = ScraperTask.query.get(task_id)
+                    active_task = db.session.get(ScraperTask, task_id)
                     if active_task:
                         active_task.status = f"Pincode {pin} ({idx}/{len(pincode_list)}): Initializing browser..."
                         db.session.commit()
@@ -145,29 +145,37 @@ def scrape_dmart_search(
                         import time
                         time.sleep(2)
 
-            def on_product_saved_callback(product: dict, category_id: Optional[int] = None):
-                try:
-                    sku_id = str(product.get('sku_id', '')).strip()
-                    if not sku_id:
-                        return
+            pending_products = []
+            processed_count = 0
 
-                    product_name = product.get('product_name') or "Unknown Product"
-                    brand = product.get('brand')
-                    pack_size = product.get('pack_size')
-                    mrp = product.get('mrp')
-                    dmart_price = product.get('dmart_price')
-                    availability = product.get('availability')
-                    category_name = product.get('category_name') or "Uncategorized"
-                    product_url = product.get('product_url')
-                    image_url = product.get('image_url')
+            def flush_pending_products():
+                nonlocal pending_products
+                if not pending_products:
+                    return
 
-                    price_str = str(dmart_price) if dmart_price is not None else "0.0"
-                    mrp_str = str(mrp) if mrp is not None else "0.0"
+                logger.info(f"Flushing {len(pending_products)} buffered products to MySQL...")
+                max_db_retries = 3
+                for db_attempt in range(1, max_db_retries + 1):
+                    try:
+                        import datetime
+                        for prod, cat_id in pending_products:
+                            sku_id = str(prod.get('sku_id', '')).strip()
+                            if not sku_id:
+                                continue
 
-                    # Sync product to MySQL dmart_products with self-healing retry logic
-                    max_db_retries = 3
-                    for db_attempt in range(1, max_db_retries + 1):
-                        try:
+                            product_name = prod.get('product_name') or "Unknown Product"
+                            brand = prod.get('brand')
+                            pack_size = prod.get('pack_size')
+                            mrp = prod.get('mrp')
+                            dmart_price = prod.get('dmart_price')
+                            availability = prod.get('availability')
+                            category_name = prod.get('category_name') or "Uncategorized"
+                            product_url = prod.get('product_url')
+                            image_url = prod.get('image_url')
+
+                            price_str = str(dmart_price) if dmart_price is not None else "0.0"
+                            mrp_str = str(mrp) if mrp is not None else "0.0"
+
                             existing = DMart.query.filter_by(asin=sku_id).first()
                             if existing:
                                 existing.title       = product_name or existing.title
@@ -176,7 +184,6 @@ def scrape_dmart_search(
                                 existing.productUrl  = product_url or existing.productUrl
                                 existing.price       = price_str
                                 existing.listPrice   = mrp_str
-                                # Defensively avoid overwriting categories with Uncategorized or null
                                 if category_name and category_name not in ("Uncategorized", "null"):
                                     existing.categoryName = category_name
                                 if category_id:
@@ -184,6 +191,7 @@ def scrape_dmart_search(
                                 existing.brand       = brand or existing.brand
                                 existing.quantity    = pack_size or existing.quantity
                                 existing.availability = availability
+                                existing.scraped_at  = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                             else:
                                 new_product = DMart(
                                     asin         = sku_id,
@@ -196,53 +204,65 @@ def scrape_dmart_search(
                                     brand        = brand,
                                     category_id  = category_id,
                                     quantity     = pack_size,
-                                    availability = availability
+                                    availability = availability,
+                                    scraped_at   = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                                 )
                                 db.session.add(new_product)
-                            
-                            db.session.commit()
-                            break  # Success
-                        except Exception as db_err:
+
+                        db.session.commit()
+                        break  # Success
+                    except Exception as db_err:
+                        db.session.rollback()
+                        db.session.remove()
+                        if db_attempt == max_db_retries:
+                            logger.error(f"Batch product sync failed after {max_db_retries} attempts: {db_err}")
+                            break
+                        logger.warning(f"Batch product sync failed on attempt {db_attempt}/{max_db_retries}. Retrying in 2s...")
+                        import time
+                        time.sleep(2)
+
+                if task_id:
+                    max_task_retries = 3
+                    for task_attempt in range(1, max_task_retries + 1):
+                        try:
+                            active_task = db.session.get(ScraperTask, task_id)
+                            if active_task:
+                                active_task.total_found = processed_count
+                                estimated_prog = min(99, int((active_task.total_found / (limit * len(pincode_list) if limit else 300)) * 100))
+                                active_task.progress = max(active_task.progress, estimated_prog)
+
+                                last_prod = pending_products[-1][0]
+                                cat_lbl = last_prod.get('category_name') or "products"
+                                active_task.status = f"Pincode {pin} ({idx}/{len(pincode_list)}): Scraped {active_task.total_found} products (last: {cat_lbl})"
+                                db.session.commit()
+                                break  # Success
+                        except Exception as t_err:
                             db.session.rollback()
-                            db.session.remove()  # Crucial: discard dead connection context
-                            if db_attempt == max_db_retries:
-                                raise db_err
-                            logger.warning(
-                                f"Product sync failed on attempt {db_attempt}/{max_db_retries} for SKU {sku_id}. "
-                                f"Discarded session, retrying in 2s..."
-                            )
+                            db.session.remove()
+                            if task_attempt == max_task_retries:
+                                logger.error(f"Failed to update task progress after {max_task_retries} attempts: {t_err}")
+                                break
+                            logger.warning(f"Task progress update failed on attempt {task_attempt}/{max_task_retries}. Retrying in 2s...")
                             import time
                             time.sleep(2)
 
-                    # Update ScraperTask status and progress dynamically via query to prevent detached session error
-                    if task_id:
-                        max_task_retries = 3
-                        for task_attempt in range(1, max_task_retries + 1):
-                            try:
-                                active_task = ScraperTask.query.get(task_id)
-                                if active_task:
-                                    active_task.total_found = active_task.total_found + 1
-                                    
-                                    # Estimate progress based on found products
-                                    estimated_prog = min(99, int((active_task.total_found / (limit * len(pincode_list) if limit else 300)) * 100))
-                                    active_task.progress = max(active_task.progress, estimated_prog)
-                                    
-                                    cat_lbl = category_name or "products"
-                                    active_task.status = f"Pincode {pin} ({idx}/{len(pincode_list)}): Scraped {active_task.total_found} products (last: {cat_lbl})"
-                                    db.session.commit()
-                                    break  # Success
-                            except Exception as t_err:
-                                db.session.rollback()
-                                db.session.remove()  # Crucial: discard dead connection context
-                                if task_attempt == max_task_retries:
-                                    logger.error(f"Failed to update task progress after {max_task_retries} attempts: {t_err}")
-                                    break
-                                logger.warning(f"Task progress update failed on attempt {task_attempt}/{max_task_retries}. Retrying in 2s...")
-                                import time
-                                time.sleep(2)
+                pending_products.clear()
+
+            def on_product_saved_callback(product: dict, category_id: Optional[int] = None):
+                nonlocal processed_count
+                try:
+                    sku_id = str(product.get('sku_id', '')).strip()
+                    if not sku_id:
+                        return
+
+                    processed_count += 1
+                    pending_products.append((product, category_id))
+
+                    if len(pending_products) >= 50:
+                        flush_pending_products()
 
                 except Exception as sync_err:
-                    logger.error(f"Real-time MySQL sync failed for SKU {product.get('sku_id')}: {sync_err}")
+                    logger.error(f"Real-time MySQL sync buffering failed for SKU {product.get('sku_id')}: {sync_err}")
 
             sqlite_db.on_category_saved = on_category_saved_callback
             sqlite_db.on_product_saved = on_product_saved_callback
@@ -265,6 +285,10 @@ def scrape_dmart_search(
                         await scraper.run(max_categories=limit, categories_to_scrape=categories_list)
 
                 asyncio.run(_run_category())
+                try:
+                    flush_pending_products()
+                except Exception as flush_err:
+                    logger.error(f"Final flush of buffered products failed: {flush_err}")
                 products_after_cat = sqlite_db.get_product_count()
                 logger.info(
                     f"Category scrape done. SQLite: {products_before} → {products_after_cat} "
@@ -356,6 +380,7 @@ def scrape_dmart_search(
                             from services.scrapers.dmart_engine.cleaner import DataCleaner
                             clean_name   = DataCleaner.clean_product_name(name_str)
 
+                            import datetime
                             is_update = False
                             existing = DMart.query.filter_by(asin=sku_id).first()
                             if existing:
@@ -374,6 +399,7 @@ def scrape_dmart_search(
                                 existing.brand       = brand or existing.brand
                                 existing.quantity    = pack_size or existing.quantity
                                 existing.availability = availability
+                                existing.scraped_at  = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                             else:
                                 new_product = DMart(
                                     asin         = sku_id,
@@ -386,7 +412,8 @@ def scrape_dmart_search(
                                     brand        = brand,
                                     category_id  = category_id,
                                     quantity     = pack_size,
-                                    availability = availability
+                                    availability = availability,
+                                    scraped_at   = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                                 )
                                 db.session.add(new_product)
 
@@ -441,7 +468,7 @@ def scrape_dmart_search(
                 logger.error(f"Scrape failed for pincode {pin}: {e}", exc_info=True)
                 if task_id:
                     try:
-                        active_task = ScraperTask.query.get(task_id)
+                        active_task = db.session.get(ScraperTask, task_id)
                         if active_task:
                             active_task.status = "ERROR"
                             active_task.error_message = str(e)
@@ -455,7 +482,7 @@ def scrape_dmart_search(
         # Mark ScraperTask as COMPLETED
         if task_id:
             try:
-                active_task = ScraperTask.query.get(task_id)
+                active_task = db.session.get(ScraperTask, task_id)
                 if active_task:
                     active_task.status = "COMPLETED"
                     active_task.progress = 100
