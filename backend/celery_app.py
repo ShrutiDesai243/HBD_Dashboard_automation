@@ -155,6 +155,7 @@ import tasks.listings_task.upload_yellow_pages_task
 import tasks.listings_task.upload_shiksha_task
 import tasks.products_task.upload_amazon_products_task
 import tasks.products_task.upload_big_basket_task
+import tasks.products_task.upload_zepto_task
 import tasks.products_task.amazon_scraper_task
 import tasks.products_task.dmart_scraper_task
 import tasks.gdrive_task.etl_tasks

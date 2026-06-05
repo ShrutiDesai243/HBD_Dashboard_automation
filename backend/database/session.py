@@ -50,4 +50,4 @@ def get_db_session():
     Returns a new database session.
     In Flask routes you must close() manually after use.
     """
-    return db_session()
+    return SessionLocal()

@@ -39,6 +39,7 @@ from model.unmatched_data_review import UnmatchedDataReview
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
 from model.product_model.bigbasket_product_model import BigBasket
+from model.product_model.additional_products import BigBasketNew, Zepto
 
 # --- Import Blueprints ---
 from routes.auth_route import auth_bp
@@ -85,6 +86,7 @@ from routes.product_routes.upload_dmart_route import dmart_bp
 from routes.product_routes.upload_flipkart_products_route import flipkart_bp
 from routes.product_routes.upload_india_mart_route import indiamart_bp
 from routes.product_routes.upload_jio_mart_route import jiomart_bp
+from routes.product_routes.upload_zepto_route import zepto_bp
 from routes.product_master_route import product_master_bp
 # New Dashboard Blueprints
 from routes.gdrive_etl_routes.validation_dashboard import validation_dashboard_bp
@@ -177,6 +179,7 @@ PUBLIC_ROUTES = [
     "/product-master/fetch-data",
     "/api/report/aggregate",
     "/api/report/health",
+    "/api/report/source-stats",
     "/api/googlemap_data",
     "/api/unmatched/counts",
     "/api/unmatched/list",
@@ -185,6 +188,17 @@ PUBLIC_ROUTES = [
     "/api/listing-upload/history",
     "/api/listing-upload/pending",
     "/api/product-report/top-products",
+    "/api/product-report/dmart/data",
+    "/api/product-report/indiamart/data",
+    "/api/product-report/bigbasket/data",
+    "/api/product-report/zepto/data",
+    "/api/product-report/blinkit/data",
+    "/api/product-report/amazon/data",
+    "/api/product-report/mapping/blinkit",
+    "/api/product-report/mapping/bigbasket",
+    "/api/product-report/mapping/dmart",
+    "/api/product-report/mapping/indiamart",
+    "/api/product-report/mapping/zepto",
     "/api/scrape_dmart",
     "/api/scrape_amazon",
 ]
@@ -197,8 +211,13 @@ def protect_all_routes():
     normalized_path = request.path.rstrip('/')
     public_paths = [route.rstrip('/') for route in PUBLIC_ROUTES]
 
-    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / tasks prefix
-    if normalized_path in public_paths or normalized_path.endswith('/fetch-data') or normalized_path.startswith('/api/listing-upload') or normalized_path.startswith('/api/product-report') or normalized_path.startswith('/api/tasks'):
+    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks prefixes
+    if (normalized_path in public_paths or 
+        normalized_path.endswith('/fetch-data') or 
+        normalized_path.startswith('/api/listing-upload') or 
+        normalized_path.startswith('/api/product-report') or 
+        normalized_path.startswith('/api/report/source-') or 
+        normalized_path.startswith('/api/tasks')):
         return None
 
     try:
@@ -240,6 +259,7 @@ blueprints_listing = [
     (nearbuy_bp, "/nearbuy"), (pinda_bp, "/pinda"), (post_office_bp, "/post-office"),
     (schoolgis_bp, "/schoolgis"), (shiksha_bp, "/shiksha"), (yellow_pages_bp, "/yellow-pages"),
     (amazon_upload_bp, "/amazon"), (vivo_bp, "/vivo"), (blinkit_bp, "/blinkit"),
+    (zepto_bp, "/zepto"),
     (dmart_bp, "/dmart"), (flipkart_bp, "/flipkart"), (indiamart_bp, "/india-mart"),
     (jiomart_bp, "/jio-mart"), (bigbasket_bp, "/big-basket"),
     (location_master_bp, "/location-master")
@@ -258,9 +278,9 @@ if __name__ == '__main__':
     
     ingestor = None
     if run_server_only:
-        print("🌐 Mode: API Server Only (Background ETL disabled for manual run)")
+        print("[SERVER] Mode: API Server Only (Background ETL disabled for manual run)")
     else:
-        print("🔗 Mode: All-in-One (Starting Background Sync Tool...)")
+        print("[ALL-IN-ONE] Mode: All-in-One (Starting Background Sync Tool...)")
         ingestor = start_background_etl()
         
         # Daemonize the ingestor thread if possible
@@ -277,12 +297,13 @@ if __name__ == '__main__':
             print('\n[SHUTDOWN] Shutdown requested...')
         if ingestor:
             ingestor.shutdown()
+        sys.argv = [sys.argv[0]] # clean args for safe shutdown
         sys.exit(0)
 
     # --- Run Flask standard server ---
     try:
         try:
-            print("🚀 Starting Flask standard server on port 8001. Press CTRL+C to quit.")
+            print("Starting Flask standard server on port 8001. Press CTRL+C to quit.")
         except UnicodeEncodeError:
             print("Starting Flask standard server on port 8001. Press CTRL+C to quit.")
         app.run(host='0.0.0.0', port=8001, debug=False) 
