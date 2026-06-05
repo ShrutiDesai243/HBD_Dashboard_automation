@@ -211,10 +211,13 @@ def protect_all_routes():
     normalized_path = request.path.rstrip('/')
     public_paths = [route.rstrip('/') for route in PUBLIC_ROUTES]
 
-    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- prefix
-    if normalized_path in public_paths or normalized_path.endswith('/fetch-data') or normalized_path.startswith('/api/listing-upload') or normalized_path.startswith('/api/product-report') or normalized_path.startswith('/api/report/source-'):
-    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / tasks prefix
-    if normalized_path in public_paths or normalized_path.endswith('/fetch-data') or normalized_path.startswith('/api/listing-upload') or normalized_path.startswith('/api/product-report') or normalized_path.startswith('/api/tasks'):
+    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks prefixes
+    if (normalized_path in public_paths or 
+        normalized_path.endswith('/fetch-data') or 
+        normalized_path.startswith('/api/listing-upload') or 
+        normalized_path.startswith('/api/product-report') or 
+        normalized_path.startswith('/api/report/source-') or 
+        normalized_path.startswith('/api/tasks')):
         return None
 
     try:
