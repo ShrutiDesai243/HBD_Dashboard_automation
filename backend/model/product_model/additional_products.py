@@ -57,7 +57,7 @@ class DMartCategory(db.Model):
 class DMart(db.Model):
     """dmart_products table — 10,740 rows.
     Actual columns: id, ASIN, Product_name, Image_URLs, link, price, listPrice,
-                    category, Brand, description, category_id, quantity, availability
+                    category, Brand, category_id, quantity, availability
     """
     __tablename__ = 'dmart_products'
     id = db.Column(db.Integer, primary_key=True)
@@ -69,7 +69,6 @@ class DMart(db.Model):
     listPrice = db.Column('listPrice', db.String(100), nullable=True)
     category = db.Column(db.String(255))
     Brand = db.Column('Brand', db.String(255))
-    description = db.Column(db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('dmart_categories.category_id', ondelete='SET NULL'), nullable=True)
     quantity = db.Column('quantity', db.String(100), nullable=True)
     availability = db.Column('availability', db.Integer, default=1)

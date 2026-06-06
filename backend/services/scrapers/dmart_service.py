@@ -154,29 +154,30 @@ def scrape_dmart_search(
                     return
 
                 logger.info(f"Flushing {len(pending_products)} buffered products to MySQL...")
-                max_db_retries = 3
-                for db_attempt in range(1, max_db_retries + 1):
-                    try:
-                        import datetime
-                        for prod, cat_id in pending_products:
-                            sku_id = str(prod.get('sku_id', '')).strip()
-                            if not sku_id:
-                                continue
+                import datetime
 
-                            product_name = prod.get('product_name') or "Unknown Product"
-                            brand = prod.get('brand')
-                            pack_size = prod.get('pack_size')
-                            mrp = prod.get('mrp')
-                            dmart_price = prod.get('dmart_price')
-                            availability = prod.get('availability')
-                            category_name = prod.get('category_name') or "Uncategorized"
-                            product_url = prod.get('product_url')
-                            image_url = prod.get('image_url')
+                for prod, cat_id in pending_products:
+                    sku_id = str(prod.get('sku_id', '')).strip()
+                    if not sku_id:
+                        continue
 
-                            price_str = str(dmart_price) if dmart_price is not None else "0.0"
-                            mrp_str = str(mrp) if mrp is not None else "0.0"
+                    product_name = prod.get('product_name') or "Unknown Product"
+                    brand = prod.get('brand')
+                    pack_size = prod.get('pack_size')
+                    mrp = prod.get('mrp')
+                    dmart_price = prod.get('dmart_price')
+                    availability = prod.get('availability')
+                    category_name = prod.get('category_name') or "Uncategorized"
+                    product_url = prod.get('product_url')
+                    image_url = prod.get('image_url')
 
-                            existing = DMart.query.filter_by(asin=sku_id).first()
+                    price_str = str(dmart_price) if dmart_price is not None else "0.0"
+                    mrp_str = str(mrp) if mrp is not None else "0.0"
+
+                    max_db_retries = 3
+                    for db_attempt in range(1, max_db_retries + 1):
+                        try:
+                            existing = DMart.query.filter_by(ASIN=sku_id).first()
                             if existing:
                                 existing.title       = product_name or existing.title
                                 if image_url:
@@ -186,8 +187,8 @@ def scrape_dmart_search(
                                 existing.listPrice   = mrp_str
                                 if category_name and category_name not in ("Uncategorized", "null"):
                                     existing.categoryName = category_name
-                                if category_id:
-                                    existing.category_id = category_id
+                                if cat_id:
+                                    existing.category_id = cat_id
                                 existing.brand       = brand or existing.brand
                                 existing.quantity    = pack_size or existing.quantity
                                 existing.availability = availability
@@ -202,24 +203,24 @@ def scrape_dmart_search(
                                     listPrice    = mrp_str,
                                     categoryName = category_name,
                                     brand        = brand,
-                                    category_id  = category_id,
+                                    category_id  = cat_id,
                                     quantity     = pack_size,
                                     availability = availability,
                                     scraped_at   = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                                 )
                                 db.session.add(new_product)
 
-                        db.session.commit()
-                        break  # Success
-                    except Exception as db_err:
-                        db.session.rollback()
-                        db.session.remove()
-                        if db_attempt == max_db_retries:
-                            logger.error(f"Batch product sync failed after {max_db_retries} attempts: {db_err}")
-                            break
-                        logger.warning(f"Batch product sync failed on attempt {db_attempt}/{max_db_retries}. Retrying in 2s...")
-                        import time
-                        time.sleep(2)
+                            db.session.commit()
+                            break  # Success for this product
+                        except Exception as db_err:
+                            db.session.rollback()
+                            db.session.remove()
+                            if db_attempt == max_db_retries:
+                                logger.error(f"MySQL sync failed for SKU {sku_id} after {max_db_retries} attempts: {db_err}")
+                                break
+                            logger.warning(f"MySQL sync failed for SKU {sku_id} on attempt {db_attempt}/{max_db_retries}. Retrying in 1s...")
+                            import time
+                            time.sleep(1)
 
                 if task_id:
                     max_task_retries = 3
@@ -242,9 +243,9 @@ def scrape_dmart_search(
                             if task_attempt == max_task_retries:
                                 logger.error(f"Failed to update task progress after {max_task_retries} attempts: {t_err}")
                                 break
-                            logger.warning(f"Task progress update failed on attempt {task_attempt}/{max_task_retries}. Retrying in 2s...")
+                            logger.warning(f"Task progress update failed on attempt {task_attempt}/{max_task_retries}. Retrying in 1s...")
                             import time
-                            time.sleep(2)
+                            time.sleep(1)
 
                 pending_products.clear()
 
@@ -382,7 +383,7 @@ def scrape_dmart_search(
 
                             import datetime
                             is_update = False
-                            existing = DMart.query.filter_by(asin=sku_id).first()
+                            existing = DMart.query.filter_by(ASIN=sku_id).first()
                             if existing:
                                 is_update = True
                                 existing.title       = clean_name or existing.title
