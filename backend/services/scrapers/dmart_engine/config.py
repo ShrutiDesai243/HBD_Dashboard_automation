@@ -14,9 +14,9 @@ import random
 from pathlib import Path
 
 # ── Project Paths ──────────────────────────────────────────────
-# Resolve to backend/output/ inside the HBD Dashboard project
+# Resolve to backend/output/dmart/ inside the HBD Dashboard project
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # → backend/
-OUTPUT_DIR = BASE_DIR / "output"
+OUTPUT_DIR = BASE_DIR / "output" / "dmart"
 EXPORT_DIR = OUTPUT_DIR / "exports"
 CATEGORY_EXPORT_DIR = EXPORT_DIR / "categories"
 JSONL_EXPORT_DIR = EXPORT_DIR / "jsonl"

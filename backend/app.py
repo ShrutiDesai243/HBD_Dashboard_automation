@@ -53,10 +53,13 @@ from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
+from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
 from routes.master_table import master_table_bp
 from routes.upload_product_csv import product_csv_bp
 from routes.upload_item_csv import item_csv_bp
+
+
 
 # Listing & Product Blueprints
 from routes.items_data import item_bp
@@ -190,7 +193,6 @@ PUBLIC_ROUTES = [
     "/product-master/fetch-data",
     "/api/report/aggregate",
     "/api/report/health",
-    "/api/report/source-stats",
     "/api/googlemap_data",
     "/api/unmatched/counts",
     "/api/unmatched/list",
@@ -220,6 +222,7 @@ PUBLIC_ROUTES = [
     "/api/category-mapping/history",
     "/api/category-mapping/settings/platforms",
     "/api/category-mapping/settings/synonyms",
+    "/api/scrape_zepto",
 ]
 
 @app.before_request
@@ -270,6 +273,7 @@ app.register_blueprint(report_aggregate_bp)
 app.register_blueprint(unmatched_data_bp, url_prefix="/api/unmatched")
 app.register_blueprint(listing_upload_bp, url_prefix="/api/listing-upload")
 app.register_blueprint(product_report_bp, url_prefix="/api/product-report")
+app.register_blueprint(zepto_api_bp, url_prefix="/api")
 
 # --- Dynamic Categories Mapping Master Blueprints ---
 app.register_blueprint(master_category_bp, url_prefix="/api/master-categories")
