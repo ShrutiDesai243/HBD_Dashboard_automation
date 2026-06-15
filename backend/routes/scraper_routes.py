@@ -96,3 +96,19 @@ def get_task_logs(task_id):
 @scraper_bp.route('/results', methods=['GET']) # url_prefix makes this /api/results
 def api_results():
     pass
+
+@scraper_bp.route('/tasks/blinkit-stats', methods=['GET'])
+def get_blinkit_global_stats():
+    """Quick stats for Blinkit tables — used by header status widget."""
+    try:
+        from sqlalchemy import text, create_engine
+        from config import config
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+        with engine.connect() as conn:
+            pc = conn.execute(text("SELECT COUNT(*) FROM blinkit")).scalar()
+            cc = conn.execute(text("SELECT COUNT(*) FROM blinkit_mapping")).scalar()
+        from flask import jsonify
+        return jsonify({"total_products": int(pc or 0), "total_categories": int(cc or 0)}), 200
+    except Exception as e:
+        from flask import jsonify
+        return jsonify({"error": str(e)}), 500

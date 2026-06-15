@@ -9,6 +9,7 @@ class Blinkit(db.Model):
     brand = db.Column(db.String(255))
     category = db.Column(db.String(255))
     sub_category = db.Column(db.String(255))
+    category_id = db.Column(db.BigInteger, db.ForeignKey('blinkit_mapping.category_id', ondelete='SET NULL'), nullable=True)
     price = db.Column(db.Numeric(10, 2))
     mrp = db.Column(db.Numeric(10, 2))
     discount = db.Column(db.Numeric(10, 2))
@@ -24,6 +25,7 @@ class Blinkit(db.Model):
             "brand": self.brand,
             "category": self.category,
             "sub_category": self.sub_category,
+            "category_id": self.category_id,
             "price": float(self.price) if self.price else 0,
             "mrp": float(self.mrp) if self.mrp else 0,
             "discount": float(self.discount) if self.discount else 0,

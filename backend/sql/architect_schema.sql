@@ -153,4 +153,54 @@ CREATE TABLE IF NOT EXISTS g_map_master_table (
     UNIQUE INDEX idx_unique_business (name(100), phone_number, city(50), address(100))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- End of Schema
+-- -----------------------------------------------------------------------------
+-- TABLE 5: blinkit_mapping (Category Hierarchy)
+-- Purpose: Stores Blinkit category tree (L1 parents + L2 subcategories).
+--          category_id is PRIMARY KEY — guarantees no duplicate categories.
+--          parent_id=0 for root L1 categories.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS blinkit_mapping (
+    category_id   BIGINT NOT NULL,
+    category_name VARCHAR(50)  DEFAULT NULL,
+    slug          VARCHAR(50)  DEFAULT NULL,
+    parent_id     BIGINT       DEFAULT NULL COMMENT '0 = root L1 category',
+    category_level BIGINT      DEFAULT NULL COMMENT '1=parent, 2=subcategory',
+    full_category_path VARCHAR(58) DEFAULT NULL COMMENT 'e.g. "Dairy, Bread & Eggs > Milk"',
+    PRIMARY KEY (category_id),
+    KEY idx_blm_category_name  (category_name),
+    KEY idx_blm_category_id    (category_id),
+    KEY idx_blm_parent_id      (parent_id),
+    KEY idx_blm_category_level (category_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- -----------------------------------------------------------------------------
+-- TABLE 6: blinkit (Product Catalog)
+-- Purpose: Stores all Blinkit products (40,000+).
+--          product_id is PRIMARY KEY — guarantees zero product duplicates.
+--          category_id FK references blinkit_mapping for proper hierarchy linkage.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS blinkit (
+    product_id    BIGINT NOT NULL,
+    product_name  TEXT,
+    brand         VARCHAR(255) DEFAULT NULL,
+    category      VARCHAR(255) DEFAULT NULL  COMMENT 'L1 parent category name (text)',
+    sub_category  VARCHAR(255) DEFAULT NULL  COMMENT 'L2 subcategory name (text)',
+    category_id   BIGINT       DEFAULT NULL  COMMENT 'FK -> blinkit_mapping.category_id (L2)',
+    price         DECIMAL(10,2) DEFAULT NULL,
+    mrp           DECIMAL(10,2) DEFAULT NULL,
+    discount      DECIMAL(10,2) DEFAULT NULL,
+    quantity      VARCHAR(100) DEFAULT NULL,
+    availability  TINYINT(1)   DEFAULT NULL,
+    image_url     TEXT,
+    product_url   TEXT,
+    PRIMARY KEY (product_id),
+    KEY idx_bl_category              (category(100)),
+    KEY idx_bl_cat_subcat_composite  (category(100), sub_category(100)),
+    KEY fk_blinkit_category          (category_id),
+    CONSTRAINT fk_blinkit_category
+        FOREIGN KEY (category_id)
+        REFERENCES blinkit_mapping (category_id)
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- End of Schema
