@@ -677,6 +677,12 @@ export const routes = [
             path: "/scrapper/dmart",
             element: <DmartScrapper />,
           },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "BigBasket",
+            path: "/scrapper/bigbasket",
+            element: <BigbasketScrapper />,
+          },
           // ... rest of scrappers
           {
             icon: <ShoppingCartIcon {...icon} />,

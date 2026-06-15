@@ -39,13 +39,14 @@ from model.unmatched_data_review import UnmatchedDataReview
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
 from model.product_model.bigbasket_product_model import BigBasket
-from model.product_model.additional_products import BigBasketNew, Zepto
+from model.product_model.additional_products import Zepto
 
 # --- Import Blueprints ---
 from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
+from routes.bigbasket_routes import bigbasket_api_bp
 from routes.googlemap import googlemap_bp 
 from routes.master_table import master_table_bp
 from routes.upload_product_csv import product_csv_bp
@@ -201,6 +202,10 @@ PUBLIC_ROUTES = [
     "/api/product-report/mapping/zepto",
     "/api/scrape_dmart",
     "/api/scrape_amazon",
+    "/api/scrape_bigbasket",
+    "/api/scrape_bigbasket/tasks",
+    "/api/scrape_bigbasket/preview",
+    "/api/scrape_bigbasket/merge",
 ]
 
 @app.before_request
@@ -209,11 +214,16 @@ def protect_all_routes():
         return jsonify({"message": "CORS preflight successful"}), 200
 
     normalized_path = request.path.rstrip('/')
+    # Explicit bypass for BigBasket scraping endpoint to allow scraper-triggering
+    # requests without requiring a JWT cookie (they run background jobs).
+    if request.path.startswith('/api/scrape_bigbasket'):
+        return None
     public_paths = [route.rstrip('/') for route in PUBLIC_ROUTES]
 
     # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks prefixes
     if (normalized_path in public_paths or 
         normalized_path.endswith('/fetch-data') or 
+        normalized_path.startswith('/api/scrape_bigbasket') or 
         normalized_path.startswith('/api/listing-upload') or 
         normalized_path.startswith('/api/product-report') or 
         normalized_path.startswith('/api/report/source-') or 
@@ -233,6 +243,7 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
+app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
 app.register_blueprint(master_table_bp)
 app.register_blueprint(product_csv_bp)

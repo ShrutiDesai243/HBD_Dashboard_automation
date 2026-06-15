@@ -260,36 +260,6 @@ class IndiaMart(db.Model):
         }
 
 
-class BigBasketNew(db.Model):
-    """bigbasket table — 34,559 rows (the ~34-35K table).
-    Columns: sku_id, product_name, product_url, rating, review, mrp,
-             selling_price, main_category, subcategory
-    """
-    __tablename__ = 'bigbasket'
-    sku_id = db.Column(db.BigInteger, primary_key=True)
-    product_name = db.Column(db.String(512))
-    product_url = db.Column(db.Text)
-    rating = db.Column(db.Float)
-    review = db.Column(db.Integer)
-    mrp = db.Column(db.Float)
-    selling_price = db.Column(db.Float)
-    main_category = db.Column(db.String(255))
-    subcategory = db.Column(db.String(255))
-
-    def to_dict(self):
-        return {
-            "id": self.sku_id,
-            "name": self.product_name,
-            "category": self.main_category,
-            "sub_category": self.subcategory,
-            "sale_price": self.selling_price,
-            "market_price": self.mrp,
-            "rating": self.rating,
-            "reviews": self.review,
-            "link": self.product_url,
-        }
-
-
 class Vivo(db.Model):
     __tablename__ = 'vivo'
     id = db.Column(db.Integer, primary_key=True)
