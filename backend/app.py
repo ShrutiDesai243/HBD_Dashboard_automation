@@ -100,6 +100,7 @@ from routes.product_routes.upload_india_mart_route import indiamart_bp
 from routes.product_routes.upload_jio_mart_route import jiomart_bp
 from routes.product_routes.upload_zepto_route import zepto_bp
 from routes.product_master_route import product_master_bp
+from routes.blinkit_scraper_routes import blinkit_scraper_bp
 # New Dashboard Blueprints
 from routes.gdrive_etl_routes.validation_dashboard import validation_dashboard_bp
 from routes.gdrive_etl_routes.dashboard_stats import dashboard_bp
@@ -213,6 +214,13 @@ PUBLIC_ROUTES = [
     "/api/product-report/mapping/zepto",
     "/api/scrape_dmart",
     "/api/scrape_amazon",
+    "/api/scrape_blinkit",
+    "/api/scrape_blinkit/status",
+    "/api/scrape_blinkit/history",
+    "/api/scrape_blinkit/stop",
+    "/api/scrape_blinkit/db-stats",
+    "/api/scrape_blinkit/categories",
+    "/api/scrape_blinkit/mapping",
     "/api/master-categories",
     "/api/category-mapping",
     "/api/category-mapping/stats",
@@ -238,6 +246,8 @@ def protect_all_routes():
         normalized_path.startswith('/api/listing-upload') or 
         normalized_path.startswith('/api/product-report') or 
         normalized_path.startswith('/api/report/source-') or 
+        normalized_path.startswith('/api/tasks') or
+        normalized_path.startswith('/api/scrape_blinkit')):
         normalized_path.startswith('/api/master-categories') or
         normalized_path.startswith('/api/category-mapping') or
         normalized_path.startswith('/api/tasks')):
@@ -272,6 +282,7 @@ app.register_blueprint(validation_dashboard_bp, url_prefix="/validation")
 app.register_blueprint(dashboard_bp, url_prefix="/stats")
 app.register_blueprint(product_master_bp, url_prefix="/api/product-master")
 app.register_blueprint(report_aggregate_bp)
+app.register_blueprint(blinkit_scraper_bp, url_prefix="/api")
 app.register_blueprint(unmatched_data_bp, url_prefix="/api/unmatched")
 app.register_blueprint(listing_upload_bp, url_prefix="/api/listing-upload")
 app.register_blueprint(product_report_bp, url_prefix="/api/product-report")
