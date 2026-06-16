@@ -689,6 +689,9 @@ export const routes = [
             name: "BigBasket",
             path: "/scrapper/bigbasket",
             element: <BigbasketScrapper />,
+            name: "Blinkit",
+            path: "/scrapper/blinkit",
+            element: <BlinkitScrapper />,
           },
           // ... rest of scrappers
             name: "Zepto",
