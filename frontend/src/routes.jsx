@@ -32,8 +32,6 @@ import CategoriesReports from "./componunts/Reports/categories_reports";
 import CitiesPendingReport from "./componunts/Reports/CitiesPendingReport";
 import CategoriesPendingReport from "./componunts/Reports/CategoriesPendingReport";
 
-import BusinessCategory from "./componunts/masterdata/BusinessCategory";
-import ServiceCategory from "./componunts/masterdata/ServiceCategory";
 import HeyPlacesData from "./componunts/Source Wise data/HeyPlacesData.jsx";
 import BankData from "./componunts/Source Wise data/BankData";
 import ProductCategory from "./componunts/masterdata/ProductCategory";
@@ -49,6 +47,7 @@ import ServiceIncomplate from "./componunts/service master data/ServiceIncomplat
 import GoogleMapScrapper from "./componunts/scrapper/GoogleMapScrapper";
 import CleanListingMaster from "./componunts/clean master data/CleanListingMaster";
 import CleanProductMaster from "./componunts/clean master data/CleanProductMaster";
+import DataCleaningDashboard from "./componunts/clean master data/DataCleaningDashboard";
 import ListingCategory from "./componunts/masterdata/ListingCategory";
 import ReportDashboard from "./componunts/ReportDashboard";
 import AggregateReport from "./componunts/AggregateReport";
@@ -120,6 +119,8 @@ import { SignUp } from "./pages/auth/sign-up";
 import MasterDataDashboard from "./componunts/MasterDataDashboard";
 import { element } from "prop-types";
 import LocationMasterData from "./componunts/masterdata/LocationMasterData";
+import MasterCategoryManager from "./componunts/masterdata/MasterCategoryManager";
+import CategoryMappingDashboard from "./componunts/masterdata/CategoryMappingDashboard";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -383,6 +384,12 @@ export const routes = [
         children: [
          
            {
+            icon: <ChartBarIcon {...icon} />,
+            name: "Cleaning Dashboard",
+            path: "/masterdata/cleaning-dashboard",
+            element: <DataCleaningDashboard />,
+          },
+           {
             icon: <TableCellsIcon {...icon} />,
             name: "Listing Master",
             path: "/masterdata/clean-listing-master",
@@ -420,21 +427,21 @@ export const routes = [
           },
           {
             icon: <TableCellsIcon {...icon} />,
-            name: "Business Category",
-            path: "/masterdata/business-category",
-            element: <BusinessCategory />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
-            name: "Service Category",
-            path: "/masterdata/service-category",
-            element: <ServiceCategory />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
             name: "Product Category",
             path: "/masterdata/product-category",
             element: <ProductCategory />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "Master Categories",
+            path: "/masterdata/master-categories",
+            element: <MasterCategoryManager />,
+          },
+          {
+            icon: <TableCellsIcon {...icon} />,
+            name: "Category Mapping",
+            path: "/masterdata/category-mapping",
+            element: <CategoryMappingDashboard />,
           },
           {
             icon: <TableCellsIcon {...icon} />,
@@ -684,6 +691,10 @@ export const routes = [
             element: <BlinkitScrapper />,
           },
           // ... rest of scrappers
+            name: "Zepto",
+            path: "/scrapper/zepto",
+            element: <ZeptoScrapper />,
+          },
           {
             icon: <ShoppingCartIcon {...icon} />,
             name: "India Mart",

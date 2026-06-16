@@ -12,21 +12,20 @@ import api from "../../utils/Api";
 /* ---------------- CONFIG ---------------- */
 const TABLE_HEADERS = [
   "id",
-  "source",
-  "business_name",
-  "category",
-  "sub_category",
-  "owner_name",
-  "mobile",
-  "phone",
-  "email",
-  "website",
-  "city",
-  "state",
-  "pincode",
-  "area",
-  "rating",
-  "review_count"
+  "marketplace_name",
+  "asin",
+  "product_name",
+  "brand",
+  "price",
+  "list_price",
+  "stars",
+  "reviews",
+  "availability",
+  "category_name",
+  "manufacturer",
+  "is_best_seller",
+  "product_url",
+  "img_url"
 ];
 
 /* ---------------- COMPONENT ---------------- */
@@ -35,23 +34,22 @@ const ProductCategory = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // New Individual Search States
+  // Search States aligning with product_master params
   const [searchName, setSearchName] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
-  const [searchSubcategory, setSearchSubcategory] = useState("");
+  const [searchSource, setSearchSource] = useState("");
   
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [error, setError] = useState(null);
 
-  const limit = 10; 
+  const limit = 15; 
 
   /* ---------------- API FETCH ---------------- */
-  // Added the new search states to the dependency array
   useEffect(() => {
     fetchData();
-  }, [currentPage, searchName, searchCategory, searchSubcategory]);
+  }, [currentPage, searchName, searchCategory, searchSource]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -63,7 +61,7 @@ const ProductCategory = () => {
           limit: limit,
           name: searchName,
           category: searchCategory,
-          sub_category: searchSubcategory,
+          source: searchSource,
         },
       });
 
@@ -81,19 +79,21 @@ const ProductCategory = () => {
 
   /* ---------------- CSV EXPORT ---------------- */
   const exportCSV = () => {
+    if (!data.length) return;
     const rows = [
       TABLE_HEADERS,
-      ...data.map((row) => TABLE_HEADERS.map((h) => `"${row[h] ?? ""}"`)),
+      ...data.map((row) => TABLE_HEADERS.map((h) => `"${String(row[h] ?? "").replace(/"/g, "'")}"`)),
     ];
 
     const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
     a.download = "product_master.csv";
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -112,20 +112,20 @@ const ProductCategory = () => {
                 Product Master Data
               </Typography>
               <Typography color="gray" className="mt-1 font-normal text-sm">
-                Showing {data.length} of {totalRecords} records
+                Showing {data.length} of {totalRecords.toLocaleString()} records
               </Typography>
             </div>
             
             <Button onClick={exportCSV} color="green" size="sm" className="whitespace-nowrap">
-              Export CSV
+              Export CSV Page
             </Button>
           </div>
 
-          {/* ---------- 3-COLUMN MULTI-SEARCH BARS ---------- */}
+          {/* ---------- MULTI-SEARCH BARS ---------- */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input
               type="text"
-              placeholder="Search by Name..."
+              placeholder="Search by Product Name..."
               className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchName}
               onChange={(e) => {
@@ -143,16 +143,21 @@ const ProductCategory = () => {
                 setCurrentPage(1);
               }}
             />
-            <input
-              type="text"
-              placeholder="Search by Subcategory..."
-              className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchSubcategory}
+            <select
+              value={searchSource}
               onChange={(e) => {
-                setSearchSubcategory(e.target.value);
+                setSearchSource(e.target.value);
                 setCurrentPage(1);
               }}
-            />
+              className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Sources</option>
+              <option value="amazon">Amazon</option>
+              <option value="flipkart">Flipkart</option>
+              <option value="bigbasket">BigBasket</option>
+              <option value="jio-mart">Jio Mart</option>
+              <option value="d-mart">D-Mart</option>
+            </select>
           </div>
         </CardHeader>
 
@@ -197,9 +202,28 @@ const ProductCategory = () => {
                         <td
                           key={key}
                           title={item[key]}
-                          className="px-4 py-3 text-sm text-gray-700 max-w-[180px] truncate"
+                          className="px-4 py-3 text-sm text-gray-700 max-w-[220px] truncate"
                         >
-                          {item[key] !== null && item[key] !== undefined ? item[key] : "-"}
+                          {key === "product_url" || key === "img_url" ? (
+                            item[key] ? (
+                              <a
+                                href={item[key]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 font-semibold underline hover:text-blue-700"
+                              >
+                                View Link
+                              </a>
+                            ) : (
+                              "-"
+                            )
+                          ) : key === "price" || key === "list_price" ? (
+                            item[key] != null ? `₹${Number(item[key]).toFixed(2)}` : "-"
+                          ) : key === "is_best_seller" ? (
+                            item[key] ? "Yes" : "No"
+                          ) : (
+                            item[key] !== null && item[key] !== undefined ? String(item[key]) : "-"
+                          )}
                         </td>
                       ))}
                     </tr>

@@ -108,38 +108,52 @@ def scrape_dmart_search(
                 max_retries = 3
                 for attempt in range(1, max_retries + 1):
                     try:
-                        cat_id = category.get('category_id')
                         name = category.get('category_name')
                         slug = category.get('slug')
                         parent_id = category.get('parent_id')
                         level = category.get('category_level')
                         category_path = category.get('category_path')
 
-                        existing_cat = DMartCategory.query.filter_by(category_id=cat_id).first()
+                        # Resolve the parent's MySQL category_id if parent_id exists
+                        parent_mysql_id = None
+                        if parent_id is not None:
+                            try:
+                                sqlite_db.cursor.execute(
+                                    "SELECT category_path FROM dmart_category_master WHERE category_id = ?",
+                                    (parent_id,)
+                                )
+                                parent_row = sqlite_db.cursor.fetchone()
+                                if parent_row and parent_row[0]:
+                                    parent_path = parent_row[0]
+                                    parent_mysql_cat = DMartCategory.query.filter_by(category_path=parent_path).first()
+                                    if parent_mysql_cat:
+                                        parent_mysql_id = parent_mysql_cat.category_id
+                            except Exception as parent_err:
+                                logger.warning(f"Failed to resolve parent path/ID for SQLite parent ID {parent_id}: {parent_err}")
+
+                        existing_cat = DMartCategory.query.filter_by(category_path=category_path).first()
                         if existing_cat:
                             existing_cat.category_name = name
                             existing_cat.slug = slug
-                            existing_cat.parent_id = parent_id
+                            existing_cat.parent_id = parent_mysql_id
                             existing_cat.category_level = level
-                            existing_cat.category_path = category_path
                         else:
                             new_cat = DMartCategory(
-                                category_id = cat_id,
                                 category_name = name,
                                 slug = slug,
-                                parent_id = parent_id,
+                                parent_id = parent_mysql_id,
                                 category_level = level,
                                 category_path = category_path
                             )
                             db.session.add(new_cat)
                         db.session.commit()
-                        logger.info(f"Synchronized category '{name}' (ID={cat_id}) to MySQL")
+                        logger.info(f"Synchronized category '{name}' (Path={category_path}) to MySQL")
                         break  # Success
                     except Exception as cat_err:
                         db.session.rollback()
                         db.session.remove()  # Crucial: discard dead connection context
                         if attempt == max_retries:
-                            logger.error(f"Real-time MySQL category sync failed for ID {category.get('category_id')} after {max_retries} attempts: {cat_err}")
+                            logger.error(f"Real-time MySQL category sync failed for path {category.get('category_path')} after {max_retries} attempts: {cat_err}")
                             break
                         logger.warning(f"Category sync failed on attempt {attempt}/{max_retries}. Discarded connection, retrying in 2s...")
                         import time
@@ -174,6 +188,28 @@ def scrape_dmart_search(
                     price_str = str(dmart_price) if dmart_price is not None else "0.0"
                     mrp_str = str(mrp) if mrp is not None else "0.0"
 
+                    # Resolve SQLite category_id to MySQL category_id by path
+                    mysql_cat_id = None
+                    if cat_id:
+                        try:
+                            sqlite_db.cursor.execute(
+                                "SELECT category_path FROM dmart_category_master WHERE category_id = ?",
+                                (cat_id,)
+                            )
+                            row = sqlite_db.cursor.fetchone()
+                            if row and row[0]:
+                                cat_path = row[0]
+                                mysql_cat = DMartCategory.query.filter_by(category_path=cat_path).first()
+                                if mysql_cat:
+                                    mysql_cat_id = mysql_cat.category_id
+                        except Exception as path_err:
+                            logger.warning(f"Failed to map SQLite category ID {cat_id} to MySQL category ID: {path_err}")
+                    
+                    if not mysql_cat_id and category_name:
+                        mysql_cat = DMartCategory.query.filter_by(category_path=category_name).first()
+                        if mysql_cat:
+                            mysql_cat_id = mysql_cat.category_id
+
                     max_db_retries = 3
                     for db_attempt in range(1, max_db_retries + 1):
                         try:
@@ -187,8 +223,8 @@ def scrape_dmart_search(
                                 existing.listPrice   = mrp_str
                                 if category_name and category_name not in ("Uncategorized", "null"):
                                     existing.categoryName = category_name
-                                if cat_id:
-                                    existing.category_id = cat_id
+                                if mysql_cat_id is not None:
+                                    existing.category_id = mysql_cat_id
                                 existing.brand       = brand or existing.brand
                                 existing.quantity    = pack_size or existing.quantity
                                 existing.availability = availability
@@ -203,7 +239,7 @@ def scrape_dmart_search(
                                     listPrice    = mrp_str,
                                     categoryName = category_name,
                                     brand        = brand,
-                                    category_id  = cat_id,
+                                    category_id  = mysql_cat_id,
                                     quantity     = pack_size,
                                     availability = availability,
                                     scraped_at   = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
@@ -304,23 +340,40 @@ def scrape_dmart_search(
                         sqlite_db.cursor.execute("""
                             SELECT category_id, category_name, slug, parent_id, category_level, category_path
                             FROM dmart_category_master
+                            ORDER BY category_level ASC
                         """)
                         cat_rows = sqlite_db.cursor.fetchall()
                         for cat_row in cat_rows:
                             c_id, c_name, c_slug, c_parent, c_level, c_path = cat_row
-                            existing_cat = DMartCategory.query.filter_by(category_id=c_id).first()
+
+                            # Resolve MySQL parent ID
+                            parent_mysql_id = None
+                            if c_parent is not None:
+                                try:
+                                    sqlite_db.cursor.execute(
+                                        "SELECT category_path FROM dmart_category_master WHERE category_id = ?",
+                                        (c_parent,)
+                                    )
+                                    parent_row = sqlite_db.cursor.fetchone()
+                                    if parent_row and parent_row[0]:
+                                        parent_path = parent_row[0]
+                                        parent_mysql_cat = DMartCategory.query.filter_by(category_path=parent_path).first()
+                                        if parent_mysql_cat:
+                                            parent_mysql_id = parent_mysql_cat.category_id
+                                except Exception as parent_err:
+                                    logger.warning(f"Fallback parent resolution failed: {parent_err}")
+
+                            existing_cat = DMartCategory.query.filter_by(category_path=c_path).first()
                             if existing_cat:
                                 existing_cat.category_name = c_name
                                 existing_cat.slug = c_slug
-                                existing_cat.parent_id = c_parent
+                                existing_cat.parent_id = parent_mysql_id
                                 existing_cat.category_level = c_level
-                                existing_cat.category_path = c_path
                             else:
                                 new_cat = DMartCategory(
-                                    category_id = c_id,
                                     category_name = c_name,
                                     slug = c_slug,
-                                    parent_id = c_parent,
+                                    parent_id = parent_mysql_id,
                                     category_level = c_level,
                                     category_path = c_path
                                 )
@@ -381,6 +434,28 @@ def scrape_dmart_search(
                             from services.scrapers.dmart_engine.cleaner import DataCleaner
                             clean_name   = DataCleaner.clean_product_name(name_str)
 
+                            # Resolve SQLite category_id to MySQL category_id by path
+                            mysql_cat_id = None
+                            if category_id:
+                                try:
+                                    sqlite_db.cursor.execute(
+                                        "SELECT category_path FROM dmart_category_master WHERE category_id = ?",
+                                        (category_id,)
+                                    )
+                                    row_path = sqlite_db.cursor.fetchone()
+                                    if row_path and row_path[0]:
+                                        cat_path = row_path[0]
+                                        mysql_cat = DMartCategory.query.filter_by(category_path=cat_path).first()
+                                        if mysql_cat:
+                                            mysql_cat_id = mysql_cat.category_id
+                                except Exception as path_err:
+                                    logger.warning(f"Failed to map SQLite category ID {category_id} to MySQL category ID: {path_err}")
+                            
+                            if not mysql_cat_id and cat_str:
+                                mysql_cat = DMartCategory.query.filter_by(category_path=cat_str).first()
+                                if mysql_cat:
+                                    mysql_cat_id = mysql_cat.category_id
+
                             import datetime
                             is_update = False
                             existing = DMart.query.filter_by(ASIN=sku_id).first()
@@ -395,8 +470,8 @@ def scrape_dmart_search(
                                 # Defensively avoid overwriting categories with Uncategorized or null
                                 if cat_str and cat_str not in ("Uncategorized", "null"):
                                     existing.categoryName = cat_str
-                                if category_id:
-                                    existing.category_id = category_id
+                                if mysql_cat_id is not None:
+                                    existing.category_id = mysql_cat_id
                                 existing.brand       = brand or existing.brand
                                 existing.quantity    = pack_size or existing.quantity
                                 existing.availability = availability
@@ -411,7 +486,7 @@ def scrape_dmart_search(
                                     listPrice    = mrp_str,
                                     categoryName = cat_str,
                                     brand        = brand,
-                                    category_id  = category_id,
+                                    category_id  = mysql_cat_id,
                                     quantity     = pack_size,
                                     availability = availability,
                                     scraped_at   = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)

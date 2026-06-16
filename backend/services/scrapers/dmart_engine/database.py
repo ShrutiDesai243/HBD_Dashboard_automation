@@ -318,20 +318,15 @@ class DatabaseManager:
         category_path: Optional[str] = None
     ) -> int:
         """
-        Insert or update a category using a deterministic path hash.
+        Insert or update a category using standard SQLite AUTOINCREMENT.
         
-        Uses (name, parent_id) as the composite cache lookup key,
-        but stores category using its unique deterministic hash ID.
+        Uses (name, parent_id) as the composite cache lookup key.
         """
         # Clean trailing/leading pipes, slashes, backslashes, colons, semicolons
         if name:
             name = name.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
         if slug:
             slug = slug.strip().strip('|').strip('/').strip('\\').strip(':').strip(';').strip()
-
-        # Generate unique deterministic category_id from path
-        hash_src = category_path if category_path else name
-        category_id = self._get_deterministic_id(hash_src)
 
         cache_key = (name, parent_id)
 
@@ -340,15 +335,35 @@ class DatabaseManager:
             return self._category_cache[cache_key]
 
         try:
-            # Check if category already exists by ID
-            self.cursor.execute(
-                "SELECT category_name FROM dmart_category_master WHERE category_id = ?",
-                (category_id,)
-            )
-            row = self.cursor.fetchone()
+            category_id = None
+            
+            # Check if category already exists by path or name & parent
+            if category_path:
+                self.cursor.execute(
+                    "SELECT category_id FROM dmart_category_master WHERE category_path = ?",
+                    (category_path,)
+                )
+                row = self.cursor.fetchone()
+                if row:
+                    category_id = row[0]
+            
+            if not category_id:
+                if parent_id is not None:
+                    self.cursor.execute(
+                        "SELECT category_id FROM dmart_category_master WHERE category_name = ? AND parent_id = ?",
+                        (name, parent_id)
+                    )
+                else:
+                    self.cursor.execute(
+                        "SELECT category_id FROM dmart_category_master WHERE category_name = ? AND parent_id IS NULL",
+                        (name,)
+                    )
+                row = self.cursor.fetchone()
+                if row:
+                    category_id = row[0]
 
-            if row:
-                # Category exists — use existing ID and idempotently update category_path if provided
+            if category_id is not None:
+                # Category exists — use existing ID and idempotently update details
                 self.cursor.execute(
                     """UPDATE dmart_category_master 
                        SET category_name = ?, slug = ?, parent_id = ?, category_level = ?, category_path = ?
@@ -357,14 +372,15 @@ class DatabaseManager:
                 )
                 self.conn.commit()
             else:
-                # Insert new category with deterministic ID
+                # Insert new category (letting SQLite generate AUTOINCREMENT ID)
                 self.cursor.execute(
                     """INSERT INTO dmart_category_master 
-                       (category_id, category_name, slug, parent_id, category_level, category_path)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
-                    (category_id, name, slug, parent_id, level, category_path)
+                       (category_name, slug, parent_id, category_level, category_path)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (name, slug, parent_id, level, category_path)
                 )
                 self.conn.commit()
+                category_id = self.cursor.lastrowid
                 logger.info(
                     f"New category inserted: '{name}' (ID={category_id}, "
                     f"parent={parent_id}, level={level}, path={category_path})"
@@ -389,7 +405,7 @@ class DatabaseManager:
             return category_id
 
         except sqlite3.Error as e:
-            logger.error(f"Category upsert failed for '{name}' (ID={category_id}): {e}")
+            logger.error(f"Category upsert failed for '{name}': {e}")
             raise
 
     def resolve_category_hierarchy(
@@ -403,30 +419,24 @@ class DatabaseManager:
     ) -> int:
         """
         Resolve a full 3-level category path, creating entries as needed.
-        
-        Args:
-            main_cat: Level 1 category name (e.g., "Grocery & Staples")
-            sub_cat: Level 2 subcategory name (e.g., "Rice & Rice Products")
-            leaf_cat: Level 3 leaf category name (e.g., "Basmati Rice")
-            main_slug, sub_slug, leaf_slug: URL slugs for each level.
-            
-        Returns:
-            The category_id of the deepest (most specific) category.
         """
         # Level 1: Main category
-        main_id = self.upsert_category(main_cat, main_slug, None, 1)
+        main_path = main_cat
+        main_id = self.upsert_category(main_cat, main_slug, None, 1, category_path=main_path)
 
         if not sub_cat:
             return main_id
 
         # Level 2: Sub-category (child of main)
-        sub_id = self.upsert_category(sub_cat, sub_slug, main_id, 2)
+        sub_path = f"{main_path} > {sub_cat}"
+        sub_id = self.upsert_category(sub_cat, sub_slug, main_id, 2, category_path=sub_path)
 
         if not leaf_cat:
             return sub_id
 
         # Level 3: Leaf category (child of sub)
-        leaf_id = self.upsert_category(leaf_cat, leaf_slug, sub_id, 3)
+        leaf_path = f"{sub_path} > {leaf_cat}"
+        leaf_id = self.upsert_category(leaf_cat, leaf_slug, sub_id, 3, category_path=leaf_path)
         return leaf_id
 
     # ── Product Operations ─────────────────────────────────────

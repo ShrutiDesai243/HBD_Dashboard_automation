@@ -220,7 +220,7 @@ def run_pending_migrations(app):
                         logger.info("⚠️ Table `dmart_categories` missing in MySQL. Creating now...")
                         conn.execute(text("""
                             CREATE TABLE dmart_categories (
-                                category_id INT PRIMARY KEY,
+                                category_id INT AUTO_INCREMENT PRIMARY KEY,
                                 category_name VARCHAR(255) NOT NULL,
                                 slug VARCHAR(255) NULL,
                                 parent_id INT NULL,
@@ -243,6 +243,55 @@ def run_pending_migrations(app):
                             logger.info("⚠️ Column `category_path` missing in `dmart_categories`. Adding column...")
                             conn.execute(text("ALTER TABLE dmart_categories ADD COLUMN category_path VARCHAR(512) NULL"))
                             logger.info("✅ Column `category_path` successfully added to `dmart_categories`.")
+ 
+                        # Ensure category_id has AUTO_INCREMENT enabled
+                        auto_inc_check = text("""
+                            SELECT EXTRA FROM information_schema.COLUMNS 
+                            WHERE TABLE_SCHEMA = DATABASE() 
+                            AND TABLE_NAME = 'dmart_categories' 
+                            AND COLUMN_NAME = 'category_id'
+                        """)
+                        extra = conn.execute(auto_inc_check).scalar()
+                        if not extra or 'auto_increment' not in extra.lower():
+                            logger.info("⚠️ Column `category_id` in `dmart_categories` does not have AUTO_INCREMENT. Adding it to align with sequential IDs...")
+                            try:
+                                conn.execute(text("ALTER TABLE dmart_categories MODIFY COLUMN category_id INT AUTO_INCREMENT"))
+                                logger.info("✅ Successfully added AUTO_INCREMENT to `category_id`.")
+                            except Exception as alter_err:
+                                logger.warning(f"Direct AUTO_INCREMENT addition failed: {alter_err}. Attempting with FK drop...")
+                                # Drop constraints
+                                try:
+                                    conn.execute(text("ALTER TABLE dmart_products DROP FOREIGN KEY fk_dmart_products_category"))
+                                except Exception:
+                                    try:
+                                        conn.execute(text("ALTER TABLE dmart_products DROP FOREIGN KEY dmart_products_ibfk_1"))
+                                    except Exception:
+                                        pass
+                                try:
+                                    conn.execute(text("ALTER TABLE dmart_categories DROP FOREIGN KEY fk_categories_parent"))
+                                except Exception:
+                                    try:
+                                        conn.execute(text("ALTER TABLE dmart_categories DROP FOREIGN KEY dmart_categories_ibfk_1"))
+                                    except Exception:
+                                        pass
+                                # Alter column
+                                conn.execute(text("ALTER TABLE dmart_categories MODIFY COLUMN category_id INT AUTO_INCREMENT"))
+                                # Re-add constraints
+                                try:
+                                    conn.execute(text("""
+                                        ALTER TABLE dmart_categories ADD CONSTRAINT fk_categories_parent 
+                                        FOREIGN KEY (parent_id) REFERENCES dmart_categories(category_id) ON DELETE SET NULL
+                                    """))
+                                except Exception as readd_err:
+                                    logger.error(f"Failed to restore dmart_categories parent FK: {readd_err}")
+                                try:
+                                    conn.execute(text("""
+                                        ALTER TABLE dmart_products ADD CONSTRAINT fk_dmart_products_category 
+                                        FOREIGN KEY (category_id) REFERENCES dmart_categories(category_id) ON DELETE SET NULL
+                                    """))
+                                except Exception as readd_err:
+                                    logger.error(f"Failed to restore dmart_products category FK: {readd_err}")
+                                logger.info("✅ Successfully added AUTO_INCREMENT to `category_id` via FK drop fallback.")
 
                     # 2. Check and Add category_id to dmart_products
                     if table_exists('dmart_products'):

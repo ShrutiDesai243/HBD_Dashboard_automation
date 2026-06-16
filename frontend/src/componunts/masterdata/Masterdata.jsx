@@ -88,7 +88,7 @@ const MasterData = () => {
         search: search,
       });
 
-      const response = await fetch(`http://localhost:8001/master_table/list?${queryParams}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/master_table/list?${queryParams}`, {
         method: "GET",
         credentials: 'include',
         headers: {

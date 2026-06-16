@@ -35,21 +35,33 @@ from model.yellow_pages import YellowPages
 from model.google_map_scrape import GoogleMapScrape
 from model.robust_gdrive_etl_v2 import start_background_etl
 from model.unmatched_data_review import UnmatchedDataReview
+from model.data_cleaning_log import DataCleaningLog
+from model.duplicate_records_review import DuplicateRecordsReview
 
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
 from model.product_model.bigbasket_product_model import BigBasket
 from model.product_model.additional_products import BigBasketNew, Zepto
 
+# --- Dynamic Categories Mapping Master Models ---
+from model.master_category import MasterCategory
+from model.platform_category_mapping import PlatformCategoryMapping
+from model.category_mapping_history import CategoryMappingHistory
+from model.category_mapping_platforms import CategoryMappingPlatform
+from model.category_mapping_synonyms import CategoryMappingSynonym
+
 # --- Import Blueprints ---
 from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
+from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
 from routes.master_table import master_table_bp
 from routes.upload_product_csv import product_csv_bp
 from routes.upload_item_csv import item_csv_bp
+
+
 
 # Listing & Product Blueprints
 from routes.items_data import item_bp
@@ -177,14 +189,14 @@ PUBLIC_ROUTES = [
     "/big-basket/fetch-data",
     "/location-master/fetch-data",
     "/validation/dashboard",
-    "/product-master/fetch-data",
+    "/api/product-master/fetch-data",
     "/api/report/aggregate",
     "/api/report/health",
-    "/api/report/source-stats",
     "/api/googlemap_data",
     "/api/unmatched/counts",
     "/api/unmatched/list",
     "/api/unmatched/fix",
+    "/api/unmatched/add-to-location-master",
     "/api/listing-upload",
     "/api/listing-upload/history",
     "/api/listing-upload/pending",
@@ -209,6 +221,15 @@ PUBLIC_ROUTES = [
     "/api/scrape_blinkit/db-stats",
     "/api/scrape_blinkit/categories",
     "/api/scrape_blinkit/mapping",
+    "/api/master-categories",
+    "/api/category-mapping",
+    "/api/category-mapping/stats",
+    "/api/category-mapping/pending",
+    "/api/category-mapping/sync",
+    "/api/category-mapping/history",
+    "/api/category-mapping/settings/platforms",
+    "/api/category-mapping/settings/synonyms",
+    "/api/scrape_zepto",
 ]
 
 @app.before_request
@@ -219,7 +240,7 @@ def protect_all_routes():
     normalized_path = request.path.rstrip('/')
     public_paths = [route.rstrip('/') for route in PUBLIC_ROUTES]
 
-    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks prefixes
+    # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks / master-categories / category-mapping prefixes
     if (normalized_path in public_paths or 
         normalized_path.endswith('/fetch-data') or 
         normalized_path.startswith('/api/listing-upload') or 
@@ -227,12 +248,18 @@ def protect_all_routes():
         normalized_path.startswith('/api/report/source-') or 
         normalized_path.startswith('/api/tasks') or
         normalized_path.startswith('/api/scrape_blinkit')):
+        normalized_path.startswith('/api/master-categories') or
+        normalized_path.startswith('/api/category-mapping') or
+        normalized_path.startswith('/api/tasks')):
         return None
 
     try:
         verify_jwt_in_request()
     except Exception as e:
-        print(f"❌ JWT REJECTED for {request.path}: {str(e)}")
+        try:
+            print(f"❌ JWT REJECTED for {request.path}: {str(e)}")
+        except UnicodeEncodeError:
+            print(f"[ERROR] JWT REJECTED for {request.path}: {str(e)}")
         return jsonify({"message": "Missing or invalid token", "error": str(e)}), 401
 
 # --- Register Blueprints ---
@@ -253,7 +280,7 @@ app.register_blueprint(upload_others_csv_bp)
 app.register_blueprint(listing_master_bp, url_prefix="/api")
 app.register_blueprint(validation_dashboard_bp, url_prefix="/validation")
 app.register_blueprint(dashboard_bp, url_prefix="/stats")
-app.register_blueprint(product_master_bp, url_prefix="/product-master")
+app.register_blueprint(product_master_bp, url_prefix="/api/product-master")
 app.register_blueprint(report_aggregate_bp)
 app.register_blueprint(blinkit_scraper_bp, url_prefix="/api")
 app.register_blueprint(unmatched_data_bp, url_prefix="/api/unmatched")

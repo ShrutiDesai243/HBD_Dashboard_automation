@@ -33,11 +33,11 @@ class Config:
     if not JWT_SECRET_KEY:
         raise ValueError("JWT_SECRET_KEY must be set in .env file")
     
-    # 1. Store token in cookies (Auto-login)
-    JWT_TOKEN_LOCATION = ['cookies']
+    # 1. Store token in headers and cookies
+    JWT_TOKEN_LOCATION = ['headers', 'cookies']
 
-    # 2. Set to True because your live site uses HTTPS
-    JWT_COOKIE_SECURE = True 
+    # 2. Set to True because your live site uses HTTPS (auto-detects and disables on local runs)
+    JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", "False" if os.getenv("DB_HOST") in ("localhost", "127.0.0.1") else "True").lower() == "true" 
 
     # 3. Disable CSRF for now
     JWT_COOKIE_CSRF_PROTECT = False

@@ -1,0 +1,1336 @@
+{
+  "source": "C:\\Users\\User\\Downloads\\category_master (2).sql",
+  "table": "category_master",
+  "column": "category_name",
+  "original_rows": 572,
+  "semantic_cleaned_rows": 463,
+  "semantic_unique_case_insensitive": 463,
+  "max_semantic_length": 45,
+  "removed_duplicate_rows": 109,
+  "semantic_renamed_rows_before_dedup": 154,
+  "semantic_changes": [
+    {
+      "from": "AC Dealer",
+      "to": "AC Dealers",
+      "source": "ac dealer"
+    },
+    {
+      "from": "Accessory Store",
+      "to": "Accessory Stores",
+      "source": "accessory store"
+    },
+    {
+      "from": "Accountant",
+      "to": "Accountants",
+      "source": "accountant"
+    },
+    {
+      "from": "Architect",
+      "to": "Architectural Services",
+      "source": "architect"
+    },
+    {
+      "from": "Auto Parts Dealer",
+      "to": "Auto Parts Dealers",
+      "source": "auto parts dealer"
+    },
+    {
+      "from": "Bank",
+      "to": "Banks",
+      "source": "bank"
+    },
+    {
+      "from": "Banquet Hall",
+      "to": "Banquet Halls",
+      "source": "banquet hall"
+    },
+    {
+      "from": "Bike Showroom",
+      "to": "Bike Dealers",
+      "source": "bike showroom"
+    },
+    {
+      "from": "Boutique",
+      "to": "Boutiques",
+      "source": "boutique"
+    },
+    {
+      "from": "Builder",
+      "to": "Builders",
+      "source": "builder"
+    },
+    {
+      "from": "Building Contractor",
+      "to": "Building Contractors",
+      "source": "Building Contractor"
+    },
+    {
+      "from": "Burger Restaurant",
+      "to": "Burger Restaurants",
+      "source": "burger restaurant"
+    },
+    {
+      "from": "Car Service",
+      "to": "Car Service Centres",
+      "source": "car service"
+    },
+    {
+      "from": "Car Service Centre",
+      "to": "Car Service Centres",
+      "source": "Car Service Centre"
+    },
+    {
+      "from": "Car Showroom",
+      "to": "Car Dealers",
+      "source": "car showroom"
+    },
+    {
+      "from": "Caterer",
+      "to": "Catering Services",
+      "source": "caterer"
+    },
+    {
+      "from": "Chartered Accountant",
+      "to": "Chartered Accountants",
+      "source": "Chartered Accountant"
+    },
+    {
+      "from": "Clinic",
+      "to": "Clinics",
+      "source": "clinic"
+    },
+    {
+      "from": "Club",
+      "to": "Clubs",
+      "source": "club"
+    },
+    {
+      "from": "Computer & Laptop Repair & Services",
+      "to": "Computer & Laptop Repair Services",
+      "source": "Computer & Laptop Repair & Services"
+    },
+    {
+      "from": "Computer and Laptop Repair and Services",
+      "to": "Computer & Laptop Repair Services",
+      "source": "Computer And Laptop Repair And Services"
+    },
+    {
+      "from": "Computer Repair Service",
+      "to": "Computer Repair Services",
+      "source": "computer repair service"
+    },
+    {
+      "from": "Computer Services & Repair",
+      "to": "Computer Repair Services",
+      "source": "Computer Services & Repair"
+    },
+    {
+      "from": "Dance Class",
+      "to": "Dance Classes",
+      "source": "dance class"
+    },
+    {
+      "from": "Dentist",
+      "to": "Dentists",
+      "source": "dentist"
+    },
+    {
+      "from": "Department Store",
+      "to": "Departmental Stores",
+      "source": "Department Store"
+    },
+    {
+      "from": "Departmental Store",
+      "to": "Departmental Stores",
+      "source": "departmental store"
+    },
+    {
+      "from": "Dermatologist",
+      "to": "Dermatologists",
+      "source": "dermatologist"
+    },
+    {
+      "from": "Dessert Restaurant",
+      "to": "Dessert Restaurants",
+      "source": "dessert restaurant"
+    },
+    {
+      "from": "Dietitian",
+      "to": "Dietitians",
+      "source": "dietitian"
+    },
+    {
+      "from": "DJ",
+      "to": "DJs",
+      "source": "dj"
+    },
+    {
+      "from": "Djs",
+      "to": "DJs",
+      "source": "Djs"
+    },
+    {
+      "from": "Doctor",
+      "to": "Doctors",
+      "source": "doctor"
+    },
+    {
+      "from": "Electrician",
+      "to": "Electricians",
+      "source": "electrician"
+    },
+    {
+      "from": "Electronic Store",
+      "to": "Electronics Stores",
+      "source": "electronic store"
+    },
+    {
+      "from": "Electronic Stores",
+      "to": "Electronics Stores",
+      "source": "Electronic Stores"
+    },
+    {
+      "from": "Electronics Store",
+      "to": "Electronics Stores",
+      "source": "electronics store"
+    },
+    {
+      "from": "Event Organizer",
+      "to": "Event Management Agencies",
+      "source": "event organizer"
+    },
+    {
+      "from": "Event Planner",
+      "to": "Event Management Agencies",
+      "source": "event planner"
+    },
+    {
+      "from": "Fabricator",
+      "to": "Fabricators",
+      "source": "fabricator"
+    },
+    {
+      "from": "Fancy & Gift Shop",
+      "to": "Gift Shops",
+      "source": "Fancy & Gift Shop"
+    },
+    {
+      "from": "Fashion Store",
+      "to": "Fashion Stores",
+      "source": "fashion store"
+    },
+    {
+      "from": "Florist",
+      "to": "Florists",
+      "source": "florist"
+    },
+    {
+      "from": "Furniture Shops",
+      "to": "Furniture Stores",
+      "source": "Furniture Shops"
+    },
+    {
+      "from": "Furniture Store",
+      "to": "Furniture Stores",
+      "source": "furniture store"
+    },
+    {
+      "from": "Garment Store",
+      "to": "Garment Stores",
+      "source": "garment store"
+    },
+    {
+      "from": "General Store",
+      "to": "General Stores",
+      "source": "general store"
+    },
+    {
+      "from": "Gift Shop",
+      "to": "Gift Shops",
+      "source": "gift shop"
+    },
+    {
+      "from": "Garment Store",
+      "to": "Garment Stores",
+      "source": "Grament Store"
+    },
+    {
+      "from": "Gym",
+      "to": "Gyms",
+      "source": "gym"
+    },
+    {
+      "from": "Handicraft Shops",
+      "to": "Handicraft Stores",
+      "source": "Handicraft Shops"
+    },
+    {
+      "from": "Handicraft Store",
+      "to": "Handicraft Stores",
+      "source": "handicraft store"
+    },
+    {
+      "from": "Hardware and Electrical Shops",
+      "to": "Hardware and Electrical Stores",
+      "source": "Hardware And Electrical Shops"
+    },
+    {
+      "from": "Hospital",
+      "to": "Hospitals",
+      "source": "hospital"
+    },
+    {
+      "from": "Hotel",
+      "to": "Hotels",
+      "source": "hotel"
+    },
+    {
+      "from": "House Keeping Services",
+      "to": "Housekeeping Services",
+      "source": "House Keeping Services"
+    },
+    {
+      "from": "Housekeeping Service",
+      "to": "Housekeeping Services",
+      "source": "housekeeping service"
+    },
+    {
+      "from": "Ice Cream Parlor",
+      "to": "Ice Cream Shops",
+      "source": "ice cream parlor"
+    },
+    {
+      "from": "Ice Cream Shop",
+      "to": "Ice Cream Shops",
+      "source": "Ice Cream Shop"
+    },
+    {
+      "from": "Insurance Service",
+      "to": "Insurance Services",
+      "source": "insurance service"
+    },
+    {
+      "from": "Interior Designer",
+      "to": "Interior Designers",
+      "source": "interior designer"
+    },
+    {
+      "from": "Internet Website Designers",
+      "to": "Website Designers",
+      "source": "Internet Website Designers"
+    },
+    {
+      "from": "Italian Restaurant",
+      "to": "Italian Restaurants",
+      "source": "italian restaurant"
+    },
+    {
+      "from": "Jewellery Shop",
+      "to": "Jewellery Stores",
+      "source": "jewellery shop"
+    },
+    {
+      "from": "Jewellery Shops",
+      "to": "Jewellery Stores",
+      "source": "Jewellery Shops"
+    },
+    {
+      "from": "Jewellery Showroom",
+      "to": "Jewellery Stores",
+      "source": "jewellery showroom"
+    },
+    {
+      "from": "Jewellery Showrooms",
+      "to": "Jewellery Stores",
+      "source": "Jewellery Showrooms"
+    },
+    {
+      "from": "Language Class",
+      "to": "Language Classes",
+      "source": "Langage Class"
+    },
+    {
+      "from": "Language Class",
+      "to": "Language Classes",
+      "source": "language class"
+    },
+    {
+      "from": "Laundry Service",
+      "to": "Laundry Services",
+      "source": "Laundary Service"
+    },
+    {
+      "from": "Laundry Service",
+      "to": "Laundry Services",
+      "source": "Laundary_Service"
+    },
+    {
+      "from": "Laundry Service",
+      "to": "Laundry Services",
+      "source": "laundry service"
+    },
+    {
+      "from": "Lawyer",
+      "to": "Lawyers",
+      "source": "lawyer"
+    },
+    {
+      "from": "Legal Service",
+      "to": "Legal Services",
+      "source": "legal service"
+    },
+    {
+      "from": "List of Top Builders & Developers",
+      "to": "Builders and Developers",
+      "source": "List Of Top Builders & Developers"
+    },
+    {
+      "from": "List of Top Builders and Developers",
+      "to": "Builders and Developers",
+      "source": "List Of Top Builders And Developers"
+    },
+    {
+      "from": "Local Chartered Accountants",
+      "to": "Chartered Accountants",
+      "source": "Local Chartered Accountants"
+    },
+    {
+      "from": "Local Doctors and Clinics",
+      "to": "Doctors and Clinics",
+      "source": "Local Doctors And Clinics"
+    },
+    {
+      "from": "Local Pharmacies",
+      "to": "Pharmacies",
+      "source": "Local Pharmacies"
+    },
+    {
+      "from": "Luggage and Bags",
+      "to": "Luggage Shops",
+      "source": "luggage and bags"
+    },
+    {
+      "from": "Man Accessory",
+      "to": "Men Accessories",
+      "source": "Man Accessory"
+    },
+    {
+      "from": "Marriage & Reception Hall",
+      "to": "Banquet Halls",
+      "source": "Marriage & Reception Hall"
+    },
+    {
+      "from": "Medical Store",
+      "to": "Medical Stores",
+      "source": "medical store"
+    },
+    {
+      "from": "Men Accessory",
+      "to": "Men Accessories",
+      "source": "men accessory"
+    },
+    {
+      "from": "Milk Parlor",
+      "to": "Milk Parlors",
+      "source": "milk parlor"
+    },
+    {
+      "from": "Milk Parlor",
+      "to": "Milk Parlors",
+      "source": "Milk_Parlor"
+    },
+    {
+      "from": "Mobile Store",
+      "to": "Mobile Stores",
+      "source": "mobile store"
+    },
+    {
+      "from": "Modular Kitchen",
+      "to": "Modular Kitchen Dealers",
+      "source": "modular kitchen"
+    },
+    {
+      "from": "Movers & Packers",
+      "to": "Packers and Movers",
+      "source": "Movers & Packers"
+    },
+    {
+      "from": "North Indian Restaurant",
+      "to": "North Indian Restaurants",
+      "source": "north indian restaurant"
+    },
+    {
+      "from": "Nursing Service",
+      "to": "Nursing Services",
+      "source": "nursing service"
+    },
+    {
+      "from": "Optical Shop",
+      "to": "Optical Stores",
+      "source": "optical shop"
+    },
+    {
+      "from": "Organic Store",
+      "to": "Organic Stores",
+      "source": "organic store"
+    },
+    {
+      "from": "Packers & Movers",
+      "to": "Packers and Movers",
+      "source": "Packers & Movers"
+    },
+    {
+      "from": "Packing Service",
+      "to": "Packaging Services",
+      "source": "Packing Service"
+    },
+    {
+      "from": "Painter",
+      "to": "Painting Contractors",
+      "source": "Painter"
+    },
+    {
+      "from": "Painting Contractor",
+      "to": "Painting Contractors",
+      "source": "painting contractor"
+    },
+    {
+      "from": "Pathology Laboratory",
+      "to": "Pathology Laboratories",
+      "source": "pathology laboratory"
+    },
+    {
+      "from": "Pest Control",
+      "to": "Pest Control Services",
+      "source": "pest control"
+    },
+    {
+      "from": "Pet Store",
+      "to": "Pet Shops",
+      "source": "pet store"
+    },
+    {
+      "from": "Pharma Store",
+      "to": "Pharmacies",
+      "source": "pharma store"
+    },
+    {
+      "from": "Pharmacy",
+      "to": "Pharmacies",
+      "source": "pharmacy"
+    },
+    {
+      "from": "Photographer",
+      "to": "Photographers",
+      "source": "photographer"
+    },
+    {
+      "from": "Photography & Videography Services",
+      "to": "Photographers and Videographers",
+      "source": "Photography & Videography Services"
+    },
+    {
+      "from": "Pizza",
+      "to": "Pizza Places",
+      "source": "pizza"
+    },
+    {
+      "from": "Pizza Place",
+      "to": "Pizza Places",
+      "source": "pizza place"
+    },
+    {
+      "from": "Placement Service",
+      "to": "Placement Services",
+      "source": "placement service"
+    },
+    {
+      "from": "Play School",
+      "to": "Play Schools",
+      "source": "play school"
+    },
+    {
+      "from": "Play Schools & Day Care",
+      "to": "Play Schools and Day Care",
+      "source": "Play Schools & Day Care"
+    },
+    {
+      "from": "Plumber",
+      "to": "Plumber Services",
+      "source": "Plumber"
+    },
+    {
+      "from": "Plumber Service",
+      "to": "Plumber Services",
+      "source": "plumber service"
+    },
+    {
+      "from": "Plumber Service",
+      "to": "Plumber Services",
+      "source": "Plumber_Service"
+    },
+    {
+      "from": "Quick Bite Cafes",
+      "to": "Quick Bites",
+      "source": "Quick Bite Cafes"
+    },
+    {
+      "from": "Readymade Garment Shops",
+      "to": "Garment Stores",
+      "source": "Readymade Garment Shops"
+    },
+    {
+      "from": "Real Estate Agencies & Brokers",
+      "to": "Real Estate Agents",
+      "source": "Real Estate Agencies & Brokers"
+    },
+    {
+      "from": "Resort",
+      "to": "Resorts",
+      "source": "resort"
+    },
+    {
+      "from": "Restaurant",
+      "to": "Restaurants",
+      "source": "restaurant"
+    },
+    {
+      "from": "Scrap Dealer",
+      "to": "Scrap Dealers",
+      "source": "scrap dealer"
+    },
+    {
+      "from": "Security System",
+      "to": "Security Systems",
+      "source": "security system"
+    },
+    {
+      "from": "Shoe Store",
+      "to": "Shoe Stores",
+      "source": "shoe store"
+    },
+    {
+      "from": "South Indian Restaurant",
+      "to": "South Indian Restaurants",
+      "source": "south indian restaurant"
+    },
+    {
+      "from": "Stationery Shop",
+      "to": "Stationery Stores",
+      "source": "stationery shop"
+    },
+    {
+      "from": "Stationery Store",
+      "to": "Stationery Stores",
+      "source": "Stationery Store"
+    },
+    {
+      "from": "Supermarket",
+      "to": "Supermarkets",
+      "source": "supermarket"
+    },
+    {
+      "from": "Tailor",
+      "to": "Tailors",
+      "source": "tailor"
+    },
+    {
+      "from": "Tax Consultant",
+      "to": "Tax Consultants",
+      "source": "tax consultant"
+    },
+    {
+      "from": "Taxi & Cab",
+      "to": "Taxi Services",
+      "source": "Taxi & Cab"
+    },
+    {
+      "from": "Taxi Service",
+      "to": "Taxi Services",
+      "source": "taxi service"
+    },
+    {
+      "from": "Tea Shop",
+      "to": "Tea Shops",
+      "source": "tea shop"
+    },
+    {
+      "from": "Tea Shop",
+      "to": "Tea Shops",
+      "source": "Tea_Shop"
+    },
+    {
+      "from": "Tiffin Service",
+      "to": "Tiffin Services",
+      "source": "tiffin service"
+    },
+    {
+      "from": "Top AC Dealers",
+      "to": "AC Dealers",
+      "source": "Top Ac Dealers"
+    },
+    {
+      "from": "Top Dentists",
+      "to": "Dentists",
+      "source": "Top Dentists"
+    },
+    {
+      "from": "Top Film Photography & Videography Services",
+      "to": "Photographers and Videographers",
+      "source": "Top Film Photography & Videography Services"
+    },
+    {
+      "from": "Top Film Photography and Videography Services",
+      "to": "Photographers and Videographers",
+      "source": "Top Film Photography And Videography Services"
+    },
+    {
+      "from": "Top Furniture Dealers",
+      "to": "Furniture Stores",
+      "source": "Top Furniture Dealers"
+    },
+    {
+      "from": "Top Jewellery Stores",
+      "to": "Jewellery Stores",
+      "source": "Top Jewellery Stores"
+    },
+    {
+      "from": "Top Real Estate Agents",
+      "to": "Real Estate Agents",
+      "source": "Top Real Estate Agents"
+    },
+    {
+      "from": "Top Shoe Dealers",
+      "to": "Shoe Stores",
+      "source": "Top Shoe Dealers"
+    },
+    {
+      "from": "Top Tailors",
+      "to": "Tailors",
+      "source": "Top Tailors"
+    },
+    {
+      "from": "Top Travel Agents",
+      "to": "Travel Agents",
+      "source": "Top Travel Agents"
+    },
+    {
+      "from": "Travel Agent",
+      "to": "Travel Agents",
+      "source": "travel agent"
+    },
+    {
+      "from": "Used Cars",
+      "to": "Used Car Dealers",
+      "source": "used cars"
+    },
+    {
+      "from": "Videographer and Photographer",
+      "to": "Photographers and Videographers",
+      "source": "Videographer And Photograher"
+    },
+    {
+      "from": "Videographer and Photographer",
+      "to": "Photographers and Videographers",
+      "source": "Videographer And Photographer"
+    },
+    {
+      "from": "Vocational Training",
+      "to": "Vocational Training Centers",
+      "source": "vocational training"
+    },
+    {
+      "from": "Website Designer",
+      "to": "Website Designers",
+      "source": "website designer"
+    },
+    {
+      "from": "Website Development and Hosting Companies",
+      "to": "Website Designers",
+      "source": "Website Development And Hosting Companies"
+    },
+    {
+      "from": "Website Designer",
+      "to": "Website Designers",
+      "source": "Website_Designer"
+    },
+    {
+      "from": "Wedding Planner",
+      "to": "Wedding Planners",
+      "source": "wedding planner"
+    },
+    {
+      "from": "Woman Accessory",
+      "to": "Women Accessories",
+      "source": "Woman Acccessory"
+    },
+    {
+      "from": "Woman Accessory",
+      "to": "Women Accessories",
+      "source": "Woman_Acccessory"
+    },
+    {
+      "from": "Women Accessory",
+      "to": "Women Accessories",
+      "source": "women accessory"
+    },
+    {
+      "from": "Yoga",
+      "to": "Yoga Classes",
+      "source": "yoga"
+    }
+  ],
+  "duplicates_removed": [
+    {
+      "original": "Ac Dealers",
+      "cleaned_as": "AC Dealers",
+      "semantic_as": "AC Dealers"
+    },
+    {
+      "original": "Accessory Stores",
+      "cleaned_as": "Accessory Stores",
+      "semantic_as": "Accessory Stores"
+    },
+    {
+      "original": "Accountants",
+      "cleaned_as": "Accountants",
+      "semantic_as": "Accountants"
+    },
+    {
+      "original": "Architectural Services",
+      "cleaned_as": "Architectural Services",
+      "semantic_as": "Architectural Services"
+    },
+    {
+      "original": "Auto Parts Dealers",
+      "cleaned_as": "Auto Parts Dealers",
+      "semantic_as": "Auto Parts Dealers"
+    },
+    {
+      "original": "Banks",
+      "cleaned_as": "Banks",
+      "semantic_as": "Banks"
+    },
+    {
+      "original": "Banquet Halls",
+      "cleaned_as": "Banquet Halls",
+      "semantic_as": "Banquet Halls"
+    },
+    {
+      "original": "bike showroom",
+      "cleaned_as": "Bike Showroom",
+      "semantic_as": "Bike Dealers"
+    },
+    {
+      "original": "Blood_Bank",
+      "cleaned_as": "Blood Bank",
+      "semantic_as": "Blood Bank"
+    },
+    {
+      "original": "Boutiques",
+      "cleaned_as": "Boutiques",
+      "semantic_as": "Boutiques"
+    },
+    {
+      "original": "Bunglow",
+      "cleaned_as": "Bungalow",
+      "semantic_as": "Bungalow"
+    },
+    {
+      "original": "Burger Restaurants",
+      "cleaned_as": "Burger Restaurants",
+      "semantic_as": "Burger Restaurants"
+    },
+    {
+      "original": "Car Service Centre",
+      "cleaned_as": "Car Service Centre",
+      "semantic_as": "Car Service Centres"
+    },
+    {
+      "original": "car showroom",
+      "cleaned_as": "Car Showroom",
+      "semantic_as": "Car Dealers"
+    },
+    {
+      "original": "Catering Services",
+      "cleaned_as": "Catering Services",
+      "semantic_as": "Catering Services"
+    },
+    {
+      "original": "Computer And Laptop Repair And Services",
+      "cleaned_as": "Computer and Laptop Repair and Services",
+      "semantic_as": "Computer & Laptop Repair Services"
+    },
+    {
+      "original": "Computer Services & Repair",
+      "cleaned_as": "Computer Services & Repair",
+      "semantic_as": "Computer Repair Services"
+    },
+    {
+      "original": "departmental store",
+      "cleaned_as": "Departmental Store",
+      "semantic_as": "Departmental Stores"
+    },
+    {
+      "original": "Departmental Stores",
+      "cleaned_as": "Departmental Stores",
+      "semantic_as": "Departmental Stores"
+    },
+    {
+      "original": "Dermatologists",
+      "cleaned_as": "Dermatologists",
+      "semantic_as": "Dermatologists"
+    },
+    {
+      "original": "Dessert Restaurants",
+      "cleaned_as": "Dessert Restaurants",
+      "semantic_as": "Dessert Restaurants"
+    },
+    {
+      "original": "Dietitians",
+      "cleaned_as": "Dietitians",
+      "semantic_as": "Dietitians"
+    },
+    {
+      "original": "Djs",
+      "cleaned_as": "Djs",
+      "semantic_as": "DJs"
+    },
+    {
+      "original": "Electricians",
+      "cleaned_as": "Electricians",
+      "semantic_as": "Electricians"
+    },
+    {
+      "original": "Electronic Stores",
+      "cleaned_as": "Electronic Stores",
+      "semantic_as": "Electronics Stores"
+    },
+    {
+      "original": "electronics store",
+      "cleaned_as": "Electronics Store",
+      "semantic_as": "Electronics Stores"
+    },
+    {
+      "original": "event organizer",
+      "cleaned_as": "Event Organizer",
+      "semantic_as": "Event Management Agencies"
+    },
+    {
+      "original": "event planner",
+      "cleaned_as": "Event Planner",
+      "semantic_as": "Event Management Agencies"
+    },
+    {
+      "original": "Fabricators",
+      "cleaned_as": "Fabricators",
+      "semantic_as": "Fabricators"
+    },
+    {
+      "original": "Florists",
+      "cleaned_as": "Florists",
+      "semantic_as": "Florists"
+    },
+    {
+      "original": "furniture store",
+      "cleaned_as": "Furniture Store",
+      "semantic_as": "Furniture Stores"
+    },
+    {
+      "original": "gift shop",
+      "cleaned_as": "Gift Shop",
+      "semantic_as": "Gift Shops"
+    },
+    {
+      "original": "Grament Store",
+      "cleaned_as": "Garment Store",
+      "semantic_as": "Garment Stores"
+    },
+    {
+      "original": "handicraft store",
+      "cleaned_as": "Handicraft Store",
+      "semantic_as": "Handicraft Stores"
+    },
+    {
+      "original": "Hardware And Electrical Stores",
+      "cleaned_as": "Hardware and Electrical Stores",
+      "semantic_as": "Hardware and Electrical Stores"
+    },
+    {
+      "original": "Hospitals",
+      "cleaned_as": "Hospitals",
+      "semantic_as": "Hospitals"
+    },
+    {
+      "original": "housekeeping service",
+      "cleaned_as": "Housekeeping Service",
+      "semantic_as": "Housekeeping Services"
+    },
+    {
+      "original": "Ice Cream Shop",
+      "cleaned_as": "Ice Cream Shop",
+      "semantic_as": "Ice Cream Shops"
+    },
+    {
+      "original": "Insurance Services",
+      "cleaned_as": "Insurance Services",
+      "semantic_as": "Insurance Services"
+    },
+    {
+      "original": "Interior Designers",
+      "cleaned_as": "Interior Designers",
+      "semantic_as": "Interior Designers"
+    },
+    {
+      "original": "Italian Restaurants",
+      "cleaned_as": "Italian Restaurants",
+      "semantic_as": "Italian Restaurants"
+    },
+    {
+      "original": "Jewellery Shops",
+      "cleaned_as": "Jewellery Shops",
+      "semantic_as": "Jewellery Stores"
+    },
+    {
+      "original": "jewellery showroom",
+      "cleaned_as": "Jewellery Showroom",
+      "semantic_as": "Jewellery Stores"
+    },
+    {
+      "original": "Jewellery Showrooms",
+      "cleaned_as": "Jewellery Showrooms",
+      "semantic_as": "Jewellery Stores"
+    },
+    {
+      "original": "language class",
+      "cleaned_as": "Language Class",
+      "semantic_as": "Language Classes"
+    },
+    {
+      "original": "Laundary_Service",
+      "cleaned_as": "Laundry Service",
+      "semantic_as": "Laundry Services"
+    },
+    {
+      "original": "laundry service",
+      "cleaned_as": "Laundry Service",
+      "semantic_as": "Laundry Services"
+    },
+    {
+      "original": "Lawyers",
+      "cleaned_as": "Lawyers",
+      "semantic_as": "Lawyers"
+    },
+    {
+      "original": "Legal Services",
+      "cleaned_as": "Legal Services",
+      "semantic_as": "Legal Services"
+    },
+    {
+      "original": "List Of Top Builders And Developers",
+      "cleaned_as": "List of Top Builders and Developers",
+      "semantic_as": "Builders and Developers"
+    },
+    {
+      "original": "Local Chartered Accountants",
+      "cleaned_as": "Local Chartered Accountants",
+      "semantic_as": "Chartered Accountants"
+    },
+    {
+      "original": "Luggage Shops",
+      "cleaned_as": "Luggage Shops",
+      "semantic_as": "Luggage Shops"
+    },
+    {
+      "original": "Marriage & Reception Hall",
+      "cleaned_as": "Marriage & Reception Hall",
+      "semantic_as": "Banquet Halls"
+    },
+    {
+      "original": "men accessory",
+      "cleaned_as": "Men Accessory",
+      "semantic_as": "Men Accessories"
+    },
+    {
+      "original": "Milk_Parlor",
+      "cleaned_as": "Milk Parlor",
+      "semantic_as": "Milk Parlors"
+    },
+    {
+      "original": "Modular Kitchen Dealers",
+      "cleaned_as": "Modular Kitchen Dealers",
+      "semantic_as": "Modular Kitchen Dealers"
+    },
+    {
+      "original": "Nursing Services",
+      "cleaned_as": "Nursing Services",
+      "semantic_as": "Nursing Services"
+    },
+    {
+      "original": "Optical Stores",
+      "cleaned_as": "Optical Stores",
+      "semantic_as": "Optical Stores"
+    },
+    {
+      "original": "Packers & Movers",
+      "cleaned_as": "Packers & Movers",
+      "semantic_as": "Packers and Movers"
+    },
+    {
+      "original": "packers and movers",
+      "cleaned_as": "Packers and Movers",
+      "semantic_as": "Packers and Movers"
+    },
+    {
+      "original": "Packing Service",
+      "cleaned_as": "Packing Service",
+      "semantic_as": "Packaging Services"
+    },
+    {
+      "original": "painting contractor",
+      "cleaned_as": "Painting Contractor",
+      "semantic_as": "Painting Contractors"
+    },
+    {
+      "original": "Painting Contractors",
+      "cleaned_as": "Painting Contractors",
+      "semantic_as": "Painting Contractors"
+    },
+    {
+      "original": "Pest Control Services",
+      "cleaned_as": "Pest Control Services",
+      "semantic_as": "Pest Control Services"
+    },
+    {
+      "original": "pet store",
+      "cleaned_as": "Pet Store",
+      "semantic_as": "Pet Shops"
+    },
+    {
+      "original": "pharma store",
+      "cleaned_as": "Pharma Store",
+      "semantic_as": "Pharmacies"
+    },
+    {
+      "original": "pharmacy",
+      "cleaned_as": "Pharmacy",
+      "semantic_as": "Pharmacies"
+    },
+    {
+      "original": "Photographers",
+      "cleaned_as": "Photographers",
+      "semantic_as": "Photographers"
+    },
+    {
+      "original": "Photography & Videography Services",
+      "cleaned_as": "Photography & Videography Services",
+      "semantic_as": "Photographers and Videographers"
+    },
+    {
+      "original": "pizza place",
+      "cleaned_as": "Pizza Place",
+      "semantic_as": "Pizza Places"
+    },
+    {
+      "original": "Placement Services",
+      "cleaned_as": "Placement Services",
+      "semantic_as": "Placement Services"
+    },
+    {
+      "original": "Play Schools And Day Care",
+      "cleaned_as": "Play Schools and Day Care",
+      "semantic_as": "Play Schools and Day Care"
+    },
+    {
+      "original": "plumber service",
+      "cleaned_as": "Plumber Service",
+      "semantic_as": "Plumber Services"
+    },
+    {
+      "original": "Plumber_Service",
+      "cleaned_as": "Plumber Service",
+      "semantic_as": "Plumber Services"
+    },
+    {
+      "original": "quick bites",
+      "cleaned_as": "Quick Bites",
+      "semantic_as": "Quick Bites"
+    },
+    {
+      "original": "Readymade Garment Shops",
+      "cleaned_as": "Readymade Garment Shops",
+      "semantic_as": "Garment Stores"
+    },
+    {
+      "original": "Real Estate Agents",
+      "cleaned_as": "Real Estate Agents",
+      "semantic_as": "Real Estate Agents"
+    },
+    {
+      "original": "Resorts",
+      "cleaned_as": "Resorts",
+      "semantic_as": "Resorts"
+    },
+    {
+      "original": "Restaurants",
+      "cleaned_as": "Restaurants",
+      "semantic_as": "Restaurants"
+    },
+    {
+      "original": "Scrap Dealers",
+      "cleaned_as": "Scrap Dealers",
+      "semantic_as": "Scrap Dealers"
+    },
+    {
+      "original": "South Indian Restaurants",
+      "cleaned_as": "South Indian Restaurants",
+      "semantic_as": "South Indian Restaurants"
+    },
+    {
+      "original": "Stationery Store",
+      "cleaned_as": "Stationery Store",
+      "semantic_as": "Stationery Stores"
+    },
+    {
+      "original": "Stationery Stores",
+      "cleaned_as": "Stationery Stores",
+      "semantic_as": "Stationery Stores"
+    },
+    {
+      "original": "Supermarkets",
+      "cleaned_as": "Supermarkets",
+      "semantic_as": "Supermarkets"
+    },
+    {
+      "original": "Tax Consultants",
+      "cleaned_as": "Tax Consultants",
+      "semantic_as": "Tax Consultants"
+    },
+    {
+      "original": "taxi service",
+      "cleaned_as": "Taxi Service",
+      "semantic_as": "Taxi Services"
+    },
+    {
+      "original": "Tea_Shop",
+      "cleaned_as": "Tea Shop",
+      "semantic_as": "Tea Shops"
+    },
+    {
+      "original": "Tiffin Services",
+      "cleaned_as": "Tiffin Services",
+      "semantic_as": "Tiffin Services"
+    },
+    {
+      "original": "Top Ac Dealers",
+      "cleaned_as": "Top AC Dealers",
+      "semantic_as": "AC Dealers"
+    },
+    {
+      "original": "Top Dentists",
+      "cleaned_as": "Top Dentists",
+      "semantic_as": "Dentists"
+    },
+    {
+      "original": "Top Film Photography & Videography Services",
+      "cleaned_as": "Top Film Photography & Videography Services",
+      "semantic_as": "Photographers and Videographers"
+    },
+    {
+      "original": "Top Film Photography And Videography Services",
+      "cleaned_as": "Top Film Photography and Videography Services",
+      "semantic_as": "Photographers and Videographers"
+    },
+    {
+      "original": "Top Furniture Dealers",
+      "cleaned_as": "Top Furniture Dealers",
+      "semantic_as": "Furniture Stores"
+    },
+    {
+      "original": "Top Jewellery Stores",
+      "cleaned_as": "Top Jewellery Stores",
+      "semantic_as": "Jewellery Stores"
+    },
+    {
+      "original": "Top Real Estate Agents",
+      "cleaned_as": "Top Real Estate Agents",
+      "semantic_as": "Real Estate Agents"
+    },
+    {
+      "original": "Top Shoe Dealers",
+      "cleaned_as": "Top Shoe Dealers",
+      "semantic_as": "Shoe Stores"
+    },
+    {
+      "original": "Top Tailors",
+      "cleaned_as": "Top Tailors",
+      "semantic_as": "Tailors"
+    },
+    {
+      "original": "travel agent",
+      "cleaned_as": "Travel Agent",
+      "semantic_as": "Travel Agents"
+    },
+    {
+      "original": "used cars",
+      "cleaned_as": "Used Cars",
+      "semantic_as": "Used Car Dealers"
+    },
+    {
+      "original": "Videographer And Photograher",
+      "cleaned_as": "Videographer and Photographer",
+      "semantic_as": "Photographers and Videographers"
+    },
+    {
+      "original": "Videographer And Photographer",
+      "cleaned_as": "Videographer and Photographer",
+      "semantic_as": "Photographers and Videographers"
+    },
+    {
+      "original": "Vocational Training Centers",
+      "cleaned_as": "Vocational Training Centers",
+      "semantic_as": "Vocational Training Centers"
+    },
+    {
+      "original": "website designer",
+      "cleaned_as": "Website Designer",
+      "semantic_as": "Website Designers"
+    },
+    {
+      "original": "Website Development And Hosting Companies",
+      "cleaned_as": "Website Development and Hosting Companies",
+      "semantic_as": "Website Designers"
+    },
+    {
+      "original": "Website_Designer",
+      "cleaned_as": "Website Designer",
+      "semantic_as": "Website Designers"
+    },
+    {
+      "original": "Wedding Planners",
+      "cleaned_as": "Wedding Planners",
+      "semantic_as": "Wedding Planners"
+    },
+    {
+      "original": "Woman_Acccessory",
+      "cleaned_as": "Woman Accessory",
+      "semantic_as": "Women Accessories"
+    },
+    {
+      "original": "women accessory",
+      "cleaned_as": "Women Accessory",
+      "semantic_as": "Women Accessories"
+    },
+    {
+      "original": "Yoga Classes",
+      "cleaned_as": "Yoga Classes",
+      "semantic_as": "Yoga Classes"
+    }
+  ],
+  "output_files": {
+    "semantic_full_replace": "C:\\Users\\User\\Downloads\\HBD_Dashboard_automation-1\\scratch\\cleaned\\category_master_cleaned_semantic_FULL_REPLACE.sql",
+    "semantic_create_if_not_exists": "C:\\Users\\User\\Downloads\\HBD_Dashboard_automation-1\\scratch\\cleaned\\category_master_cleaned_semantic_CREATE_IF_NOT_EXISTS.sql",
+    "semantic_table_import_replace_data": "C:\\Users\\User\\Downloads\\HBD_Dashboard_automation-1\\scratch\\cleaned\\category_master_cleaned_semantic_TABLE_IMPORT_REPLACE_DATA.sql",
+    "semantic_report": "C:\\Users\\User\\Downloads\\HBD_Dashboard_automation-1\\scratch\\cleaned\\category_master_cleaned_semantic_report.json"
+  }
+}
