@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from extensions import db
 from model.scraper_task import ScraperTask
+import glob
 
 from tasks.deep_scraper_task import run_deep_scraper
 
@@ -80,10 +81,18 @@ def get_task_logs(task_id):
     try:
         import os
         backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        log_dir = os.path.join(backend_dir, "logs")
+        log_file_path = os.path.join(log_dir, f"dmart_task_{task_id}.log")
+        
         log_file_path = os.path.join(backend_dir, "logs", f"dmart_task_{task_id}.log")
         if not os.path.exists(log_file_path):
             log_file_path = os.path.join(backend_dir, "logs", f"zepto_task_{task_id}.log")
             
+        if not os.path.exists(log_file_path):
+            matches = glob.glob(os.path.join(log_dir, f"*_task_{task_id}.log"))
+            if matches:
+                log_file_path = matches[0]
+
         if not os.path.exists(log_file_path):
             return jsonify({"logs": []}), 200
             

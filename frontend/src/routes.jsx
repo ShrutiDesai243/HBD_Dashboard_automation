@@ -686,6 +686,9 @@ export const routes = [
           },
           {
             icon: <ShoppingCartIcon {...icon} />,
+            name: "BigBasket",
+            path: "/scrapper/bigbasket",
+            element: <BigbasketScrapper />,
             name: "Blinkit",
             path: "/scrapper/blinkit",
             element: <BlinkitScrapper />,

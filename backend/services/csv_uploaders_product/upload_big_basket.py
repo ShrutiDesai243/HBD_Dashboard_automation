@@ -15,7 +15,7 @@ def upload_big_basket_data(file_paths):
     batch_size = 10000
     upload_success = False
     try:
-        drop_non_essential_indexes(cursor,'big_basket',['category','brand','rating'])
+        drop_non_essential_indexes(cursor,'bigbasket',['category','brand','rating'])
         connection.commit()
         for file in file_paths:
             with open(file,newline='',encoding='utf-8') as f:  
@@ -39,7 +39,7 @@ def upload_big_basket_data(file_paths):
 
                     # storing the valus in the database
                     insert_query = '''
-                    INSERT INTO big_basket (
+                    INSERT INTO bigbasket (
                         product, category, sub_category, brand, sale_price, market_price, type, rating, description) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                         category = VALUES(category),
@@ -63,7 +63,7 @@ def upload_big_basket_data(file_paths):
         return inserted
     finally:
         if upload_success:
-            create_non_essential_indexes(cursor,'big_basket',['category','brand','rating'])
+            create_non_essential_indexes(cursor,'bigbasket',['category','brand','rating'])
             connection.commit()
         cursor.close()
         connection.close()
