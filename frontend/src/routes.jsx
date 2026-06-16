@@ -32,8 +32,6 @@ import CategoriesReports from "./componunts/Reports/categories_reports";
 import CitiesPendingReport from "./componunts/Reports/CitiesPendingReport";
 import CategoriesPendingReport from "./componunts/Reports/CategoriesPendingReport";
 
-import BusinessCategory from "./componunts/masterdata/BusinessCategory";
-import ServiceCategory from "./componunts/masterdata/ServiceCategory";
 import HeyPlacesData from "./componunts/Source Wise data/HeyPlacesData.jsx";
 import BankData from "./componunts/Source Wise data/BankData";
 import ProductCategory from "./componunts/masterdata/ProductCategory";
@@ -49,6 +47,7 @@ import ServiceIncomplate from "./componunts/service master data/ServiceIncomplat
 import GoogleMapScrapper from "./componunts/scrapper/GoogleMapScrapper";
 import CleanListingMaster from "./componunts/clean master data/CleanListingMaster";
 import CleanProductMaster from "./componunts/clean master data/CleanProductMaster";
+import DataCleaningDashboard from "./componunts/clean master data/DataCleaningDashboard";
 import ListingCategory from "./componunts/masterdata/ListingCategory";
 import ReportDashboard from "./componunts/ReportDashboard";
 import AggregateReport from "./componunts/AggregateReport";
@@ -385,6 +384,12 @@ export const routes = [
         children: [
          
            {
+            icon: <ChartBarIcon {...icon} />,
+            name: "Cleaning Dashboard",
+            path: "/masterdata/cleaning-dashboard",
+            element: <DataCleaningDashboard />,
+          },
+           {
             icon: <TableCellsIcon {...icon} />,
             name: "Listing Master",
             path: "/masterdata/clean-listing-master",
@@ -419,18 +424,6 @@ export const routes = [
             name: "Listing Category",
             path: "/masterdata/listing-category",
             element: <ListingCategory />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
-            name: "Business Category",
-            path: "/masterdata/business-category",
-            element: <BusinessCategory />,
-          },
-          {
-            icon: <TableCellsIcon {...icon} />,
-            name: "Service Category",
-            path: "/masterdata/service-category",
-            element: <ServiceCategory />,
           },
           {
             icon: <TableCellsIcon {...icon} />,

@@ -44,7 +44,7 @@ export function Home() {
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("http://localhost:8001/api/report/aggregate");
+        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/report/aggregate`);
         const d = await response.json();
         if (d.status === "COMPLETED") {
           setStats({

@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-06-12T15:08:02",
+  "database": "genuineh_dashboard",
+  "chunk_size": 10000,
+  "tables": [
+    {
+      "table": "magicpin",
+      "row_count_before": 523729,
+      "row_count_after": 523729,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_150802_magicpin",
+      "pk_column": "id",
+      "changed_rows_reported": 1766,
+      "status": "completed",
+      "error": null
+    }
+  ],
+  "skipped_tables": [],
+  "completed_at": "2026-06-12T15:08:43",
+  "summary": {
+    "tables_seen": 143,
+    "tables_processed": 1,
+    "tables_changed": 1,
+    "tables_failed": 0,
+    "tables_skipped": 0,
+    "all_processed_row_counts_unchanged": true
+  }
+}

@@ -35,6 +35,8 @@ from model.yellow_pages import YellowPages
 from model.google_map_scrape import GoogleMapScrape
 from model.robust_gdrive_etl_v2 import start_background_etl
 from model.unmatched_data_review import UnmatchedDataReview
+from model.data_cleaning_log import DataCleaningLog
+from model.duplicate_records_review import DuplicateRecordsReview
 
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
@@ -105,10 +107,6 @@ from routes.report_aggregate_routes import report_aggregate_bp
 from routes.unmatched_data_routes import unmatched_data_bp
 from routes.listing_upload_routes import listing_upload_bp
 from routes.product_report_routes import product_report_bp
-
-# --- Dynamic Categories Mapping Master Blueprints ---
-from routes.master_category_routes import master_category_bp
-from routes.category_mapping_routes import category_mapping_bp
 
 # --- Initialize App ---
 load_dotenv(override=True)
@@ -190,13 +188,14 @@ PUBLIC_ROUTES = [
     "/big-basket/fetch-data",
     "/location-master/fetch-data",
     "/validation/dashboard",
-    "/product-master/fetch-data",
+    "/api/product-master/fetch-data",
     "/api/report/aggregate",
     "/api/report/health",
     "/api/googlemap_data",
     "/api/unmatched/counts",
     "/api/unmatched/list",
     "/api/unmatched/fix",
+    "/api/unmatched/add-to-location-master",
     "/api/listing-upload",
     "/api/listing-upload/history",
     "/api/listing-upload/pending",
@@ -247,7 +246,10 @@ def protect_all_routes():
     try:
         verify_jwt_in_request()
     except Exception as e:
-        print(f"❌ JWT REJECTED for {request.path}: {str(e)}")
+        try:
+            print(f"❌ JWT REJECTED for {request.path}: {str(e)}")
+        except UnicodeEncodeError:
+            print(f"[ERROR] JWT REJECTED for {request.path}: {str(e)}")
         return jsonify({"message": "Missing or invalid token", "error": str(e)}), 401
 
 # --- Register Blueprints ---
@@ -268,16 +270,11 @@ app.register_blueprint(upload_others_csv_bp)
 app.register_blueprint(listing_master_bp, url_prefix="/api")
 app.register_blueprint(validation_dashboard_bp, url_prefix="/validation")
 app.register_blueprint(dashboard_bp, url_prefix="/stats")
-app.register_blueprint(product_master_bp, url_prefix="/product-master")
+app.register_blueprint(product_master_bp, url_prefix="/api/product-master")
 app.register_blueprint(report_aggregate_bp)
 app.register_blueprint(unmatched_data_bp, url_prefix="/api/unmatched")
 app.register_blueprint(listing_upload_bp, url_prefix="/api/listing-upload")
 app.register_blueprint(product_report_bp, url_prefix="/api/product-report")
-app.register_blueprint(zepto_api_bp, url_prefix="/api")
-
-# --- Dynamic Categories Mapping Master Blueprints ---
-app.register_blueprint(master_category_bp, url_prefix="/api/master-categories")
-app.register_blueprint(category_mapping_bp, url_prefix="/api/category-mapping")
 
 # --- Register Listing & Product Blueprints (Batch) ---
 blueprints_listing = [
