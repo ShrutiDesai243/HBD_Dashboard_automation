@@ -125,7 +125,7 @@ const RawCleanedData = () => {
                 // If selective, pick first raw state for now or omit to get global
                 // params.append('state', Array.from(aggregatedData[selectedState].rawStates)[0]);
             }
-            const res = await fetch(`http://localhost:8001/api/model/stats?${params.toString()}`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/model/stats?${params.toString()}`);
             const json = await res.json();
             if (json.status === "success") setStats(json);
         } catch (err) { console.error("Stats Error:", err); }
@@ -135,7 +135,7 @@ const RawCleanedData = () => {
     const fetchStateSummary = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8001/api/model/state-summary');
+            const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/model/state-summary`);
             const json = await res.json();
             if (json.status === "success") setStateSummary(json.data);
         } catch (err) { console.error("Summary Error:", err); }
@@ -153,7 +153,7 @@ const RawCleanedData = () => {
             // Parallel fetch for all raw mappings to ensure zero data loss
             const fetchPromises = catData.rawMappings.map(async ({ state, category }) => {
                 const params = new URLSearchParams({ state, category });
-                const res = await fetch(`http://localhost:8001/api/model/files?${params.toString()}`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/model/files?${params.toString()}`);
                 const json = await res.json();
                 return json.status === "success" ? json.data : [];
             });
@@ -192,7 +192,7 @@ const RawCleanedData = () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({ page, limit: 50, file_name: selectedFile });
-            const res = await fetch(`http://localhost:8001/api/model/all?${params.toString()}`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/model/all?${params.toString()}`);
             const json = await res.json();
             if (json.status === "success") setDetailData(json.data);
         } catch (err) { console.error("Detail Error:", err); }
@@ -202,7 +202,7 @@ const RawCleanedData = () => {
     // 5. Recent Activity Log
     const fetchRecent = useCallback(async () => {
         try {
-            const res = await fetch('http://localhost:8001/api/model/recent');
+            const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/model/recent`);
             const json = await res.json();
             if (json.status === "success") {
                 setRecentActivity(json.data);

@@ -35,7 +35,7 @@ class Blinkit(db.Model):
 
 class DMartCategory(db.Model):
     __tablename__ = 'dmart_categories'
-    category_id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category_name = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(255), nullable=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('dmart_categories.category_id', ondelete='SET NULL'), nullable=True)

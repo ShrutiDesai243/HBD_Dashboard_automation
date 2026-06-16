@@ -40,6 +40,7 @@ def scrape_dmart():
         
         cmd = [
             sys.executable,
+            "-u",
             "-m", "services.scrapers.dmart_service",
             "--search_term", str(search_term),
             "--mode", str(mode),
@@ -52,10 +53,11 @@ def scrape_dmart():
             cmd.extend(["--categories", str(categories)])
 
             
-        # UTF-8 encoding environment for Windows logs compatibility
+        # UTF-8 encoding environment for Windows logs compatibility and unbuffered output
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "utf-8"
         env["PYTHONUTF8"] = "1"
+        env["PYTHONUNBUFFERED"] = "1"
         
         # Create logs directory and log file handle
         log_dir = os.path.join(backend_dir, "logs")

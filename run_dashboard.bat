@@ -59,7 +59,7 @@ echo %BOLD%%MAGENTA%============================================================
 echo %BOLD%%GREEN%  SUCCESS: All 4 services are starting in separate windows!%RESET%
 echo %BOLD%%MAGENTA%=====================================================================%RESET%
 echo   1. Frontend Dev Server  - http://localhost:5173
-echo   2. Backend Flask API    - http://localhost:5000
+echo   2. Backend Flask API    - http://localhost:8001
 echo   3. Celery Worker        - Processing CSV tasks in the background
 echo   4. GDrive Scanner       - Monitoring Google Drive changes
 echo.

@@ -14,9 +14,9 @@ import random
 from pathlib import Path
 
 # ── Project Paths ──────────────────────────────────────────────
-# Resolve to backend/output/ inside the HBD Dashboard project
+# Resolve to backend/output/dmart/ inside the HBD Dashboard project
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # → backend/
-OUTPUT_DIR = BASE_DIR / "output"
+OUTPUT_DIR = BASE_DIR / "output" / "dmart"
 EXPORT_DIR = OUTPUT_DIR / "exports"
 CATEGORY_EXPORT_DIR = EXPORT_DIR / "categories"
 JSONL_EXPORT_DIR = EXPORT_DIR / "jsonl"
@@ -101,6 +101,7 @@ SELECTORS = {
     "product_pack_size":    "[class*='pack' i], [class*='variant' i], .MuiSelect-select span, div:has-text('kg'), div:has-text('gm'), div:has-text('L'), div:has-text('ml')",
     "product_availability": "[class*='out-of-stock' i], [class*='unavailable' i], div:has-text('Out of Stock')",
     "product_sku":          "[data-sku], [data-product-id], [data-id], [id*='sku' i]",
+    "product_image":        "img[src*='images/products/'], img[src*='cdn.dmart.in/images/'], img",
     
     # ── Infinite Scroll ──
     "scroll_sentinel":      "[class*='loading' i], [class*='spinner' i], [class*='loader' i]",

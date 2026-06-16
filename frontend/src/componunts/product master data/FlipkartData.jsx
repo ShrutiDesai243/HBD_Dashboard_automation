@@ -61,7 +61,7 @@ const FlipkartData = () => {
   ];
 
   useEffect(() => {
-    fetch('http://localhost:8001/api/flipkart-products') // CHANGE THIS URL to your specific API endpoint
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/flipkart-products`) // CHANGE THIS URL to your specific API endpoint
       .then((response) => response.json())
       .then((data) => {
         setProducts(data);

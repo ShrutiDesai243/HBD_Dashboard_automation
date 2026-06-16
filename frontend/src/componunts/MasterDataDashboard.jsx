@@ -22,7 +22,7 @@ const MasterDataDashboard = () => {
     const fetchData = async () => {
       try {
         const query = taskId ? `?task_id=${taskId}` : "";
-        const response = await fetch(`http://localhost:8001/master-dashboard-stats${query}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/master-dashboard-stats${query}`, {
           credentials: 'include',
         });
         const result = await response.json();
