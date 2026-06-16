@@ -107,6 +107,9 @@ from routes.report_aggregate_routes import report_aggregate_bp
 from routes.unmatched_data_routes import unmatched_data_bp
 from routes.listing_upload_routes import listing_upload_bp
 from routes.product_report_routes import product_report_bp
+from routes.data_cleaning_routes import data_cleaning_bp
+from routes.category_mapping_routes import category_mapping_bp
+from routes.master_category_routes import master_category_bp
 
 # --- Initialize App ---
 load_dotenv(override=True)
@@ -240,6 +243,7 @@ def protect_all_routes():
         normalized_path.startswith('/api/report/source-') or 
         normalized_path.startswith('/api/master-categories') or
         normalized_path.startswith('/api/category-mapping') or
+        normalized_path.startswith('/api/cleaning') or
         normalized_path.startswith('/api/tasks')):
         return None
 
@@ -275,6 +279,9 @@ app.register_blueprint(report_aggregate_bp)
 app.register_blueprint(unmatched_data_bp, url_prefix="/api/unmatched")
 app.register_blueprint(listing_upload_bp, url_prefix="/api/listing-upload")
 app.register_blueprint(product_report_bp, url_prefix="/api/product-report")
+app.register_blueprint(data_cleaning_bp, url_prefix="/api/cleaning")
+app.register_blueprint(category_mapping_bp, url_prefix="/api/category-mapping")
+app.register_blueprint(master_category_bp, url_prefix="/api/master-categories")
 
 # --- Register Listing & Product Blueprints (Batch) ---
 blueprints_listing = [
