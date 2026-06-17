@@ -48,6 +48,7 @@ import GoogleMapScrapper from "./componunts/scrapper/GoogleMapScrapper";
 import CleanListingMaster from "./componunts/clean master data/CleanListingMaster";
 import CleanProductMaster from "./componunts/clean master data/CleanProductMaster";
 import DataCleaningDashboard from "./componunts/clean master data/DataCleaningDashboard";
+import DynamicTierDashboard from "./componunts/clean master data/DynamicTierDashboard";
 import ListingCategory from "./componunts/masterdata/ListingCategory";
 import ReportDashboard from "./componunts/ReportDashboard";
 import AggregateReport from "./componunts/AggregateReport";
@@ -388,6 +389,12 @@ export const routes = [
             name: "Cleaning Dashboard",
             path: "/masterdata/cleaning-dashboard",
             element: <DataCleaningDashboard />,
+          },
+           {
+            icon: <ChartBarIcon {...icon} />,
+            name: "Tiered Dashboard",
+            path: "/masterdata/dynamic-tier-dashboard",
+            element: <DynamicTierDashboard />,
           },
            {
             icon: <TableCellsIcon {...icon} />,
