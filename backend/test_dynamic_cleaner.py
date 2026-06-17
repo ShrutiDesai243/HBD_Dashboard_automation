@@ -28,6 +28,25 @@ def run_cleaner(limit, target_table):
         print(f"Starting Dynamic Cleaner Task (Limit: {limit}, Table: {target_table})")
         print("--------------------------------------------------")
         
+        # Auto-create tier destination tables if they don't exist
+        print("Ensuring destination tier tables exist...")
+        try:
+            sql_file = "sql/002_create_dynamic_tier_tables.sql"
+            if os.path.exists(sql_file):
+                with open(sql_file, 'r') as f:
+                    sql_statements = f.read().split(';')
+                for statement in sql_statements:
+                    if statement.strip():
+                        db.session.execute(text(statement))
+                db.session.commit()
+                print("Destination tables ready.")
+            else:
+                print(f"Warning: {sql_file} not found. Cannot auto-create tier tables.")
+        except Exception as e:
+            print(f"Note: Error verifying tier tables. {e}")
+            db.session.rollback()
+        
+        
         # Dynamically fetch columns first to check for status columns and support any table schema
         columns_query = db.session.execute(text(f"SHOW COLUMNS FROM {target_table}")).fetchall()
         col_names = [col[0].lower() for col in columns_query]
