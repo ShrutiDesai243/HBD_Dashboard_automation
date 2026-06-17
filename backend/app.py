@@ -16,6 +16,8 @@ from model.item_csv_model import ItemData
 from model.master_table_model import MasterTable
 from model.upload_master_reports_model import UploadReport
 from model.listing_master import ListingMaster
+from model.uncleaned_listing_master import UncleanedListingMaster
+from model.uncleaned_product_master import UncleanedProductMaster
 from model.heyplaces import HeyPlaces
 from model.location_master import LocationMaster 
 
@@ -253,18 +255,19 @@ def protect_all_routes():
     public_paths = [route.rstrip('/') for route in PUBLIC_ROUTES]
 
     # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks / master-categories / category-mapping prefixes
-    if (normalized_path in public_paths or 
-        normalized_path.endswith('/fetch-data') or 
-        normalized_path.startswith('/api/scrape_bigbasket') or 
-        normalized_path.startswith('/api/listing-upload') or 
-        normalized_path.startswith('/api/product-report') or 
-        normalized_path.startswith('/api/report/source-') or 
-        normalized_path.startswith('/api/tasks') or
-        normalized_path.startswith('/api/scrape_blinkit')):
-        normalized_path.startswith('/api/master-categories') or
-        normalized_path.startswith('/api/category-mapping') or
-        normalized_path.startswith('/api/cleaning') or
-        normalized_path.startswith('/api/tasks')):
+    if (
+        normalized_path in public_paths
+        or normalized_path.endswith('/fetch-data')
+        or normalized_path.startswith('/api/scrape_bigbasket')
+        or normalized_path.startswith('/api/listing-upload')
+        or normalized_path.startswith('/api/product-report')
+        or normalized_path.startswith('/api/report/source-')
+        or normalized_path.startswith('/api/tasks')
+        or normalized_path.startswith('/api/scrape_blinkit')
+        or normalized_path.startswith('/api/master-categories')
+        or normalized_path.startswith('/api/category-mapping')
+        or normalized_path.startswith('/api/cleaning')
+    ):
         return None
 
     try:

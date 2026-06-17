@@ -322,6 +322,13 @@ const DataCleaningDashboard = () => {
                   <Typography className="text-xl font-bold text-orange-600 group-hover:scale-[1.02] origin-left transition-transform">{metrics.master_table.invalid_phone_email.toLocaleString()}</Typography>
                 </div>
                 <div 
+                  className="cursor-pointer hover:bg-cyan-50/70 p-2.5 rounded-lg border border-transparent hover:border-cyan-100 transition-all group"
+                  onClick={() => fetchErrorData("master_table", "incomplete_records", "Incomplete Listing Records")}
+                >
+                  <Typography className="text-[11px] text-cyan-500 font-semibold uppercase tracking-wider group-hover:text-cyan-700">Incomplete Data 🔍</Typography>
+                  <Typography className="text-xl font-bold text-cyan-600 group-hover:scale-[1.02] origin-left transition-transform">{metrics?.master_table?.incomplete_records?.toLocaleString() || '0'}</Typography>
+                </div>
+                <div 
                   className="col-span-2 cursor-pointer hover:bg-deep-purple-50/70 p-2.5 rounded-lg border border-transparent hover:border-deep-purple-100 transition-all group"
                   onClick={() => fetchErrorData("master_table", "unmatched_location", "Unmatched Indian Locations (Not in Reference DB)")}
                 >
@@ -356,6 +363,13 @@ const DataCleaningDashboard = () => {
                 >
                   <Typography className="text-[11px] text-amber-500 font-semibold uppercase tracking-wider group-hover:text-amber-700">Wrong Category Mappings 🔍</Typography>
                   <Typography className="text-xl font-bold text-amber-600 group-hover:scale-[1.02] origin-left transition-transform">{metrics.product_master.wrong_category.toLocaleString()}</Typography>
+                </div>
+                <div 
+                  className="col-span-2 cursor-pointer hover:bg-cyan-50/70 p-2.5 rounded-lg border border-transparent hover:border-cyan-100 transition-all group"
+                  onClick={() => fetchErrorData("product_master", "incomplete_records", "Incomplete Product Records")}
+                >
+                  <Typography className="text-[11px] text-cyan-500 font-semibold uppercase tracking-wider group-hover:text-cyan-700">Incomplete Data 🔍</Typography>
+                  <Typography className="text-xl font-bold text-cyan-600 group-hover:scale-[1.02] origin-left transition-transform">{metrics?.product_master?.incomplete_records?.toLocaleString() || '0'}</Typography>
                 </div>
               </CardBody>
             </Card>

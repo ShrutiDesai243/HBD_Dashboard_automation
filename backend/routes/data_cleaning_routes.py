@@ -11,8 +11,68 @@ from services.data_cleaning_service import (
     active_tasks
 )
 from safe_db_cleaner import load_engine, get_tables, is_backup_table, run_cleaning
+from model.uncleaned_listing_master import UncleanedListingMaster
+from model.uncleaned_product_master import UncleanedProductMaster
 
 data_cleaning_bp = Blueprint("data_cleaning", __name__)
+
+@data_cleaning_bp.route("/uncleaned-listing", methods=["GET"])
+@jwt_required()
+def get_uncleaned_listing():
+    try:
+        page = request.args.get("page", 1, type=int)
+        limit = request.args.get("limit", 10, type=int)
+        search = request.args.get("search", "", type=str)
+        
+        query = UncleanedListingMaster.query
+        if search:
+            from sqlalchemy import or_
+            query = query.filter(
+                or_(
+                    UncleanedListingMaster.business_name.ilike(f"%{search}%"),
+                    UncleanedListingMaster.primary_phone.ilike(f"%{search}%")
+                )
+            )
+            
+        total_count = query.count()
+        rows = query.order_by(UncleanedListingMaster.id.desc()).offset((page - 1) * limit).limit(limit).all()
+        
+        return jsonify({
+            "status": "success",
+            "total_count": total_count,
+            "data": [r.to_dict() for r in rows]
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@data_cleaning_bp.route("/uncleaned-products", methods=["GET"])
+@jwt_required()
+def get_uncleaned_products():
+    try:
+        page = request.args.get("page", 1, type=int)
+        limit = request.args.get("limit", 10, type=int)
+        search = request.args.get("search", "", type=str)
+        
+        query = UncleanedProductMaster.query
+        if search:
+            from sqlalchemy import or_
+            query = query.filter(
+                or_(
+                    UncleanedProductMaster.product_name.ilike(f"%{search}%"),
+                    UncleanedProductMaster.asin.ilike(f"%{search}%")
+                )
+            )
+            
+        total_count = query.count()
+        rows = query.order_by(UncleanedProductMaster.id.desc()).offset((page - 1) * limit).limit(limit).all()
+        
+        return jsonify({
+            "status": "success",
+            "total_count": total_count,
+            "data": [r.to_dict() for r in rows]
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @data_cleaning_bp.route("/analyze", methods=["GET"])
 @jwt_required()
@@ -319,6 +379,24 @@ def get_cleaning_errors():
                         "address": r[3], "city": r[4], "state": r[5], "area": r[6]
                     } for r in rows
                 ]
+            elif error_type == "incomplete_records":
+                q = text("""
+                    SELECT id, business_name, primary_phone, address, city
+                    FROM master_table
+                    WHERE business_name IS NULL OR business_name = '' 
+                       OR primary_phone IS NULL OR primary_phone = '' 
+                       OR city IS NULL OR city = '' 
+                       OR address IS NULL OR address = '' 
+                       OR (primary_phone IS NOT NULL AND primary_phone != '' AND NOT (primary_phone REGEXP '^[0-9+ -]{8,20}$'))
+                    LIMIT 50
+                """)
+                rows = db.session.execute(q).fetchall()
+                data = [
+                    {
+                        "id": r[0], "business_name": r[1] or "[Missing]", "primary_phone": r[2] or "[Missing/Invalid]", 
+                        "address": r[3] or "[Missing]", "city": r[4] or "[Missing]"
+                    } for r in rows
+                ]
         elif table_name == "product_master":
             if error_type == "duplicates":
                 q = text("""
@@ -354,6 +432,22 @@ def get_cleaning_errors():
                     {
                         "id": r[0], "marketplace_name": r[1], "asin": r[2], 
                         "product_name": r[3], "brand": r[4], "category_name": r[5]
+                    } for r in rows
+                ]
+            elif error_type == "incomplete_records":
+                q = text("""
+                    SELECT id, marketplace_name, product_name, category_name
+                    FROM product_master
+                    WHERE product_name IS NULL OR product_name = '' 
+                       OR marketplace_name IS NULL OR marketplace_name = '' 
+                       OR category_name IS NULL OR category_name = ''
+                    LIMIT 50
+                """)
+                rows = db.session.execute(q).fetchall()
+                data = [
+                    {
+                        "id": r[0], "marketplace_name": r[1] or "[Missing]", "product_name": r[2] or "[Missing]", 
+                        "category_name": r[3] or "[Missing]"
                     } for r in rows
                 ]
                 

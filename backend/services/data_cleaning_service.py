@@ -160,12 +160,14 @@ def get_table_counts_and_metrics():
             "duplicate_rows": 0,
             "missing_location": 0,
             "invalid_phone_email": 0,
-            "unmatched_location": 0
+            "unmatched_location": 0,
+            "incomplete_records": 0
         },
         "product_master": {
             "total_rows": 0,
             "duplicate_rows": 0,
-            "wrong_category": 0
+            "wrong_category": 0,
+            "incomplete_records": 0
         }
     }
     
@@ -207,6 +209,17 @@ def get_table_counts_and_metrics():
                OR (area IS NOT NULL AND area != '' AND area NOT IN (SELECT DISTINCT area_name FROM Location_Master_India))
         """)
         metrics["master_table"]["unmatched_location"] = db.session.execute(unmatched_loc_q).fetchone()[0]
+
+        # Incomplete Records
+        incomplete_m_q = text("""
+            SELECT COUNT(*) FROM master_table 
+            WHERE business_name IS NULL OR business_name = '' 
+               OR primary_phone IS NULL OR primary_phone = '' 
+               OR city IS NULL OR city = '' 
+               OR address IS NULL OR address = '' 
+               OR (primary_phone IS NOT NULL AND primary_phone != '' AND NOT (primary_phone REGEXP '^[0-9+ -]{8,20}$'))
+        """)
+        metrics["master_table"]["incomplete_records"] = db.session.execute(incomplete_m_q).fetchone()[0]
         
         # --- product_master ---
         metrics["product_master"]["total_rows"] = db.session.execute(text("SELECT COUNT(*) FROM product_master")).fetchone()[0]
@@ -242,6 +255,15 @@ def get_table_counts_and_metrics():
               AND category_name COLLATE utf8mb4_general_ci NOT IN (SELECT DISTINCT category_name COLLATE utf8mb4_general_ci FROM product_category_master)
         """)
         metrics["product_master"]["wrong_category"] = db.session.execute(wrong_cat_q).fetchone()[0]
+
+        # Incomplete Records
+        incomplete_p_q = text("""
+            SELECT COUNT(*) FROM product_master 
+            WHERE product_name IS NULL OR product_name = '' 
+               OR marketplace_name IS NULL OR marketplace_name = '' 
+               OR category_name IS NULL OR category_name = ''
+        """)
+        metrics["product_master"]["incomplete_records"] = db.session.execute(incomplete_p_q).fetchone()[0]
         
     except Exception as e:
         logger.error(f"Error executing analysis queries: {e}")
@@ -299,6 +321,8 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
             unmatched_count = 0
             wrong_cat_count = 0
             cleaned_count = 0
+            incomplete_master_count = 0
+            incomplete_product_count = 0
             
             batch_size = 5000
             
@@ -333,6 +357,7 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                     batch_updates = []
                     batch_duplicates = []
                     batch_unmatched = []
+                    batch_incomplete_master_ids = []
                     
                     for row in rows_res:
                         row_id = row[0]
@@ -386,6 +411,18 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                             if extracted_pin:
                                 pincode_clean = extracted_pin
                                 cleaned_count += 1 # increment count of changes
+
+                        # Check if record is incomplete (missing crucial details)
+                        is_incomplete = False
+                        if not b_name_clean or not phone_clean or not city_clean or not address_clean:
+                            is_incomplete = True
+                        if phone_clean and not is_phone_valid:
+                            is_incomplete = True
+                        
+                        if is_incomplete:
+                            incomplete_master_count += 1
+                            batch_incomplete_master_ids.append(row_id)
+                            continue
 
                         # Check for Duplication key: normalized (business_name + phone + address)
                         dupe_key = f"{b_name_clean or ''}_{phone_clean or ''}_{address_clean or ''}".lower().replace(' ', '')
@@ -534,7 +571,22 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                             # Bulk delete
                             delete_rows_by_ids("master_table", unmatched_ids)
 
-                        # 3. Bulk updates
+                        # 3. Bulk insert incomplete records to uncleaned table and delete from master_table
+                        if batch_incomplete_master_ids:
+                            res_m = db.session.execute(text("SHOW COLUMNS FROM master_table")).fetchall()
+                            res_u = db.session.execute(text("SHOW COLUMNS FROM uncleaned_listing_master_table")).fetchall()
+                            m_cols = {r[0].lower(): r[0] for r in res_m}
+                            u_cols = {r[0].lower(): r[0] for r in res_u}
+                            common_cols = set(m_cols.keys()).intersection(set(u_cols.keys()))
+                            
+                            insert_cols = ", ".join([f"`{u_cols[c]}`" for c in common_cols])
+                            select_cols = ", ".join([f"`{m_cols[c]}`" for c in common_cols])
+                            
+                            sql = f"INSERT IGNORE INTO uncleaned_listing_master_table ({insert_cols}) SELECT {select_cols} FROM master_table WHERE id IN :ids"
+                            db.session.execute(text(sql).bindparams(bindparam("ids", expanding=True)), {"ids": batch_incomplete_master_ids})
+                            delete_rows_by_ids("master_table", batch_incomplete_master_ids)
+
+                        # 4. Bulk updates
                         if batch_updates:
                             db.session.execute(
                                 text("""
@@ -579,6 +631,7 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                     batch_updates = []
                     batch_duplicates = []
                     batch_unmatched = []
+                    batch_incomplete_product_ids = []
                     
                     for row in rows_res:
                         row_id = row[0]
@@ -606,6 +659,16 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                         if brand_clean == '': brand_clean = None
                         if category_clean == '': category_clean = None
                         if sub_cat_clean == '': sub_cat_clean = None
+
+                        # Check if record is incomplete
+                        is_incomplete = False
+                        if not p_name_clean or not market_clean or not category_clean:
+                            is_incomplete = True
+                        
+                        if is_incomplete:
+                            incomplete_product_count += 1
+                            batch_incomplete_product_ids.append(row_id)
+                            continue
 
                         # Check for Duplication
                         is_dupe = False
@@ -715,7 +778,15 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                             # Bulk delete
                             delete_rows_by_ids("product_master", unmatched_ids)
 
-                        # 3. Bulk updates
+                        # 3. Bulk insert incomplete products to uncleaned table and delete from product_master
+                        if batch_incomplete_product_ids:
+                            db.session.execute(
+                                text("INSERT IGNORE INTO uncleaned_product_master_table (id, marketplace_name, asin, product_name, brand, category_name, sub_category_name, price, list_price, product_category_id) SELECT id, marketplace_name, asin, product_name, brand, category_name, sub_category_name, price, list_price, product_category_id FROM product_master WHERE id IN :ids").bindparams(bindparam("ids", expanding=True)),
+                                {"ids": batch_incomplete_product_ids}
+                            )
+                            delete_rows_by_ids("product_master", batch_incomplete_product_ids)
+
+                        # 4. Bulk updates
                         if batch_updates:
                             db.session.execute(
                                 text("""
@@ -748,7 +819,9 @@ def run_cleaning_async(run_id, table_name, run_type, app_context):
                     "invalid_phones_or_emails": invalid_phone_email_count,
                     "unmatched_locations_removed": unmatched_count,
                     "wrong_categories_removed": wrong_cat_count,
-                    "records_cleaned_or_updated": cleaned_count
+                    "records_cleaned_or_updated": cleaned_count,
+                    "incomplete_master_segregated": incomplete_master_count,
+                    "incomplete_product_segregated": incomplete_product_count
                 }
             })
             

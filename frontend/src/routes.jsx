@@ -689,11 +689,15 @@ export const routes = [
             name: "BigBasket",
             path: "/scrapper/bigbasket",
             element: <BigbasketScrapper />,
+          },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
             name: "Blinkit",
             path: "/scrapper/blinkit",
             element: <BlinkitScrapper />,
           },
-          // ... rest of scrappers
+          {
+            icon: <ShoppingCartIcon {...icon} />,
             name: "Zepto",
             path: "/scrapper/zepto",
             element: <ZeptoScrapper />,

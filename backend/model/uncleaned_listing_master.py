@@ -1,0 +1,61 @@
+from sqlalchemy import Column, Integer, String, Float, Text, TIMESTAMP, func
+from extensions import db
+
+class UncleanedListingMaster(db.Model):
+    __tablename__ = "uncleaned_listing_master_table"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    global_business_id = Column(String(100), index=True, nullable=True) # Changed to nullable since we might copy partial rows
+    asin = Column(String(50), nullable=True)
+    ifsc = Column(String(20), nullable=True)
+    micr = Column(String(20), nullable=True)
+    business_name = Column(String(255), nullable=True)
+    branch_code = Column(String(50), nullable=True)
+    branch = Column(String(100), nullable=True)
+    business_category = Column(String(100), index=True, nullable=True)
+    business_subcategory = Column(String(100), nullable=True)
+    price = Column(Float, nullable=True)
+    listPrice = Column(Float, nullable=True)
+    ratings = Column(Float, nullable=True)
+    stars = Column(String(20), nullable=True)
+    email = Column(String(255), index=True, nullable=True)
+    primary_phone = Column(String(50), nullable=True)
+    secondary_phone = Column(String(50), nullable=True)
+    other_phones = Column(String(255), nullable=True)
+    virtual_phone = Column(String(50), nullable=True)
+    whatsapp_phone = Column(String(50), nullable=True)
+    website_url = Column(String(500), nullable=True)
+    isBestSeller = Column(String(20), nullable=True)
+    ImgUrl = Column(Text, nullable=True)
+    facebook_url = Column(String(255), nullable=True)
+    linkedin_url = Column(String(255), nullable=True)
+    twitter_url = Column(String(255), nullable=True)
+    address = Column(Text, nullable=True)
+    area = Column(String(255), index=True, nullable=True)
+    city = Column(String(100), index=True, nullable=True)
+    district = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    pincode = Column(String(20), nullable=True)
+    country = Column(String(100), nullable=True, default='India')
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    avg_fees = Column(Float, nullable=True)
+    course_details = Column(Text, nullable=True)
+    duration = Column(String(100), nullable=True)
+    requirement = Column(Text, nullable=True)
+    avg_spent = Column(Float, nullable=True)
+    cost_for_two = Column(Float, nullable=True)
+    reviews = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
+    data_source = Column(String(255), index=True, nullable=True)
+    avg_salary = Column(Float, nullable=True)
+    admission_req_list = Column(Text, nullable=True)
+    courses = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now(), index=True)
+
+    def to_dict(self):
+        data = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        if self.created_at:
+            data['created_at'] = self.created_at.isoformat()
+        return data
+

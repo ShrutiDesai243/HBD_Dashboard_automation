@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import api from "../../utils/Api";
 import {
   Button,
   Card,
@@ -16,14 +17,14 @@ import {
 import * as XLSX from "xlsx/dist/xlsx.full.min.js";
 
 const incompleteColumns = [
-  { key: "name", label: "Name", width: 220 },
+  { key: "business_name", label: "Name", width: 220 },
   { key: "address", label: "Address", width: 320 },
-  { key: "website", label: "Website", width: 180 },
-  { key: "phone_number", label: "Contact", width: 140 },
-  { key: "reviews_count", label: "Review Count", width: 120 },
-  { key: "reviews_average", label: "Review Avg", width: 120 },
-  { key: "category", label: "Category", width: 140 },
-  { key: "subcategory", label: "Sub-Category", width: 140 },
+  { key: "website_url", label: "Website", width: 180 },
+  { key: "primary_phone", label: "Contact", width: 140 },
+  { key: "reviews", label: "Review Count", width: 120 },
+  { key: "ratings", label: "Review Avg", width: 120 },
+  { key: "business_category", label: "Category", width: 140 },
+  { key: "business_subcategory", label: "Sub-Category", width: 140 },
   { key: "city", label: "City", width: 140 },
   { key: "state", label: "State", width: 140 },
   { key: "area", label: "Area", width: 140 },
@@ -46,21 +47,16 @@ const ListingIncomplate = () => {
     setError(null);
     try {
       const queryParams = new URLSearchParams({
-        source: "listing-incomplete", // Explicitly requesting incomplete records
         page: currentPage,
         limit: limit,
-        search: search,
-        category: categorySearch,
+        search: search
       });
 
-      const response = await fetch(`/?${queryParams}`);
-
-      if (!response.ok) throw new Error("Backend connection failed");
-
-      const result = await response.json();
+      const response = await api.get(`/cleaning/uncleaned-listing?${queryParams}`);
+      const result = response.data;
 
       setPageData(result.data || []);
-      setTotalPages(result.total_pages || 1);
+      setTotalPages(Math.ceil((result.total_count || 0) / limit) || 1);
       setTotalRecords(result.total_count || 0);
     } catch (err) {
       console.error("Fetch Error:", err);
