@@ -114,6 +114,7 @@ from routes.product_report_routes import product_report_bp
 from routes.data_cleaning_routes import data_cleaning_bp
 from routes.category_mapping_routes import category_mapping_bp
 from routes.master_category_routes import master_category_bp
+from routes.dynamic_tier_routes import dynamic_tier_bp
 
 # --- Initialize App ---
 load_dotenv(override=True)
@@ -267,6 +268,7 @@ def protect_all_routes():
         or normalized_path.startswith('/api/master-categories')
         or normalized_path.startswith('/api/category-mapping')
         or normalized_path.startswith('/api/cleaning')
+        or normalized_path.startswith('/api/tiers')
     ):
         return None
 
@@ -307,6 +309,7 @@ app.register_blueprint(product_report_bp, url_prefix="/api/product-report")
 app.register_blueprint(data_cleaning_bp, url_prefix="/api/cleaning")
 app.register_blueprint(category_mapping_bp, url_prefix="/api/category-mapping")
 app.register_blueprint(master_category_bp, url_prefix="/api/master-categories")
+app.register_blueprint(dynamic_tier_bp)
 
 # --- Register Listing & Product Blueprints (Batch) ---
 blueprints_listing = [
