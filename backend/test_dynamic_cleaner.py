@@ -67,7 +67,7 @@ def run_cleaner(limit, target_table):
             columns_query = db.session.execute(text(f"SHOW COLUMNS FROM {target_table}")).fetchall()
             col_names = [col[0].lower() for col in columns_query]
         except Exception as e:
-            print(f"CRITICAL ERROR: Could not alter table to add status tracking columns. {e}")
+            print(f"CRITICAL ERROR: Could not auto-alter table. The table might be too large. Please use the 'Prepare Table' button in the dashboard UI. {e}")
             if os.path.exists(running_file):
                 os.remove(running_file)
             return

@@ -21,6 +21,7 @@ export function DynamicTierDashboard() {
   const [tierData, setTierData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [logs, setLogs] = useState([]);
   const [pollInterval, setPollInterval] = useState(null);
   const [tables, setTables] = useState([]);
@@ -139,6 +140,23 @@ export function DynamicTierDashboard() {
     window.location.href = exportUrl;
   };
 
+  const prepareTable = async () => {
+    try {
+      setIsPreparing(true);
+      const res = await axios.post(`${API_BASE}/api/tiers/prepare-table`, { table: selectedTable }, { withCredentials: true });
+      if (res.data.status === "success") {
+        alert(res.data.message);
+      } else {
+        alert("Error: " + res.data.message);
+      }
+    } catch (error) {
+      console.error("Error preparing table:", error);
+      alert("Failed to prepare table. See console.");
+    } finally {
+      setIsPreparing(false);
+    }
+  };
+
   const runCleaner = async (limit) => {
     try {
       setIsCleaning(true);
@@ -203,6 +221,15 @@ export function DynamicTierDashboard() {
               ))}
               {tables.length === 0 && <option value="raw_clean_google_map_data">raw_clean_google_map_data</option>}
             </select>
+            <Button 
+              color="indigo" 
+              className="text-white flex items-center gap-2"
+              onClick={prepareTable}
+              disabled={isCleaning || isPreparing}
+            >
+              {isPreparing ? <Spinner className="h-4 w-4" /> : null}
+              {isPreparing ? "Preparing..." : "Prepare Table"}
+            </Button>
             <Button 
               color="white" 
               className="text-blue-500 flex items-center gap-2"
