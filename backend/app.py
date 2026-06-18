@@ -57,6 +57,7 @@ from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
+from routes.indiamart_scraper_routes import indiamart_scraper_bp
 from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
@@ -245,6 +246,7 @@ PUBLIC_ROUTES = [
     "/api/category-mapping/settings/platforms",
     "/api/category-mapping/settings/synonyms",
     "/api/scrape_zepto",
+    "/api/scrape_indiamart",
 ]
 
 @app.before_request
@@ -264,6 +266,7 @@ def protect_all_routes():
         normalized_path in public_paths
         or normalized_path.endswith('/fetch-data')
         or normalized_path.startswith('/api/scrape_bigbasket')
+        or normalized_path.startswith('/api/scrape_indiamart')
         or normalized_path.startswith('/api/listing-upload')
         or normalized_path.startswith('/api/product-report')
         or normalized_path.startswith('/api/report/source-')
@@ -295,6 +298,7 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
+app.register_blueprint(indiamart_scraper_bp, url_prefix="/api")
 app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
 app.register_blueprint(master_table_bp)
