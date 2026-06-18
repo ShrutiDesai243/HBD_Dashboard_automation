@@ -737,7 +737,7 @@ function ExportModal({ data, onClose, title = "Dashboard Overview", sourceId = n
     
     // If a sourceId is provided, download all records from the database table (real-time streaming)
     if (sourceId) {
-      const base = api.defaults.baseURL ? api.defaults.baseURL.replace(/\/api$/, '') : 'http://localhost:8001';
+      const base = api.defaults.baseURL ? api.defaults.baseURL.replace(/\/api$/, '') : import.meta.env.VITE_API_URL || "http://localhost:8001";
       const exportUrl = `${base}/api/report/source-export/${sourceId}?format=${selected}`;
       window.open(exportUrl, '_blank');
       onClose();

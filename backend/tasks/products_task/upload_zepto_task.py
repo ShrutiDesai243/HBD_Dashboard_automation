@@ -14,4 +14,12 @@ def process_zepto_task(self, file_paths):
                 os.remove(path)
         except PermissionError:
             pass
+
+    # Automatically trigger category sync & auto-mapping for Zepto in background
+    try:
+        from services.category_sync_service import auto_sync_platform
+        auto_sync_platform('Zepto')
+    except Exception as e:
+        print(f"[CategoryAutoSync] Error running sync for Zepto: {e}")
+
     return result

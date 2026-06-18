@@ -9,6 +9,7 @@ class Blinkit(db.Model):
     brand = db.Column(db.String(255))
     category = db.Column(db.String(255))
     sub_category = db.Column(db.String(255))
+    category_id = db.Column(db.BigInteger, db.ForeignKey('blinkit_mapping.category_id', ondelete='SET NULL'), nullable=True)
     price = db.Column(db.Numeric(10, 2))
     mrp = db.Column(db.Numeric(10, 2))
     discount = db.Column(db.Numeric(10, 2))
@@ -24,6 +25,7 @@ class Blinkit(db.Model):
             "brand": self.brand,
             "category": self.category,
             "sub_category": self.sub_category,
+            "category_id": self.category_id,
             "price": float(self.price) if self.price else 0,
             "mrp": float(self.mrp) if self.mrp else 0,
             "discount": float(self.discount) if self.discount else 0,
@@ -35,7 +37,7 @@ class Blinkit(db.Model):
 
 class DMartCategory(db.Model):
     __tablename__ = 'dmart_categories'
-    category_id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category_name = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(255), nullable=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('dmart_categories.category_id', ondelete='SET NULL'), nullable=True)
@@ -257,36 +259,6 @@ class IndiaMart(db.Model):
             "badges": self.badges,
             "link": self.productUrl,
             "image_url": self.imgUrl,
-        }
-
-
-class BigBasketNew(db.Model):
-    """bigbasket table — 34,559 rows (the ~34-35K table).
-    Columns: sku_id, product_name, product_url, rating, review, mrp,
-             selling_price, main_category, subcategory
-    """
-    __tablename__ = 'bigbasket'
-    sku_id = db.Column(db.BigInteger, primary_key=True)
-    product_name = db.Column(db.String(512))
-    product_url = db.Column(db.Text)
-    rating = db.Column(db.Float)
-    review = db.Column(db.Integer)
-    mrp = db.Column(db.Float)
-    selling_price = db.Column(db.Float)
-    main_category = db.Column(db.String(255))
-    subcategory = db.Column(db.String(255))
-
-    def to_dict(self):
-        return {
-            "id": self.sku_id,
-            "name": self.product_name,
-            "category": self.main_category,
-            "sub_category": self.subcategory,
-            "sale_price": self.selling_price,
-            "market_price": self.mrp,
-            "rating": self.rating,
-            "reviews": self.review,
-            "link": self.product_url,
         }
 
 

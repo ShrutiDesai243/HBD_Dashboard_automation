@@ -360,13 +360,32 @@ class DataCleaner:
             if match:
                 extracted_pack_size = match.group(1)
 
+        brand = DataCleaner.clean_brand(
+            raw.get('brand') or raw.get('brand_name')
+        )
+        if not brand and raw_name:
+            words = raw_name.split()
+            if words:
+                if len(words) > 1 and words[0].lower() == 'dmart' and words[1].lower() == 'premia':
+                    brand = "DMart Premia"
+                elif len(words) > 1 and words[0].lower() == 'wagh' and words[1].lower() == 'bakri':
+                    brand = "Wagh Bakri"
+                elif len(words) > 1 and words[0].lower() == 'thums' and words[1].lower() == 'up':
+                    brand = "Thums Up"
+                elif len(words) > 1 and words[0].lower() == 'red' and words[1].lower() == 'bull':
+                    brand = "Red Bull"
+                elif len(words) > 1 and words[0].lower() == 'tata' and words[1].lower() in ('tea', 'sampann', 'simply'):
+                    brand = "Tata"
+                else:
+                    brand = words[0].strip().strip(':').strip('-').strip()
+                if brand:
+                    brand = brand.title()
+
         return {
             'product_url': product_url,
             'sku_id': str(sku) if sku else None,
             'product_name': DataCleaner.clean_product_name(raw_name),
-            'brand': DataCleaner.clean_brand(
-                raw.get('brand') or raw.get('brand_name')
-            ),
+            'brand': brand,
             'mrp': mrp,
             'dmart_price': dmart_price,
             'discount_amount': DataCleaner.calculate_discount(mrp, dmart_price),

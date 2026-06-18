@@ -843,6 +843,18 @@ class DMartScraper:
             except Exception:
                 continue
 
+        # ── Image URL ──
+        for sel in SELECTORS.get('product_image', "img[src*='images/products/'], img[src*='cdn.dmart.in/images/'], img").split(', '):
+            try:
+                el = await card.query_selector(sel.strip())
+                if el:
+                    img_src = await el.get_attribute('src')
+                    if img_src and img_src.strip():
+                        raw['image_url'] = img_src
+                        break
+            except Exception:
+                continue
+
         return raw if raw.get('product_name') or raw.get('product_url') else None
 
     def _extract_products_from_api(self, page: Optional[Page] = None) -> List[dict]:
@@ -1028,6 +1040,7 @@ class DMartScraper:
                         logger.error(f"Failed to resolve product category path '{product_cat_path}': {cat_err}")
                         cat_id = current_category_id_val
 
+                    cleaned['category_name'] = product_cat_path
                     # Insert into SQLite (which has secondary name+pack deduplication)
                     self.db.upsert_product(cleaned, cat_id, self.pincode)
 
@@ -1163,6 +1176,7 @@ class DMartScraper:
                         logger.error(f"Failed to resolve product category path '{product_cat_path}': {cat_err}")
                         cat_id = current_category_id_val
 
+                    cleaned['category_name'] = product_cat_path
                     self.db.upsert_product(cleaned, cat_id, self.pincode)
 
                     scraped_skus_set.add(cleaned_sku)

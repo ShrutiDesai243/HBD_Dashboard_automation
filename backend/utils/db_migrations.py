@@ -220,7 +220,7 @@ def run_pending_migrations(app):
                         logger.info("⚠️ Table `dmart_categories` missing in MySQL. Creating now...")
                         conn.execute(text("""
                             CREATE TABLE dmart_categories (
-                                category_id INT PRIMARY KEY,
+                                category_id INT AUTO_INCREMENT PRIMARY KEY,
                                 category_name VARCHAR(255) NOT NULL,
                                 slug VARCHAR(255) NULL,
                                 parent_id INT NULL,
@@ -243,6 +243,55 @@ def run_pending_migrations(app):
                             logger.info("⚠️ Column `category_path` missing in `dmart_categories`. Adding column...")
                             conn.execute(text("ALTER TABLE dmart_categories ADD COLUMN category_path VARCHAR(512) NULL"))
                             logger.info("✅ Column `category_path` successfully added to `dmart_categories`.")
+ 
+                        # Ensure category_id has AUTO_INCREMENT enabled
+                        auto_inc_check = text("""
+                            SELECT EXTRA FROM information_schema.COLUMNS 
+                            WHERE TABLE_SCHEMA = DATABASE() 
+                            AND TABLE_NAME = 'dmart_categories' 
+                            AND COLUMN_NAME = 'category_id'
+                        """)
+                        extra = conn.execute(auto_inc_check).scalar()
+                        if not extra or 'auto_increment' not in extra.lower():
+                            logger.info("⚠️ Column `category_id` in `dmart_categories` does not have AUTO_INCREMENT. Adding it to align with sequential IDs...")
+                            try:
+                                conn.execute(text("ALTER TABLE dmart_categories MODIFY COLUMN category_id INT AUTO_INCREMENT"))
+                                logger.info("✅ Successfully added AUTO_INCREMENT to `category_id`.")
+                            except Exception as alter_err:
+                                logger.warning(f"Direct AUTO_INCREMENT addition failed: {alter_err}. Attempting with FK drop...")
+                                # Drop constraints
+                                try:
+                                    conn.execute(text("ALTER TABLE dmart_products DROP FOREIGN KEY fk_dmart_products_category"))
+                                except Exception:
+                                    try:
+                                        conn.execute(text("ALTER TABLE dmart_products DROP FOREIGN KEY dmart_products_ibfk_1"))
+                                    except Exception:
+                                        pass
+                                try:
+                                    conn.execute(text("ALTER TABLE dmart_categories DROP FOREIGN KEY fk_categories_parent"))
+                                except Exception:
+                                    try:
+                                        conn.execute(text("ALTER TABLE dmart_categories DROP FOREIGN KEY dmart_categories_ibfk_1"))
+                                    except Exception:
+                                        pass
+                                # Alter column
+                                conn.execute(text("ALTER TABLE dmart_categories MODIFY COLUMN category_id INT AUTO_INCREMENT"))
+                                # Re-add constraints
+                                try:
+                                    conn.execute(text("""
+                                        ALTER TABLE dmart_categories ADD CONSTRAINT fk_categories_parent 
+                                        FOREIGN KEY (parent_id) REFERENCES dmart_categories(category_id) ON DELETE SET NULL
+                                    """))
+                                except Exception as readd_err:
+                                    logger.error(f"Failed to restore dmart_categories parent FK: {readd_err}")
+                                try:
+                                    conn.execute(text("""
+                                        ALTER TABLE dmart_products ADD CONSTRAINT fk_dmart_products_category 
+                                        FOREIGN KEY (category_id) REFERENCES dmart_categories(category_id) ON DELETE SET NULL
+                                    """))
+                                except Exception as readd_err:
+                                    logger.error(f"Failed to restore dmart_products category FK: {readd_err}")
+                                logger.info("✅ Successfully added AUTO_INCREMENT to `category_id` via FK drop fallback.")
 
                     # 2. Check and Add category_id to dmart_products
                     if table_exists('dmart_products'):
@@ -359,6 +408,167 @@ def run_pending_migrations(app):
 
                 except Exception as dmart_mig_err:
                     logger.error(f"❌ DMart Category/Product MySQL migration failed: {dmart_mig_err}")
+
+                # === Blinkit Category Mapping Table and Schema Upgrade ===
+                try:
+                    if table_exists('blinkit_mapping'):
+                        # 1. Clean up duplicate categories
+                        res = conn.execute(text("SELECT category_id, category_name, parent_id, category_level, full_category_path FROM blinkit_mapping"))
+                        rows = res.mappings().fetchall()
+                        
+                        import re
+                        by_name_level = {}
+                        for r in rows:
+                            if not r["category_name"]:
+                                continue
+                            norm_name = re.sub(r"\s+", " ", r["category_name"]).strip().lower()
+                            level = int(r["category_level"] or 1)
+                            key = (norm_name, level)
+                            if key not in by_name_level:
+                                by_name_level[key] = []
+                            by_name_level[key].append(r)
+                            
+                        dupe_groups = {k: v for k, v in by_name_level.items() if len(v) > 1}
+                        if dupe_groups:
+                            logger.info(f"🧹 Found {len(dupe_groups)} duplicate groups in blinkit_mapping. Healing duplicates...")
+                            id_mapping = {}
+                            ids_to_delete = []
+                            for (name, level), group in dupe_groups.items():
+                                group_sorted = sorted(group, key=lambda x: int(x['category_id']))
+                                master = group_sorted[0]
+                                master_id = int(master['category_id'])
+                                
+                                for dupe in group_sorted[1:]:
+                                    dupe_id = int(dupe['category_id'])
+                                    id_mapping[dupe_id] = master_id
+                                    ids_to_delete.append(dupe_id)
+                                    
+                            # Update child categories parent_id
+                            for dupe_id, master_id in id_mapping.items():
+                                conn.execute(
+                                    text("UPDATE blinkit_mapping SET parent_id = :master_id WHERE parent_id = :dupe_id"),
+                                    {"master_id": master_id, "dupe_id": dupe_id}
+                                )
+                            # Delete duplicate categories
+                            for did in ids_to_delete:
+                                conn.execute(
+                                    text("DELETE FROM blinkit_mapping WHERE category_id = :did"),
+                                    {"did": did}
+                                )
+                            logger.info(f"✅ Deduplicated categories. Deleted {len(ids_to_delete)} duplicate rows.")
+
+                        # 2. Heal remaining orphans (invalid parent_id references)
+                        res = conn.execute(text("SELECT category_id, category_name FROM blinkit_mapping WHERE category_level = 1"))
+                        l1_cats = res.mappings().fetchall()
+                        l1_map = {re.sub(r"\s+", " ", c['category_name']).strip().lower(): int(c['category_id']) for c in l1_cats}
+                        l1_variations = {
+                            "beauty & personal care": "personal care",
+                            "cleaning & household": "cleaning essentials",
+                            "pantry staples": "atta, rice & dal",
+                            "dairy & breakfast": "dairy, bread & eggs",
+                            "ice creams & sweets": "sweet tooth",
+                            "paan & hookah": "paan corner",
+                            "digital needs": "digital goods",
+                            "meat & seafood": "chicken, meat & fish",
+                            "vegetables & fruits": "vegetables & fruits",
+                        }
+                        
+                        res = conn.execute(text("SELECT category_id, category_name, parent_id, full_category_path FROM blinkit_mapping WHERE category_level > 1"))
+                        children = res.mappings().fetchall()
+                        
+                        healed_orphans = 0
+                        for child in children:
+                            child_id = int(child['category_id'])
+                            parent_id = int(child['parent_id'] or 0)
+                            path = child['full_category_path'] or ""
+                            
+                            # Check if parent exists
+                            p_check = conn.execute(text("SELECT COUNT(*) FROM blinkit_mapping WHERE category_id = :pid"), {"pid": parent_id}).scalar()
+                            if p_check == 0:
+                                parts = [p.strip() for p in path.split('>') if p.strip()]
+                                if len(parts) >= 2:
+                                    parent_name = parts[0]
+                                    name_lower = re.sub(r"\s+", " ", parent_name).strip().lower()
+                                    resolved_parent_id = None
+                                    
+                                    if name_lower in l1_map:
+                                        resolved_parent_id = l1_map[name_lower]
+                                    elif name_lower in l1_variations:
+                                        var_name = l1_variations[name_lower]
+                                        if var_name in l1_map:
+                                            resolved_parent_id = l1_map[var_name]
+                                            
+                                    if resolved_parent_id is not None:
+                                        conn.execute(
+                                            text("UPDATE blinkit_mapping SET parent_id = :rpid WHERE category_id = :cid"),
+                                            {"rpid": resolved_parent_id, "cid": child_id}
+                                        )
+                                        healed_orphans += 1
+                        if healed_orphans > 0:
+                            logger.info(f"✅ Healed {healed_orphans} orphaned category mappings.")
+
+                        # 3. Enforce category_id as PRIMARY KEY in blinkit_mapping
+                        pk_check = conn.execute(text("""
+                            SELECT COUNT(*) 
+                            FROM information_schema.TABLE_CONSTRAINTS 
+                            WHERE CONSTRAINT_SCHEMA = DATABASE() 
+                            AND TABLE_NAME = 'blinkit_mapping' 
+                            AND CONSTRAINT_TYPE = 'PRIMARY KEY'
+                        """)).scalar()
+                        if pk_check == 0:
+                            logger.info("⚠️ Enforcing `category_id` as PRIMARY KEY on `blinkit_mapping`...")
+                            conn.execute(text("ALTER TABLE blinkit_mapping MODIFY COLUMN category_id BIGINT NOT NULL"))
+                            conn.execute(text("ALTER TABLE blinkit_mapping ADD PRIMARY KEY (category_id)"))
+                            logger.info("✅ `category_id` successfully set as PRIMARY KEY on `blinkit_mapping`.")
+
+                    # 4. Check and add category_id to blinkit table
+                    if table_exists('blinkit'):
+                        col_check = conn.execute(text("""
+                            SELECT COUNT(*) FROM information_schema.COLUMNS 
+                            WHERE TABLE_SCHEMA = DATABASE() 
+                            AND TABLE_NAME = 'blinkit' 
+                            AND COLUMN_NAME = 'category_id'
+                        """)).scalar()
+                        if col_check == 0:
+                            logger.info("⚠️ Column `category_id` missing in `blinkit` table. Adding column and Foreign Key constraint...")
+                            conn.execute(text("ALTER TABLE blinkit ADD COLUMN category_id BIGINT NULL"))
+                            
+                            # Add Foreign Key referencing blinkit_mapping
+                            if table_exists('blinkit_mapping'):
+                                conn.execute(text("""
+                                    ALTER TABLE blinkit 
+                                    ADD CONSTRAINT fk_blinkit_category 
+                                    FOREIGN KEY (category_id) REFERENCES blinkit_mapping(category_id) 
+                                    ON DELETE SET NULL
+                                """))
+                            logger.info("✅ Column `category_id` and foreign key constraint successfully migrated on `blinkit`.")
+
+                        # 5. Populate category_id on existing products where category_id is NULL
+                        null_check = conn.execute(text("SELECT COUNT(*) FROM blinkit WHERE category_id IS NULL")).scalar()
+                        if null_check > 0:
+                            logger.info(f"🧹 Backfilling `category_id` for {null_check} products in `blinkit` table...")
+                            
+                            # Try to match sub_category name first
+                            conn.execute(text("""
+                                UPDATE blinkit b
+                                JOIN blinkit_mapping bm ON LOWER(TRIM(bm.category_name)) = LOWER(TRIM(b.sub_category))
+                                SET b.category_id = bm.category_id
+                                WHERE b.category_id IS NULL
+                            """))
+                            
+                            # Fallback to category name
+                            conn.execute(text("""
+                                UPDATE blinkit b
+                                JOIN blinkit_mapping bm ON LOWER(TRIM(bm.category_name)) = LOWER(TRIM(b.category))
+                                SET b.category_id = bm.category_id
+                                WHERE b.category_id IS NULL
+                            """))
+                            
+                            updated_null_check = conn.execute(text("SELECT COUNT(*) FROM blinkit WHERE category_id IS NULL")).scalar()
+                            logger.info(f"✅ Backfill complete. Remaining unmapped products: {updated_null_check}")
+
+                except Exception as blinkit_mig_err:
+                    logger.error(f"❌ Blinkit Category/Product MySQL migration failed: {blinkit_mig_err}")
 
             print("[Migrations] DB Migrations check complete.")
             

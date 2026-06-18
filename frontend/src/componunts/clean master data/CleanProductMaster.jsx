@@ -10,26 +10,26 @@ import {
 } from "@material-tailwind/react";
 import { ChevronUpDownIcon } from "@heroicons/react/24/solid";
 import * as XLSX from "xlsx/dist/xlsx.full.min.js";
-import { amazonProductData } from "@/data/amazonJSON";
+import api from "../../utils/Api";
 
 /* -------------------- Constants -------------------- */
 
 const LIMIT = 20;
 
 const COLUMNS = [
-  { key: "ASIN", label: "ASIN", width: 140 },
-  { key: "title", label: "Product Title", width: 350 },
+  { key: "asin", label: "ASIN", width: 140 },
+  { key: "product_name", label: "Product Title", width: 350 },
   { key: "price", label: "Price", width: 100 },
-  { key: "rating", label: "Rating", width: 90 },
-  { key: "review_count", label: "Reviews", width: 110 },
-  { key: "best_seller_rank", label: "BSR", width: 150 },
+  { key: "stars", label: "Rating", width: 90 },
+  { key: "reviews", label: "Reviews", width: 110 },
+  { key: "is_best_seller", label: "Best Seller", width: 120 },
   { key: "brand", label: "Brand", width: 130 },
   { key: "availability", label: "Stock Status", width: 120 },
-  { key: "category", label: "Main Category", width: 180 },
-  { key: "url", label: "Product Link", width: 250 },
-  { key: "image_url", label: "Image Link", width: 200 },
+  { key: "category_name", label: "Main Category", width: 180 },
+  { key: "product_url", label: "Product Link", width: 250 },
+  { key: "img_url", label: "Image Link", width: 200 },
   { key: "manufacturer", label: "Manufacturer", width: 180 },
-  { key: "source", label: "Source", width: 120 },
+  { key: "marketplace_name", label: "Source", width: 120 },
 ];
 
 /* -------------------- Utils -------------------- */
@@ -49,9 +49,11 @@ const convertToCSV = (rows) => {
 
 const CleanProductMaster = () => {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState([]);
+  const [pageData, setPageData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [source, setSource] = useState("");
@@ -61,57 +63,61 @@ const CleanProductMaster = () => {
 
   /* -------------------- Load Data -------------------- */
 
-  useEffect(() => {
-    setTimeout(() => {
-      setData(amazonProductData);
+  const fetchProducts = async (page, nameQuery, categoryQuery, sourceQuery) => {
+    setLoading(true);
+    try {
+      const response = await api.get("/product-master/fetch-data", {
+        params: {
+          page: page,
+          limit: LIMIT,
+          name: nameQuery,
+          category: categoryQuery,
+          source: sourceQuery
+        }
+      });
+
+      const result = response.data;
+      setPageData(result.data || []);
+      setTotalRecords(result.total_count || 0);
+      setTotalPages(result.total_pages || 1);
+    } catch (err) {
+      console.error("Fetch Products Error:", err);
+      if (err.response?.status === 401) {
+        window.location.href = "/auth/sign-in";
+      }
+    } finally {
       setLoading(false);
-    }, 300);
-  }, []);
+    }
+  };
 
-  /* -------------------- Filtering -------------------- */
+  useEffect(() => {
+    fetchProducts(currentPage, search, categorySearch, source);
+  }, [currentPage, search, categorySearch, source]);
 
-  const filteredData = useMemo(() => {
-    return data.filter((x) => {
-      if (search && !safeLower(x.title).includes(search.toLowerCase()))
-        return false;
+  // Reset to page 1 on search / filter updates
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, categorySearch, source]);
 
-      if (
-        categorySearch &&
-        !safeLower(x.category).includes(categorySearch.toLowerCase())
-      )
-        return false;
+  /* -------------------- Sorting (Page-Level) -------------------- */
 
-      if (source && safeLower(x.source) !== source) return false;
+  const sortedPageData = useMemo(() => {
+    if (!sortField) return pageData;
 
-      return true;
-    });
-  }, [data, search, categorySearch, source]);
-
-  /* -------------------- Sorting -------------------- */
-
-  const sortedData = useMemo(() => {
-    if (!sortField) return filteredData;
-
-    return [...filteredData].sort((a, b) => {
+    return [...pageData].sort((a, b) => {
+      // Numerical sort for specific fields
+      if (sortField === "price" || sortField === "stars" || sortField === "reviews") {
+        const valA = Number(a[sortField]) || 0;
+        const valB = Number(b[sortField]) || 0;
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      }
+      
       const A = safeLower(a[sortField]);
       const B = safeLower(b[sortField]);
       if (A === B) return 0;
       return sortOrder === "asc" ? (A > B ? 1 : -1) : A < B ? 1 : -1;
     });
-  }, [filteredData, sortField, sortOrder]);
-
-  /* -------------------- Pagination -------------------- */
-
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / LIMIT));
-
-  const pageData = useMemo(() => {
-    const start = (page - 1) * LIMIT;
-    return sortedData.slice(start, start + LIMIT);
-  }, [sortedData, page]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, categorySearch, source]);
+  }, [pageData, sortField, sortOrder]);
 
   /* -------------------- Actions -------------------- */
 
@@ -124,74 +130,82 @@ const CleanProductMaster = () => {
     }
   };
 
-  const downloadCSV = (currentOnly) => {
-    const rows = currentOnly ? pageData : sortedData;
-    const blob = new Blob([convertToCSV(rows)], {
-      type: "text/csv;charset=utf-8;",
-    });
+  const downloadCSV = () => {
+    if (!pageData.length) return;
+    const csv = convertToCSV(pageData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = currentOnly ? "product_page.csv" : "product_all.csv";
+    a.href = url;
+    a.download = "product_page.csv";
     a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const downloadExcel = (currentOnly) => {
-    const rows = currentOnly ? pageData : sortedData;
-    if (!rows.length) return;
-
-    const ws = XLSX.utils.json_to_sheet(rows);
+  const downloadExcel = () => {
+    if (!pageData.length) return;
+    const ws = XLSX.utils.json_to_sheet(pageData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Products");
-    XLSX.writeFile(
-      wb,
-      currentOnly ? "product_page.xlsx" : "product_all.xlsx"
-    );
+    XLSX.writeFile(wb, "product_page.xlsx");
   };
 
   /* -------------------- UI -------------------- */
 
   return (
     <div className="min-h-screen mt-8 mb-12 px-4 bg-white text-black">
-      <div className="flex justify-between mb-4">
-        <Typography variant="h4" className="pb-2">
-          Clean Product Data
-        </Typography>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <Typography variant="h4" className="pb-1 text-gray-800">
+            Clean Product Master Data
+          </Typography>
+          <Typography variant="small" className="text-gray-500 font-normal">
+            Viewing records directly from the database `product_master` ({totalRecords.toLocaleString()} total rows).
+          </Typography>
+        </div>
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => downloadCSV(false)}>CSV All</Button>
-          <Button size="sm" onClick={() => downloadCSV(true)}>CSV Page</Button>
-          <Button size="sm" onClick={() => downloadExcel(false)}>Excel All</Button>
-          <Button size="sm" onClick={() => downloadExcel(true)}>Excel Page</Button>
+          <Button size="sm" onClick={downloadCSV}>CSV Page</Button>
+          <Button size="sm" onClick={downloadExcel}>Excel Page</Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-wrap gap-3 p-4 bg-gray-100">
-          <Input
-            label="Search Name"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <Input
-            label="Search Category"
-            value={categorySearch}
-            onChange={(e) => setCategorySearch(e.target.value)}
-          />
-          <select
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="border rounded px-3 py-2 bg-gray-100"
-          >
-            <option value="">All Sources</option>
-            <option value="amazon">Amazon</option>
-            <option value="flipkart">Flipkart</option>
-            <option value="bigbasket">BigBasket</option>
-            <option value="jio-mart">Jio Mart</option>
-            <option value="d-mart">D-Mart</option>
-          </select>
+      <Card className="border border-gray-250 shadow-sm rounded-xl overflow-hidden bg-white">
+        <CardHeader className="flex flex-wrap justify-between items-center gap-3 p-4 bg-gray-50 border-b border-gray-200">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            <div className="w-64">
+              <Input
+                label="Search Name"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="w-64">
+              <Input
+                label="Search Category"
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+              />
+            </div>
+            <div>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">All Sources</option>
+                <option value="amazon">Amazon</option>
+                <option value="flipkart">Flipkart</option>
+                <option value="bigbasket">BigBasket</option>
+                <option value="jio-mart">Jio Mart</option>
+                <option value="d-mart">D-Mart</option>
+              </select>
+            </div>
+          </div>
 
-          <div className="ml-auto flex gap-2">
-            <Button size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-            <Button size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+          <div className="flex gap-2 items-center ml-auto">
+            <Button size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Prev</Button>
+            <span className="text-sm font-medium text-gray-600">Page {currentPage} of {totalPages}</span>
+            <Button size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
           </div>
         </CardHeader>
 
@@ -202,20 +216,20 @@ const CleanProductMaster = () => {
             </div>
           ) : (
             <table className="w-full min-w-[1500px] table-fixed">
-              <thead className="bg-gray-200 sticky top-0">
+              <thead className="bg-gray-100 border-b border-gray-250 text-left">
                 <tr>
                   {COLUMNS.map((c) => (
                     <th
                       key={c.key}
                       style={{ width: c.width }}
-                      className="px-3 py-2"
+                      className="px-4 py-3 text-xs font-bold text-gray-600 uppercase"
                     >
                       <div
-                        className="flex gap-2 cursor-pointer"
+                        className="flex gap-2 items-center cursor-pointer select-none"
                         onClick={() => toggleSort(c.key)}
                       >
                         {c.label}
-                        <ChevronUpDownIcon className="h-4" />
+                        <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
                       </div>
                     </th>
                   ))}
@@ -223,7 +237,7 @@ const CleanProductMaster = () => {
               </thead>
 
               <tbody>
-                {pageData.length === 0 ? (
+                {sortedPageData.length === 0 ? (
                   <tr>
                     <td
                       colSpan={COLUMNS.length}
@@ -233,29 +247,35 @@ const CleanProductMaster = () => {
                     </td>
                   </tr>
                 ) : (
-                  pageData.map((row, index) => (
+                  sortedPageData.map((row, index) => (
                     <tr
                       key={index}
-                      className="even:bg-blue-gray-50/50 hover:bg-blue-50/50 transition-colors"
+                      className="border-b hover:bg-gray-50"
                     >
                       {COLUMNS.map((col) => (
                         <td
                           key={col.key}
-                          className="p-4 text-sm border-b border-blue-gray-50 truncate"
+                          className="px-4 py-3 text-sm break-words border-b border-gray-100 truncate"
                         >
-                          {col.key === "url" || col.key === "image_url"? (
-                            <a
-                              href={row[col.key]}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 font-medium hover:underline"
-                            >
-                              View Link
-                            </a>
+                          {col.key === "product_url" || col.key === "img_url" ? (
+                            row[col.key] ? (
+                              <a
+                                href={row[col.key]}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 font-medium hover:underline"
+                              >
+                                View Link
+                              </a>
+                            ) : (
+                              "-"
+                            )
                           ) : col.key === "price" ? (
                             <span className="font-bold text-green-700">
-                              ₹{row[col.key] || "0.00"}
+                              ₹{row[col.key] != null ? Number(row[col.key]).toFixed(2) : "0.00"}
                             </span>
+                          ) : col.key === "is_best_seller" ? (
+                            <span>{row[col.key] ? "Yes" : "No"}</span>
                           ) : (
                             String(row[col.key] ?? "-")
                           )}

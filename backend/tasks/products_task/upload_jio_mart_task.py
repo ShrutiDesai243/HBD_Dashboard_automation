@@ -14,4 +14,12 @@ def process_jio_mart_products_task(self,file_paths):
                 os.remove(path)
         except PermissionError:
             pass
+
+    # Automatically trigger category sync & auto-mapping for JioMart in background
+    try:
+        from services.category_sync_service import auto_sync_platform
+        auto_sync_platform('JioMart')
+    except Exception as e:
+        print(f"[CategoryAutoSync] Error running sync for JioMart: {e}")
+
     return result
