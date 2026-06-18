@@ -11,12 +11,12 @@ import axios from "axios";
 
 // Make sure to use your configured axios instance if you have one
 // For this demo we'll use window.location.origin or basic axios
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8001";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export function DynamicTierDashboard() {
   const [stats, setStats] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
-  
+
   const [activeTier, setActiveTier] = useState("tier1");
   const [tierData, setTierData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -210,7 +210,7 @@ export function DynamicTierDashboard() {
             Dynamic Cleaning Engine Tiers
           </Typography>
           <div className="flex flex-wrap items-center gap-2">
-            <select 
+            <select
               className="bg-white text-blue-900 px-3 py-2 rounded-md font-medium text-sm outline-none"
               value={selectedTable}
               onChange={(e) => setSelectedTable(e.target.value)}
@@ -221,8 +221,8 @@ export function DynamicTierDashboard() {
               ))}
               {tables.length === 0 && <option value="raw_clean_google_map_data">raw_clean_google_map_data</option>}
             </select>
-            <Button 
-              color="indigo" 
+            <Button
+              color="indigo"
               className="text-white flex items-center gap-2"
               onClick={prepareTable}
               disabled={isCleaning || isPreparing}
@@ -230,8 +230,8 @@ export function DynamicTierDashboard() {
               {isPreparing ? <Spinner className="h-4 w-4" /> : null}
               {isPreparing ? "Preparing..." : "Prepare Table"}
             </Button>
-            <Button 
-              color="white" 
+            <Button
+              color="white"
               className="text-blue-500 flex items-center gap-2"
               onClick={() => runCleaner(100)}
               disabled={isCleaning}
@@ -239,8 +239,8 @@ export function DynamicTierDashboard() {
               {isCleaning ? <Spinner className="h-4 w-4" /> : null}
               {isCleaning ? "Processing..." : "Run Cleaner (Top 100)"}
             </Button>
-            <Button 
-              color="orange" 
+            <Button
+              color="orange"
               className="text-white flex items-center gap-2"
               onClick={() => runCleaner('all')}
               disabled={isCleaning}
@@ -249,8 +249,8 @@ export function DynamicTierDashboard() {
               {isCleaning ? "Processing..." : "Run Cleaner (ALL)"}
             </Button>
             {isCleaning && (
-              <Button 
-                color="red" 
+              <Button
+                color="red"
                 className="text-white flex items-center gap-2"
                 onClick={stopCleaner}
               >
@@ -259,13 +259,13 @@ export function DynamicTierDashboard() {
             )}
           </div>
         </CardHeader>
-        
+
         <CardBody className="px-4 pb-4">
-          
+
           {/* View Filter Selection & Export */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-            <Button 
-              color="green" 
+            <Button
+              color="green"
               onClick={exportTierData}
               className="flex items-center gap-2 shadow-md hover:shadow-lg transition-shadow"
             >
@@ -274,12 +274,12 @@ export function DynamicTierDashboard() {
               </svg>
               Export Active Tier to CSV
             </Button>
-            
+
             <div className="flex items-center">
               <Typography variant="small" color="blue-gray" className="mr-2 font-bold uppercase">
                 Viewing Results For:
               </Typography>
-              <select 
+              <select
                 className="bg-gray-100 border border-gray-300 text-blue-900 px-3 py-1 rounded-md font-medium text-sm outline-none shadow-sm"
                 value={viewFilter}
                 onChange={(e) => setViewFilter(e.target.value)}
@@ -304,13 +304,13 @@ export function DynamicTierDashboard() {
                 </div>
                 <div className="text-gray-400 text-xs font-mono tracking-widest">CLEANER_TERMINAL</div>
                 <div className="flex gap-3">
-                  <button 
+                  <button
                     onClick={() => setAutoScroll(!autoScroll)}
                     className={`text-xs font-mono px-2 py-1 rounded transition-colors ${autoScroll ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
                   >
                     {autoScroll ? 'Auto-Scroll: ON' : 'Auto-Scroll: OFF'}
                   </button>
-                  <button 
+                  <button
                     onClick={() => setLogs([])}
                     className="text-xs font-mono bg-gray-700 text-gray-300 px-2 py-1 rounded hover:bg-gray-600 transition-colors"
                   >
@@ -333,12 +333,11 @@ export function DynamicTierDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
               {stats.map((stat) => (
-                <div 
-                  key={stat.tier} 
+                <div
+                  key={stat.tier}
                   onClick={() => setActiveTier(stat.tier)}
-                  className={`p-4 rounded-lg shadow cursor-pointer transition-all ${
-                    activeTier === stat.tier ? 'ring-4 ring-blue-500 scale-105' : 'hover:scale-105'
-                  } ${stat.color} text-white`}
+                  className={`p-4 rounded-lg shadow cursor-pointer transition-all ${activeTier === stat.tier ? 'ring-4 ring-blue-500 scale-105' : 'hover:scale-105'
+                    } ${stat.color} text-white`}
                 >
                   <Typography variant="h6" className="text-sm opacity-80">{stat.name}</Typography>
                   <Typography variant="h3">{stat.count}</Typography>
@@ -354,7 +353,7 @@ export function DynamicTierDashboard() {
                 Preview: {stats.find(s => s.tier === activeTier)?.name || activeTier} (Top 100)
               </Typography>
             </div>
-            
+
             {loadingData ? (
               <div className="flex justify-center p-10"><Spinner className="h-8 w-8 text-blue-500" /></div>
             ) : tierData.length === 0 ? (
@@ -367,12 +366,12 @@ export function DynamicTierDashboard() {
                     {Object.keys(tierData[0] || {})
                       .filter(k => k !== 'duplicate_data' && k !== 'fragment_data')
                       .map((key) => (
-                      <th key={key} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                        <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
-                          {key.replace(/_/g, ' ')}
-                        </Typography>
-                      </th>
-                    ))}
+                        <th key={key} className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                          <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
+                            {key.replace(/_/g, ' ')}
+                          </Typography>
+                        </th>
+                      ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -383,14 +382,14 @@ export function DynamicTierDashboard() {
                     return (
                       <tr key={idx} className="hover:bg-blue-gray-50 transition-colors">
                         {Object.entries(row)
-                           .filter(([k, v]) => k !== 'duplicate_data' && k !== 'fragment_data')
-                           .map(([key, val]) => (
-                          <td key={key} className={classes}>
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                              {val !== null ? String(val) : '-'}
-                            </Typography>
-                          </td>
-                        ))}
+                          .filter(([k, v]) => k !== 'duplicate_data' && k !== 'fragment_data')
+                          .map(([key, val]) => (
+                            <td key={key} className={classes}>
+                              <Typography variant="small" color="blue-gray" className="font-normal">
+                                {val !== null ? String(val) : '-'}
+                              </Typography>
+                            </td>
+                          ))}
                       </tr>
                     );
                   })}

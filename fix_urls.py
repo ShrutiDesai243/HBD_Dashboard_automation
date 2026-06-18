@@ -11,7 +11,7 @@ def replace_in_file(filepath):
     # We remove the hardcoded origin completely so it becomes relative.
     new_content = re.sub(r'https?://dashboard\.cityhangaround\.com/api', '/api', content)
     new_content = re.sub(r'https?://dashboard\.cityhangaround\.com', '', new_content)
-    new_content = re.sub(r'http://localhost:5000', '', new_content)
+    new_content = re.sub(r'https?://dashboard\.cityhangaround\.com/api/auth/login', '', new_content)
 
     if new_content != content:
         with open(filepath, 'w', encoding='utf-8') as f:

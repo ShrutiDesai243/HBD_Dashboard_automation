@@ -3,7 +3,7 @@ import axios from 'axios';
 // 1. Define your Backend URL
 // If your Python terminal says "Running on http://127.0.0.1:5000", keep this.
 // If it says port 8000, change it to 8000.
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // 2. Create the Axios Instance
 const api = axios.create({

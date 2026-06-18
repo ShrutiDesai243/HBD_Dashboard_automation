@@ -8,11 +8,11 @@ const POLL_INTERVAL_MS = 2500;
 
 const STATUS_COLORS = {
   COMPLETED: { bg: "bg-green-100", text: "text-green-700", dot: "bg-green-500" },
-  RUNNING:   { bg: "bg-blue-100",  text: "text-blue-700",  dot: "bg-blue-500 animate-pulse" },
-  MERGED:    { bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
-  FAILED:    { bg: "bg-red-100",   text: "text-red-700",   dot: "bg-red-500" },
-  starting:  { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-400 animate-pulse" },
-  PENDING:   { bg: "bg-gray-100",  text: "text-gray-600",  dot: "bg-gray-400" },
+  RUNNING: { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500 animate-pulse" },
+  MERGED: { bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
+  FAILED: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500" },
+  starting: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-400 animate-pulse" },
+  PENDING: { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" },
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -41,10 +41,10 @@ function ProgressBar({ value }) {
 function LogLine({ log }) {
   const colorMap = {
     success: "text-green-400",
-    error:   "text-red-400 font-semibold",
+    error: "text-red-400 font-semibold",
     warning: "text-yellow-300",
-    system:  "text-sky-300 font-semibold",
-    info:    "text-gray-200",
+    system: "text-sky-300 font-semibold",
+    info: "text-gray-200",
   };
   return (
     <div className="flex gap-2 leading-relaxed">
@@ -504,7 +504,7 @@ const BigbasketScrapper = () => {
                 {(taskStatus === "COMPLETED" || taskStatus === "MERGED") && taskId && (
                   <div className="space-y-2 pt-1">
                     <a
-                      href={`http://localhost:8001/api/scrape_bigbasket/csv/${taskId}`}
+                      href={`/api/scrape_bigbasket/csv/${taskId}`}
                       target="_blank"
                       rel="noreferrer"
                       className="w-full py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-80"
@@ -605,7 +605,7 @@ const BigbasketScrapper = () => {
                     </button>
                   )}
                   <a
-                    href={`http://localhost:8001/api/scrape_bigbasket/csv/${taskId}`}
+                    href={`/api/scrape_bigbasket/csv/${taskId}`}
                     target="_blank"
                     rel="noreferrer"
                     className="px-4 py-2 rounded-lg text-xs font-semibold border transition-all hover:bg-green-50"
@@ -703,7 +703,7 @@ const BigbasketScrapper = () => {
                         )}
                         {(t.status === "COMPLETED" || t.status === "MERGED") && (
                           <a
-                            href={`http://localhost:8001${t.download_url}`}
+                            href={t.download_url}
                             target="_blank"
                             rel="noreferrer"
                             className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-all"
