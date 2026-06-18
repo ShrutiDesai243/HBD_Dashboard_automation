@@ -61,6 +61,7 @@ from routes.indiamart_scraper_routes import indiamart_scraper_bp
 from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
+from routes.flipkart_routes import flipkart_api_bp 
 from routes.master_table import master_table_bp
 from routes.upload_product_csv import product_csv_bp
 from routes.upload_item_csv import item_csv_bp
@@ -222,6 +223,7 @@ PUBLIC_ROUTES = [
     "/api/product-report/mapping/zepto",
     "/api/scrape_dmart",
     "/api/scrape_amazon",
+    "/api/scrape_flipkart",
     "/api/scraper/zepto/start",
     "/api/scraper/zepto/stop",
     "/api/scraper/zepto/status",
@@ -298,6 +300,7 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
+app.register_blueprint(flipkart_api_bp, url_prefix="/api")
 app.register_blueprint(indiamart_scraper_bp, url_prefix="/api")
 app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
@@ -353,11 +356,18 @@ if __name__ == '__main__':
         print("[SERVER] Mode: API Server Only (Background ETL disabled for manual run)")
     else:
         print("[ALL-IN-ONE] Mode: All-in-One (Starting Background Sync Tool...)")
-        ingestor = start_background_etl()
+        try:
+            ingestor = start_background_etl()
+        except FileNotFoundError as e:
+            print(f"[WARNING] Background ETL disabled: {e}")
+            ingestor = None
+        except Exception as e:
+            print(f"[ERROR] Failed to start background ETL: {e}")
+            ingestor = None
         
         # Daemonize the ingestor thread if possible
         try:
-            if hasattr(ingestor, 'daemon'):
+            if ingestor and hasattr(ingestor, 'daemon'):
                 ingestor.daemon = True
         except Exception:
             pass

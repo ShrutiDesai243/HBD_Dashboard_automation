@@ -87,6 +87,8 @@ def get_task_logs(task_id):
         log_file_path = os.path.join(backend_dir, "logs", f"dmart_task_{task_id}.log")
         if not os.path.exists(log_file_path):
             log_file_path = os.path.join(backend_dir, "logs", f"zepto_task_{task_id}.log")
+        if not os.path.exists(log_file_path):
+            log_file_path = os.path.join(backend_dir, "logs", f"flipkart_task_{task_id}.log")
             
         if not os.path.exists(log_file_path):
             matches = glob.glob(os.path.join(log_dir, f"*_task_{task_id}.log"))

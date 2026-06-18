@@ -60,6 +60,7 @@ import AmazonScraper from "./componunts/scrapper/AmazonScrapper";
 import OthersDataImport from "./componunts/data import/OthersDataImport";
 import SearchKeyword from "./componunts/SearchKeyword";
 import DmartScrapper from "./componunts/scrapper/DmartScrapper";
+import FlipkartScrapper from "./componunts/scrapper/FlipkartScrapper";
 import State from "./componunts/masterdata/location msater/State";
 import Country from "./componunts/masterdata/location msater/Country";
 import Area from "./componunts/masterdata/location msater/Area";
@@ -93,7 +94,7 @@ import PostOfficeUploader from "./componunts/data import/listing import/PostOffi
 import ShikshaUploader from "./componunts/data import/listing import/ShikshaUploader";
 import DuplicateData from "./componunts/Source Wise data/DuplicateData";
 import ShikshaData from "./componunts/Source Wise data/ShikshaData";
-import FlipkartScrapper from "./componunts/scrapper/FlipkartScrapper";
+
 import IndiamartScrapper from "./componunts/scrapper/IndiamartScrapper";
 import BlinkitScrapper from "./componunts/scrapper/BlinkitScrapper";
 import ZeptoScrapper from "./componunts/scrapper/ZeptoScrapper";
@@ -691,6 +692,14 @@ export const routes = [
             path: "/scrapper/dmart",
             element: <DmartScrapper />,
           },
+            {
+              icon: <ShoppingCartIcon {...icon} />, 
+              name: "Flipkart",
+              path: "/scrapper/flipkart",
+              element: <FlipkartScrapper />,
+            },
+
+
           {
             icon: <ShoppingCartIcon {...icon} />,
             name: "BigBasket",
