@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from model.user import User
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity, set_access_cookies
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 import os
@@ -33,11 +33,12 @@ def signup():
 
     # Create token for immediate login
     token = create_access_token(identity=str(user.id))
-
-    return jsonify({
+    response = jsonify({
         "message": "Signup successful! Redirecting to dashboard...",
         "token": token
-    }), 201
+    })
+    set_access_cookies(response, token)
+    return response, 201
 
 
 # Login
@@ -57,10 +58,12 @@ def login():
     # Generates the real token for the logged-in user
     token = create_access_token(identity=str(user.id))
     
-    return jsonify({
+    response = jsonify({
         "message": "Login successful",
         "token": token
-    }), 200
+    })
+    set_access_cookies(response, token)
+    return response, 200
 
 
 # Google Login

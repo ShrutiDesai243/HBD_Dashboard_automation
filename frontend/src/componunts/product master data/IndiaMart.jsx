@@ -94,16 +94,25 @@ export default function IndiaMartData() {
   const [searchInput, setSearchInput] = useState("");
   const [category, setCategory]       = useState("");
   const [categories, setCategories]   = useState([]);
+  const [location, setLocation]       = useState("");
+  const [locationInput, setLocationInput] = useState("");
+  const [manufacturer, setManufacturer]   = useState("");
+  const [manufacturerInput, setManufacturerInput] = useState("");
+  const [minRating, setMinRating]     = useState("");
   const [sortField, setSortField]     = useState("");
   const [sortDir, setSortDir]         = useState("asc");
   const [stats, setStats]             = useState(null);
 
-  const fetchData = useCallback(async (pg = 1, q = search, cat = category) => {
+  const fetchData = useCallback(async (pg = 1, q = search, cat = category, loc = location, mfg = manufacturer, rat = minRating) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: pg, limit: LIMIT });
       if (q) params.append("search", q);
       if (cat && cat !== "All") params.append("category", cat);
+      if (loc) params.append("location", loc);
+      if (mfg) params.append("manufacturer", mfg);
+      if (rat) params.append("min_rating", rat);
+      
       const res = await api.get(`/product-report/indiamart/data?${params}`);
       const d = res.data;
       setData(d.data || []);
@@ -115,9 +124,9 @@ export default function IndiaMartData() {
     } finally {
       setLoading(false);
     }
-  }, [search, category]);
+  }, [search, category, location, manufacturer, minRating]);
 
-  useEffect(() => { fetchData(1, "", ""); }, []);
+  useEffect(() => { fetchData(1, "", "", "", "", ""); }, []);
 
   useEffect(() => {
     api.get("/product-report/summary?marketplace=IndiaMart")
@@ -131,8 +140,34 @@ export default function IndiaMartData() {
       .catch(() => {});
   }, []);
 
-  const handleSearch = () => { setSearch(searchInput); fetchData(1, searchInput, category); };
-  const handleCategoryChange = (e) => { setCategory(e.target.value); fetchData(1, search, e.target.value); };
+  const handleSearch = () => {
+    setSearch(searchInput);
+    setLocation(locationInput);
+    setManufacturer(manufacturerInput);
+    fetchData(1, searchInput, category, locationInput, manufacturerInput, minRating);
+  };
+
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+    fetchData(1, search, e.target.value, location, manufacturer, minRating);
+  };
+
+  const handleRatingChange = (e) => {
+    setMinRating(e.target.value);
+    fetchData(1, search, category, location, manufacturer, e.target.value);
+  };
+
+  const handleReset = () => {
+    setSearchInput("");
+    setSearch("");
+    setCategory("");
+    setLocationInput("");
+    setLocation("");
+    setManufacturerInput("");
+    setManufacturer("");
+    setMinRating("");
+    fetchData(1, "", "", "", "", "");
+  };
 
   const sortedData = [...data].sort((a, b) => {
     if (!sortField) return 0;
@@ -215,21 +250,56 @@ export default function IndiaMartData() {
 
       {/* Controls */}
       <div className="imt-controls">
-        <div className="imt-search" style={{ flex: 2 }}>
+        {/* General Search */}
+        <div className="imt-search" style={{ minWidth: "200px", flex: "1 1 200px" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
-            placeholder="Search by product name, manufacturer, location or code…"
+            placeholder="Search name, code..."
           />
         </div>
-        <select className="imt-select" value={category} onChange={handleCategoryChange}>
+
+        {/* Location Search */}
+        <div className="imt-search" style={{ minWidth: "150px", flex: "1 1 150px" }}>
+          <span style={{ fontSize: 13, marginRight: 2 }}>📍</span>
+          <input
+            value={locationInput}
+            onChange={e => setLocationInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+            placeholder="Location / City..."
+          />
+        </div>
+
+        {/* Manufacturer Search */}
+        <div className="imt-search" style={{ minWidth: "150px", flex: "1 1 150px" }}>
+          <span style={{ fontSize: 13, marginRight: 2 }}>🏭</span>
+          <input
+            value={manufacturerInput}
+            onChange={e => setManufacturerInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+            placeholder="Manufacturer..."
+          />
+        </div>
+
+        {/* Category Selector */}
+        <select className="imt-select" value={category} onChange={handleCategoryChange} style={{ minWidth: "160px" }}>
           <option value="">All Categories</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
+
+        {/* Rating Selector */}
+        <select className="imt-select" value={minRating} onChange={handleRatingChange} style={{ minWidth: "130px" }}>
+          <option value="">All Ratings</option>
+          <option value="4.5">4.5+ ★ Stars</option>
+          <option value="4.0">4.0+ ★ Stars</option>
+          <option value="3.5">3.5+ ★ Stars</option>
+          <option value="3.0">3.0+ ★ Stars</option>
+        </select>
+
         <button className="imt-btn imt-btn-blue" onClick={handleSearch}>Search</button>
-        <button className="imt-btn imt-btn-ghost" onClick={() => { setSearchInput(""); setSearch(""); setCategory(""); fetchData(1, "", ""); }}>Reset</button>
+        <button className="imt-btn imt-btn-ghost" onClick={handleReset}>Reset</button>
       </div>
 
       {/* Table */}

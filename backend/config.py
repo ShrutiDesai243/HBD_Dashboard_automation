@@ -36,6 +36,8 @@ class Config:
     # 1. Store token in headers and cookies
     JWT_TOKEN_LOCATION = ['headers', 'cookies']
 
+    # 2. Set to False for local development (allow cookies over HTTP)
+    JWT_COOKIE_SECURE = False
     # 2. Set to True because your live site uses HTTPS (auto-detects and disables on local runs)
     JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", "False" if os.getenv("DB_HOST") in ("localhost", "127.0.0.1") else "True").lower() == "true" 
 

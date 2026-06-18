@@ -23,3 +23,5 @@ gevent
 prometheus-client
 flask_mail
 flask_migrate
+pdfplumber
+scrapy

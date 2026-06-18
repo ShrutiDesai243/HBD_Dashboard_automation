@@ -16,12 +16,12 @@ def fetch_flipkart_data():
         search = request.args.get('search', '')
         category = request.args.get('category', '')
 
-        query = Flipkart.query.order_by(Flipkart.id.desc())
+        query = Flipkart.query
         
         if search:
-            query = query.filter(Flipkart.product_name.ilike(f"%{search}%"))
+            query = query.filter(Flipkart.title.ilike(f"%{search}%"))
         if category:
-            query = query.filter(Flipkart.leaf_category.ilike(f"%{category}%"))
+            query = query.filter(Flipkart.categoryName.ilike(f"%{category}%"))
         
         pagination = query.paginate(page=page, per_page=limit, error_out=False)
         return jsonify({

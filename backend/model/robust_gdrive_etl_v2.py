@@ -38,9 +38,24 @@ ROOT_FOLDER_ID = os.getenv('GDRIVE_ROOT_FOLDER_ID', '1ltTYjekxZsk2CdF20tSk1B2FnR
 SERVICE_ACCOUNT_FILE = config.SERVICE_ACCOUNT_FILE
 DATABASE_URI = config.DATABASE_URI
 
+
+def get_service_account_file():
+    if not SERVICE_ACCOUNT_FILE:
+        raise FileNotFoundError(
+            "SERVICE_ACCOUNT_FILE is not configured. "
+            "Set SERVICE_ACCOUNT_FILE in backend/.env or export it in the environment."
+        )
+    if not os.path.exists(SERVICE_ACCOUNT_FILE):
+        raise FileNotFoundError(f"Service account file not found at: {SERVICE_ACCOUNT_FILE}")
+    return SERVICE_ACCOUNT_FILE
+
+
 class GDriveHighSpeedIngestor:
     def __init__(self):
-        self.creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=['https://www.googleapis.com/auth/drive.readonly'])
+        service_account_file = get_service_account_file()
+        self.creds = service_account.Credentials.from_service_account_file(
+            service_account_file, scopes=['https://www.googleapis.com/auth/drive.readonly']
+        )
         # Producer uses a standard pool since it's threaded, not gevent
         # Reduced pool size to save memory on 3.5GB systems
         self.engine = create_engine(DATABASE_URI, pool_size=10, max_overflow=5, pool_pre_ping=True, pool_recycle=1800, pool_timeout=30, isolation_level="READ COMMITTED")
