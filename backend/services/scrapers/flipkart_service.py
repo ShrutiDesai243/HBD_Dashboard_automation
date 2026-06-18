@@ -11,34 +11,9 @@ backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if backend_root not in sys.path:
     sys.path.insert(0, backend_root)
 
-# ── Helper to resolve Scrapy project directory ──
-def get_flipkart_scrapy_dir():
-    """
-    Priority order for finding the Scrapy project:
-    1. FLIPKART_SCRAPY_DIR environment variable
-    2. Local copy inside backend/flipkart_scrapy  (preferred — self-contained)
-    3. Original dev path on D: drive (fallback only)
-    """
-    # 1. Check env var
-    env_path = os.getenv("FLIPKART_SCRAPY_DIR")
-    if env_path and os.path.isdir(env_path):
-        return env_path
-
-    # 2. Local copy inside backend (self-contained deployment — preferred)
-    local_path = os.path.join(backend_root, "flipkart_scrapy")
-    if os.path.isdir(local_path):
-        return local_path
-
-    # 3. Dev machine fallback
-    dev_path = r"d:\flipkart_scrapy_v3\flipkart_scrapy"
-    if os.path.isdir(dev_path):
-        return dev_path
-
-    return None
-
-
-scrapy_dir = get_flipkart_scrapy_dir()
-if scrapy_dir and scrapy_dir not in sys.path:
+# ── Engine is a sibling package ──
+scrapy_dir = os.path.join(os.path.dirname(__file__), "flipkart_engine")
+if scrapy_dir not in sys.path:
     sys.path.insert(0, scrapy_dir)
 
 # ── Set Scrapy settings module ──
