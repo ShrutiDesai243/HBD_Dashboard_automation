@@ -201,6 +201,10 @@ PUBLIC_ROUTES = [
     "/api/product-report/mapping/zepto",
     "/api/scrape_dmart",
     "/api/scrape_amazon",
+    "/api/scraper/zepto/start",
+    "/api/scraper/zepto/stop",
+    "/api/scraper/zepto/status",
+    "/api/scraper/zepto/logs",
 ]
 
 @app.before_request
@@ -229,6 +233,9 @@ def protect_all_routes():
 # --- Register Blueprints ---
 # As requested, we follow the working file's lead: no manual '/api' addition here 
 # if Nginx handles it.
+from services.scrapers.zepto.controller import zepto_scraper_bp
+app.register_blueprint(zepto_scraper_bp, url_prefix="/api")
+
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
