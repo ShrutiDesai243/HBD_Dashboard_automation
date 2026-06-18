@@ -22,11 +22,20 @@ def get_tier_stats():
             where_clause = "WHERE raw_source_table = :src"
             params = {"src": source_table}
             
-        t1 = db.session.execute(text(f"SELECT COUNT(*) FROM tier1_master_clean {where_clause}"), params).fetchone()[0]
-        t2 = db.session.execute(text(f"SELECT COUNT(*) FROM tier2_missing_contact {where_clause}"), params).fetchone()[0]
-        t3 = db.session.execute(text(f"SELECT COUNT(*) FROM tier3_missing_location {where_clause}"), params).fetchone()[0]
-        t4 = db.session.execute(text(f"SELECT COUNT(*) FROM tier4_partial_fragments {where_clause}"), params).fetchone()[0]
-        t5 = db.session.execute(text(f"SELECT COUNT(*) FROM tier5_linked_duplicates {where_clause}"), params).fetchone()[0]
+            # Exact count when filtered
+            t1 = db.session.execute(text(f"SELECT COUNT(*) FROM tier1_master_clean {where_clause}"), params).fetchone()[0]
+            t2 = db.session.execute(text(f"SELECT COUNT(*) FROM tier2_missing_contact {where_clause}"), params).fetchone()[0]
+            t3 = db.session.execute(text(f"SELECT COUNT(*) FROM tier3_missing_location {where_clause}"), params).fetchone()[0]
+            t4 = db.session.execute(text(f"SELECT COUNT(*) FROM tier4_partial_fragments {where_clause}"), params).fetchone()[0]
+            t5 = db.session.execute(text(f"SELECT COUNT(*) FROM tier5_linked_duplicates {where_clause}"), params).fetchone()[0]
+        else:
+            # Fast approximate count from information_schema when checking ALL tables
+            query = text("SELECT TABLE_ROWS FROM information_schema.tables WHERE table_name = :tname AND table_schema = DATABASE()")
+            t1 = db.session.execute(query, {"tname": "tier1_master_clean"}).fetchone()[0] or 0
+            t2 = db.session.execute(query, {"tname": "tier2_missing_contact"}).fetchone()[0] or 0
+            t3 = db.session.execute(query, {"tname": "tier3_missing_location"}).fetchone()[0] or 0
+            t4 = db.session.execute(query, {"tname": "tier4_partial_fragments"}).fetchone()[0] or 0
+            t5 = db.session.execute(query, {"tname": "tier5_linked_duplicates"}).fetchone()[0] or 0
 
         return jsonify({
             "status": "success",
@@ -94,12 +103,52 @@ def run_dynamic_cleaner():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@dynamic_tier_bp.route('/api/tiers/prepare-table', methods=['POST'])
+def prepare_table():
+    """Explicitly adds required tracking columns to the specified table so it's fit for cleaning."""
+    try:
+        table_name = request.json.get('table')
+        if not table_name:
+            return jsonify({"status": "error", "message": "Table name is required"}), 400
+
+        # Fetch existing columns
+        columns_query = db.session.execute(text(f"SHOW COLUMNS FROM {table_name}")).fetchall()
+        col_names = [col[0].lower() for col in columns_query]
+
+        added_cols = []
+        if 'cleaning_status' not in col_names:
+            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN cleaning_status VARCHAR(50) DEFAULT 'PENDING'"))
+            added_cols.append('cleaning_status')
+        if 'assigned_tier' not in col_names:
+            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN assigned_tier VARCHAR(100) DEFAULT NULL"))
+            added_cols.append('assigned_tier')
+        if 'quality_score' not in col_names:
+            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN quality_score INT DEFAULT NULL"))
+            added_cols.append('quality_score')
+
+        db.session.commit()
+        return jsonify({
+            "status": "success", 
+            "message": f"Table '{table_name}' prepared successfully. Added columns: {added_cols if added_cols else 'None (Already fit)'}"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @dynamic_tier_bp.route('/api/tiers/tables', methods=['GET'])
 def get_tables():
     """Returns a list of all tables in the database so the user can select one."""
     try:
         rows = db.session.execute(text("SHOW TABLES")).fetchall()
-        tables = [r[0] for r in rows if isinstance(r[0], str)]
+        tables = []
+        for r in rows:
+            val = r[0]
+            if isinstance(val, bytes):
+                tables.append(val.decode('utf-8'))
+            else:
+                tables.append(str(val))
+                
         return jsonify({"status": "success", "tables": tables}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -180,12 +229,16 @@ def get_tier_data(tier_name):
         source_table = request.args.get('source_table', 'ALL')
         where_clause = ""
         params = {}
+        order_clause = "ORDER BY id DESC"
+        
         if source_table and source_table != "ALL":
             where_clause = "WHERE raw_source_table = :src"
             params = {"src": source_table}
+            # Use raw_source_id for sorting when filtering by source table to utilize the composite index perfectly
+            order_clause = "ORDER BY raw_source_id DESC"
 
         # Fetching top 100
-        rows = db.session.execute(text(f"SELECT * FROM {table_name} {where_clause} ORDER BY id DESC LIMIT 100"), params).fetchall()
+        rows = db.session.execute(text(f"SELECT * FROM {table_name} {where_clause} {order_clause} LIMIT 100"), params).fetchall()
         columns = db.session.execute(text(f"SHOW COLUMNS FROM {table_name}")).fetchall()
         col_names = [col[0] for col in columns]
 
