@@ -55,10 +55,10 @@ const ProductIncomplete = () => {
   const fetchData = useCallback(async (pg = 1, sq = appliedSearch, mp = marketplace) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: limit, page: pg, marketplace: mp });
+      const params = new URLSearchParams({ limit: limit, page: pg });
       if (sq) params.append("search", sq);
       
-      const res = await api.get(`/product-report/unmapped-products?${params}`);
+      const res = await api.get(`/cleaning/uncleaned-products?${params}`);
       const d = res.data;
       setData(d.data || []);
       setTotal(d.total_count || (d.data ? d.data.length : 0));

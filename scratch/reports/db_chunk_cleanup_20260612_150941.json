@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-06-12T15:09:38",
+  "database": "genuineh_dashboard",
+  "chunk_size": 10000,
+  "tables": [
+    {
+      "table": "gdrive_sync_inventory",
+      "row_count_before": 116924,
+      "row_count_after": 116924,
+      "row_count_unchanged": true,
+      "backup_table": null,
+      "pk_column": null,
+      "changed_rows_reported": 0,
+      "status": "completed",
+      "error": null
+    }
+  ],
+  "skipped_tables": [],
+  "completed_at": "2026-06-12T15:09:41",
+  "summary": {
+    "tables_seen": 144,
+    "tables_processed": 1,
+    "tables_changed": 0,
+    "tables_failed": 0,
+    "tables_skipped": 0,
+    "all_processed_row_counts_unchanged": true
+  }
+}

@@ -1,7 +1,7 @@
 from extensions import db
 
 class BigBasket(db.Model):
-    __tablename__ = 'big_basket' # Assuming this is your exact MySQL table name
+    __tablename__ = 'bigbasket'
 
     id = db.Column(db.Integer, primary_key=True)
     product = db.Column(db.String(512))
@@ -14,7 +14,7 @@ class BigBasket(db.Model):
     rating = db.Column(db.String(50))
     description = db.Column(db.Text)
     created_at = db.Column(db.String(100))
-    product_brand_hash = db.Column(db.String(64))
+    # product_brand_hash = db.Column(db.String(64)) # Commented out as it's a generated column in MySQL
 
     def to_dict(self):
         return {

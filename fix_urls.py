@@ -1,7 +1,7 @@
 import os
 import re
 
-src_dir = r'C:\Users\ranpu\Documents\Dashboard automation g map\frontend\src'
+src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'frontend', 'src'))
 
 def replace_in_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:

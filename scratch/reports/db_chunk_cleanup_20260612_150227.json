@@ -1,0 +1,204 @@
+{
+  "started_at": "2026-06-12T14:59:35",
+  "database": "genuineh_dashboard",
+  "chunk_size": 10000,
+  "tables": [
+    {
+      "table": "asklaila",
+      "row_count_before": 237381,
+      "row_count_after": 237381,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_asklaila",
+      "pk_column": "id",
+      "changed_rows_reported": 1,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "atm",
+      "row_count_before": 19938,
+      "row_count_after": 19938,
+      "row_count_unchanged": true,
+      "backup_table": null,
+      "pk_column": "id",
+      "changed_rows_reported": 0,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "bank_data",
+      "row_count_before": 115,
+      "row_count_after": 115,
+      "row_count_unchanged": true,
+      "backup_table": null,
+      "pk_column": "id",
+      "changed_rows_reported": 0,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "big_basket",
+      "row_count_before": 54668,
+      "row_count_after": 54668,
+      "row_count_unchanged": true,
+      "backup_table": null,
+      "pk_column": "id",
+      "changed_rows_reported": 0,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "college_dunia",
+      "row_count_before": 17341,
+      "row_count_after": 17341,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_college_dunia",
+      "pk_column": "id",
+      "changed_rows_reported": 754,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "freelisting",
+      "row_count_before": 16927,
+      "row_count_after": 16927,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_freelisting",
+      "pk_column": "id",
+      "changed_rows_reported": 8,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "google_map",
+      "row_count_before": 71398,
+      "row_count_after": 71398,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_google_map",
+      "pk_column": "id",
+      "changed_rows_reported": 71094,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "google_map_scrape",
+      "row_count_before": 25423,
+      "row_count_after": 25423,
+      "row_count_unchanged": true,
+      "backup_table": null,
+      "pk_column": "id",
+      "changed_rows_reported": 0,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "heyplaces",
+      "row_count_before": 53638,
+      "row_count_after": 53638,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_heyplaces",
+      "pk_column": "id",
+      "changed_rows_reported": 19,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "justdial",
+      "row_count_before": 62249,
+      "row_count_after": 62249,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_justdial",
+      "pk_column": "id",
+      "changed_rows_reported": 3482,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "magicpin",
+      "row_count_before": 523729,
+      "row_count_after": null,
+      "row_count_unchanged": null,
+      "backup_table": "safe_clean_changed_20260612_145935_magicpin",
+      "pk_column": "id",
+      "changed_rows_reported": 0,
+      "status": "failed",
+      "error": "(pymysql.err.IntegrityError) (1062, \"Duplicate entry 'a1074fdd5fc06122bdcaea422d17dd7e8a0374a3ba33048656718ed6cde67db0' for key 'magicpin.unique_name_address'\")\n[SQL: \n                                    UPDATE `magicpin`\n                                    SET `name` = TRIM(`name`), `number` = TRIM(`number`), `avg_spent` = TRIM(`avg_spent`), `address` = TRIM(`address`), `area` = TRIM(`area`), `subcategory` = TRIM(`subcategory`), `city` = TRIM(`city`), `category` = TRIM(`category`), `cost_for_two` = TRIM(`cost_for_two`), `source` = TRIM(`source`)\n                                    WHERE `id` BETWEEN %(start_id)s AND %(end_id)s\n                                      AND ((`name` IS NOT NULL AND `name` <> TRIM(`name`)) OR (`number` IS NOT NULL AND `number` <> TRIM(`number`)) OR (`avg_spent` IS NOT NULL AND `avg_spent` <> TRIM(`avg_spent`)) OR (`address` IS NOT NULL AND `address` <> TRIM(`address`)) OR (`area` IS NOT NULL AND `area` <> TRIM(`area`)) OR (`subcategory` IS NOT NULL AND `subcategory` <> TRIM(`subcategory`)) OR (`city` IS NOT NULL AND `city` <> TRIM(`city`)) OR (`category` IS NOT NULL AND `category` <> TRIM(`category`)) OR (`cost_for_two` IS NOT NULL AND `cost_for_two` <> TRIM(`cost_for_two`)) OR (`source` IS NOT NULL AND `source` <> TRIM(`source`)))\n                                ]\n[parameters: {'start_id': 8001, 'end_id': 18000}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    },
+    {
+      "table": "nearbuy",
+      "row_count_before": 4377,
+      "row_count_after": 4377,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_nearbuy",
+      "pk_column": "id",
+      "changed_rows_reported": 260,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "pinda",
+      "row_count_before": 816519,
+      "row_count_after": 816519,
+      "row_count_unchanged": true,
+      "backup_table": null,
+      "pk_column": "id",
+      "changed_rows_reported": 0,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "post_office",
+      "row_count_before": 154784,
+      "row_count_after": 154784,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_post_office",
+      "pk_column": "id",
+      "changed_rows_reported": 895,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "schoolgis",
+      "row_count_before": 36579,
+      "row_count_after": 36579,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_schoolgis",
+      "pk_column": "id",
+      "changed_rows_reported": 11,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "shiksha",
+      "row_count_before": 10619,
+      "row_count_after": 10619,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_shiksha",
+      "pk_column": "id",
+      "changed_rows_reported": 139,
+      "status": "completed",
+      "error": null
+    },
+    {
+      "table": "yellow_pages",
+      "row_count_before": 1736,
+      "row_count_after": 1736,
+      "row_count_unchanged": true,
+      "backup_table": "safe_clean_changed_20260612_145935_yellow_pages",
+      "pk_column": "id",
+      "changed_rows_reported": 36,
+      "status": "completed",
+      "error": null
+    }
+  ],
+  "skipped_tables": [],
+  "completed_at": "2026-06-12T15:02:27",
+  "summary": {
+    "tables_seen": 131,
+    "tables_processed": 17,
+    "tables_changed": 11,
+    "tables_failed": 1,
+    "tables_skipped": 0,
+    "all_processed_row_counts_unchanged": true
+  }
+}

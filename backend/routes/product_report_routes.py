@@ -872,11 +872,10 @@ def refresh_report_summary():
                 blinkit_stats = conn.execute(text("""
                     WITH unique_blinkit_mapping AS (
                         SELECT 
-                            bm.category_name,
-                            MIN(COALESCE(parent.category_name, bm.category_name)) as resolved_main_category
+                            bm.category_id,
+                            COALESCE(parent.category_name, bm.category_name) as resolved_main_category
                         FROM blinkit_mapping bm
                         LEFT JOIN blinkit_mapping parent ON bm.parent_id = parent.category_id AND bm.category_level = 2
-                        GROUP BY bm.category_name
                     ),
                     resolved_blinkit AS (
                         SELECT 
@@ -887,7 +886,7 @@ def refresh_report_summary():
                             b.price,
                             b.brand
                         FROM blinkit b
-                        LEFT JOIN unique_blinkit_mapping ubm ON ubm.category_name = b.category
+                        LEFT JOIN unique_blinkit_mapping ubm ON ubm.category_id = b.category_id
                     )
                     SELECT 
                         (SELECT COUNT(DISTINCT category_name) FROM blinkit_mapping WHERE category_level = 1) as total_categories,
@@ -922,10 +921,10 @@ def refresh_report_summary():
                             (SELECT parent.category_name 
                              FROM blinkit_mapping bm 
                              JOIN blinkit_mapping parent ON bm.parent_id = parent.category_id
-                             WHERE bm.category_name = b.category AND bm.category_level = 2 LIMIT 1),
+                             WHERE bm.category_id = b.category_id AND bm.category_level = 2 LIMIT 1),
                             (SELECT bm.category_name 
                              FROM blinkit_mapping bm 
-                             WHERE bm.category_name = b.category AND bm.category_level = 1 LIMIT 1)
+                             WHERE bm.category_id = b.category_id AND bm.category_level = 1 LIMIT 1)
                         ) as category_name,
                         sub_category as sub_category_name,
                         price,
@@ -1102,17 +1101,17 @@ def refresh_report_summary():
                             c.category_name,
                             MIN(COALESCE(root4.category_name, root3.category_name, root2.category_name, root1.category_name, root0.category_name)) AS resolved_main_category
                         FROM indiamart_mappings c
-                        LEFT JOIN indiamart_mappings p4 ON c.parent_id = p4.category_id AND c.category_level = 4
-                        LEFT JOIN indiamart_mappings p3 ON p4.parent_id = p3.category_id
-                        LEFT JOIN indiamart_mappings p2 ON p3.parent_id = p2.category_id
-                        LEFT JOIN indiamart_mappings root4 ON p2.parent_id = root4.category_id AND root4.category_level IS NULL
-                        LEFT JOIN indiamart_mappings q3 ON c.parent_id = q3.category_id AND c.category_level = 3
-                        LEFT JOIN indiamart_mappings q2 ON q3.parent_id = q2.category_id
-                        LEFT JOIN indiamart_mappings root3 ON q2.parent_id = root3.category_id AND root3.category_level IS NULL
-                        LEFT JOIN indiamart_mappings r2 ON c.parent_id = r2.category_id AND c.category_level = 2
-                        LEFT JOIN indiamart_mappings root2 ON r2.parent_id = root2.category_id AND root2.category_level IS NULL
-                        LEFT JOIN indiamart_mappings root1 ON c.parent_id = root1.category_id AND c.category_level = 1 AND root1.category_level IS NULL
-                        LEFT JOIN indiamart_mappings root0 ON c.category_id = root0.category_id AND c.category_level IS NULL
+                        LEFT JOIN indiamart_mappings p4 ON c.parent_id = p4.id AND c.category_level = 4
+                        LEFT JOIN indiamart_mappings p3 ON p4.parent_id = p3.id
+                        LEFT JOIN indiamart_mappings p2 ON p3.parent_id = p2.id
+                        LEFT JOIN indiamart_mappings root4 ON p2.parent_id = root4.id AND root4.category_level IS NULL
+                        LEFT JOIN indiamart_mappings q3 ON c.parent_id = q3.id AND c.category_level = 3
+                        LEFT JOIN indiamart_mappings q2 ON q3.parent_id = q2.id
+                        LEFT JOIN indiamart_mappings root3 ON q2.parent_id = root3.id AND root3.category_level IS NULL
+                        LEFT JOIN indiamart_mappings r2 ON c.parent_id = r2.id AND c.category_level = 2
+                        LEFT JOIN indiamart_mappings root2 ON r2.parent_id = root2.id AND root2.category_level IS NULL
+                        LEFT JOIN indiamart_mappings root1 ON c.parent_id = root1.id AND c.category_level = 1 AND root1.category_level IS NULL
+                        LEFT JOIN indiamart_mappings root0 ON c.id = root0.id AND c.category_level IS NULL
                         GROUP BY c.category_name
                     ),
                     resolved_indiamart AS (
@@ -1633,7 +1632,7 @@ def get_blinkit_live_data():
                 
             total_count = conn.execute(text(f"SELECT COUNT(*) {q}"), params).scalar()
             
-            q_select = f"SELECT product_id, product_name, brand, category, sub_category, price, mrp, quantity, availability, product_url, image_url {q} ORDER BY product_id ASC LIMIT :limit OFFSET :offset"
+            q_select = f"SELECT product_id, product_name, brand, category, sub_category, category_id, price, mrp, quantity, availability, product_url, image_url {q} ORDER BY product_id ASC LIMIT :limit OFFSET :offset"
             params['limit'] = limit
             params['offset'] = (page - 1) * limit
             
@@ -1648,6 +1647,7 @@ def get_blinkit_live_data():
                     "brand": r["brand"] or "",
                     "category": r["category"] or "",
                     "sub_category": r["sub_category"] or "",
+                    "category_id": r["category_id"],
                     "price": float(r["price"]) if r["price"] is not None else None,
                     "mrp": float(r["mrp"]) if r["mrp"] is not None else None,
                     "quantity": r["quantity"] or "",
@@ -1798,6 +1798,9 @@ def get_indiamart_live_data():
         limit = request.args.get('limit', 50, type=int)
         search = request.args.get('search', '').strip()
         category = request.args.get('category', '').strip()
+        location = request.args.get('location', '').strip()
+        min_rating = request.args.get('min_rating', 0, type=float)
+        manufacturer = request.args.get('manufacturer', '').strip()
         
         with engine.connect() as conn:
             q = "FROM indiamart_products WHERE 1=1"
@@ -1808,6 +1811,15 @@ def get_indiamart_live_data():
             if category:
                 q += " AND category_name = :category"
                 params['category'] = category
+            if location:
+                q += " AND location LIKE :location"
+                params['location'] = f"%{location}%"
+            if min_rating > 0:
+                q += " AND stars >= :min_rating"
+                params['min_rating'] = min_rating
+            if manufacturer:
+                q += " AND manufacturer LIKE :manufacturer"
+                params['manufacturer'] = f"%{manufacturer}%"
                 
             total_count = conn.execute(text(f"SELECT COUNT(*) {q}"), params).scalar()
             
@@ -1859,6 +1871,41 @@ def get_indiamart_live_data():
     except Exception as e:
         print(f"[product_report] indiamart live data error: {traceback.format_exc()}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@product_report_bp.route('/indiamart/locations', methods=['GET'])
+def get_indiamart_locations():
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT DISTINCT location 
+                FROM indiamart_products 
+                WHERE location IS NOT NULL AND location != ''
+                ORDER BY location ASC
+            """)).fetchall()
+            data = [r[0] for r in rows]
+        return jsonify({"status": "success", "data": data, "total": len(data)}), 200
+    except Exception as e:
+        print(f"[product_report] indiamart locations error: {traceback.format_exc()}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@product_report_bp.route('/indiamart/manufacturers', methods=['GET'])
+def get_indiamart_manufacturers():
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT DISTINCT manufacturer 
+                FROM indiamart_products 
+                WHERE manufacturer IS NOT NULL AND manufacturer != ''
+                ORDER BY manufacturer ASC
+            """)).fetchall()
+            data = [r[0] for r in rows]
+        return jsonify({"status": "success", "data": data, "total": len(data)}), 200
+    except Exception as e:
+        print(f"[product_report] indiamart manufacturers error: {traceback.format_exc()}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @product_report_bp.route('/mapping/zepto', methods=['GET'])
@@ -2775,17 +2822,17 @@ def get_mapping_report():
                             c.category_name,
                             MIN(COALESCE(root4.category_name, root3.category_name, root2.category_name, root1.category_name, root0.category_name)) AS resolved_main_category
                         FROM indiamart_mappings c
-                        LEFT JOIN indiamart_mappings p4 ON c.parent_id = p4.category_id AND c.category_level = 4
-                        LEFT JOIN indiamart_mappings p3 ON p4.parent_id = p3.category_id
-                        LEFT JOIN indiamart_mappings p2 ON p3.parent_id = p2.category_id
-                        LEFT JOIN indiamart_mappings root4 ON p2.parent_id = root4.category_id AND root4.category_level IS NULL
-                        LEFT JOIN indiamart_mappings q3 ON c.parent_id = q3.category_id AND c.category_level = 3
-                        LEFT JOIN indiamart_mappings q2 ON q3.parent_id = q2.category_id
-                        LEFT JOIN indiamart_mappings root3 ON q2.parent_id = root3.category_id AND root3.category_level IS NULL
-                        LEFT JOIN indiamart_mappings r2 ON c.parent_id = r2.category_id AND c.category_level = 2
-                        LEFT JOIN indiamart_mappings root2 ON r2.parent_id = root2.category_id AND root2.category_level IS NULL
-                        LEFT JOIN indiamart_mappings root1 ON c.parent_id = root1.category_id AND c.category_level = 1 AND root1.category_level IS NULL
-                        LEFT JOIN indiamart_mappings root0 ON c.category_id = root0.category_id AND c.category_level IS NULL
+                        LEFT JOIN indiamart_mappings p4 ON c.parent_id = p4.id AND c.category_level = 4
+                        LEFT JOIN indiamart_mappings p3 ON p4.parent_id = p3.id
+                        LEFT JOIN indiamart_mappings p2 ON p3.parent_id = p2.id
+                        LEFT JOIN indiamart_mappings root4 ON p2.parent_id = root4.id AND root4.category_level IS NULL
+                        LEFT JOIN indiamart_mappings q3 ON c.parent_id = q3.id AND c.category_level = 3
+                        LEFT JOIN indiamart_mappings q2 ON q3.parent_id = q2.id
+                        LEFT JOIN indiamart_mappings root3 ON q2.parent_id = root3.id AND root3.category_level IS NULL
+                        LEFT JOIN indiamart_mappings r2 ON c.parent_id = r2.id AND c.category_level = 2
+                        LEFT JOIN indiamart_mappings root2 ON r2.parent_id = root2.id AND root2.category_level IS NULL
+                        LEFT JOIN indiamart_mappings root1 ON c.parent_id = root1.id AND c.category_level = 1 AND root1.category_level IS NULL
+                        LEFT JOIN indiamart_mappings root0 ON c.id = root0.id AND c.category_level IS NULL
                         GROUP BY c.category_name
                     ),
                     resolved_products AS (

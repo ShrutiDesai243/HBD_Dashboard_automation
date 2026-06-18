@@ -16,6 +16,8 @@ from model.item_csv_model import ItemData
 from model.master_table_model import MasterTable
 from model.upload_master_reports_model import UploadReport
 from model.listing_master import ListingMaster
+from model.uncleaned_listing_master import UncleanedListingMaster
+from model.uncleaned_product_master import UncleanedProductMaster
 from model.heyplaces import HeyPlaces
 from model.location_master import LocationMaster 
 
@@ -35,11 +37,13 @@ from model.yellow_pages import YellowPages
 from model.google_map_scrape import GoogleMapScrape
 from model.robust_gdrive_etl_v2 import start_background_etl
 from model.unmatched_data_review import UnmatchedDataReview
+from model.data_cleaning_log import DataCleaningLog
+from model.duplicate_records_review import DuplicateRecordsReview
 
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
 from model.product_model.bigbasket_product_model import BigBasket
-from model.product_model.additional_products import BigBasketNew, Zepto
+from model.product_model.additional_products import Zepto
 
 # --- Dynamic Categories Mapping Master Models ---
 from model.master_category import MasterCategory
@@ -53,6 +57,8 @@ from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
+from routes.indiamart_scraper_routes import indiamart_scraper_bp
+from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
 from routes.flipkart_routes import flipkart_api_bp 
@@ -99,6 +105,7 @@ from routes.product_routes.upload_india_mart_route import indiamart_bp
 from routes.product_routes.upload_jio_mart_route import jiomart_bp
 from routes.product_routes.upload_zepto_route import zepto_bp
 from routes.product_master_route import product_master_bp
+from routes.blinkit_scraper_routes import blinkit_scraper_bp
 # New Dashboard Blueprints
 from routes.gdrive_etl_routes.validation_dashboard import validation_dashboard_bp
 from routes.gdrive_etl_routes.dashboard_stats import dashboard_bp
@@ -106,10 +113,10 @@ from routes.report_aggregate_routes import report_aggregate_bp
 from routes.unmatched_data_routes import unmatched_data_bp
 from routes.listing_upload_routes import listing_upload_bp
 from routes.product_report_routes import product_report_bp
-
-# --- Dynamic Categories Mapping Master Blueprints ---
-from routes.master_category_routes import master_category_bp
+from routes.data_cleaning_routes import data_cleaning_bp
 from routes.category_mapping_routes import category_mapping_bp
+from routes.master_category_routes import master_category_bp
+from routes.dynamic_tier_routes import dynamic_tier_bp
 
 # --- Initialize App ---
 load_dotenv(override=True)
@@ -191,13 +198,14 @@ PUBLIC_ROUTES = [
     "/big-basket/fetch-data",
     "/location-master/fetch-data",
     "/validation/dashboard",
-    "/product-master/fetch-data",
+    "/api/product-master/fetch-data",
     "/api/report/aggregate",
     "/api/report/health",
     "/api/googlemap_data",
     "/api/unmatched/counts",
     "/api/unmatched/list",
     "/api/unmatched/fix",
+    "/api/unmatched/add-to-location-master",
     "/api/listing-upload",
     "/api/listing-upload/history",
     "/api/listing-upload/pending",
@@ -216,6 +224,21 @@ PUBLIC_ROUTES = [
     "/api/scrape_dmart",
     "/api/scrape_amazon",
     "/api/scrape_flipkart",
+    "/api/scraper/zepto/start",
+    "/api/scraper/zepto/stop",
+    "/api/scraper/zepto/status",
+    "/api/scraper/zepto/logs",
+    "/api/scrape_bigbasket",
+    "/api/scrape_bigbasket/tasks",
+    "/api/scrape_bigbasket/preview",
+    "/api/scrape_bigbasket/merge",
+    "/api/scrape_blinkit",
+    "/api/scrape_blinkit/status",
+    "/api/scrape_blinkit/history",
+    "/api/scrape_blinkit/stop",
+    "/api/scrape_blinkit/db-stats",
+    "/api/scrape_blinkit/categories",
+    "/api/scrape_blinkit/mapping",
     "/api/master-categories",
     "/api/category-mapping",
     "/api/category-mapping/stats",
@@ -225,6 +248,7 @@ PUBLIC_ROUTES = [
     "/api/category-mapping/settings/platforms",
     "/api/category-mapping/settings/synonyms",
     "/api/scrape_zepto",
+    "/api/scrape_indiamart",
 ]
 
 @app.before_request
@@ -233,33 +257,52 @@ def protect_all_routes():
         return jsonify({"message": "CORS preflight successful"}), 200
 
     normalized_path = request.path.rstrip('/')
+    # Explicit bypass for BigBasket scraping endpoint to allow scraper-triggering
+    # requests without requiring a JWT cookie (they run background jobs).
+    if request.path.startswith('/api/scrape_bigbasket'):
+        return None
     public_paths = [route.rstrip('/') for route in PUBLIC_ROUTES]
 
     # Bypass for whitelist, fetch-data routes, or listing-upload / product-report / source- / tasks / master-categories / category-mapping prefixes
-    if (normalized_path in public_paths or 
-        normalized_path.endswith('/fetch-data') or 
-        normalized_path.startswith('/api/listing-upload') or 
-        normalized_path.startswith('/api/product-report') or 
-        normalized_path.startswith('/api/report/source-') or 
-        normalized_path.startswith('/api/master-categories') or
-        normalized_path.startswith('/api/category-mapping') or
-        normalized_path.startswith('/api/tasks')):
+    if (
+        normalized_path in public_paths
+        or normalized_path.endswith('/fetch-data')
+        or normalized_path.startswith('/api/scrape_bigbasket')
+        or normalized_path.startswith('/api/scrape_indiamart')
+        or normalized_path.startswith('/api/listing-upload')
+        or normalized_path.startswith('/api/product-report')
+        or normalized_path.startswith('/api/report/source-')
+        or normalized_path.startswith('/api/tasks')
+        or normalized_path.startswith('/api/scrape_blinkit')
+        or normalized_path.startswith('/api/master-categories')
+        or normalized_path.startswith('/api/category-mapping')
+        or normalized_path.startswith('/api/cleaning')
+        or normalized_path.startswith('/api/tiers')
+    ):
         return None
 
     try:
         verify_jwt_in_request()
     except Exception as e:
-        print(f"❌ JWT REJECTED for {request.path}: {str(e)}")
+        try:
+            print(f"❌ JWT REJECTED for {request.path}: {str(e)}")
+        except UnicodeEncodeError:
+            print(f"[ERROR] JWT REJECTED for {request.path}: {str(e)}")
         return jsonify({"message": "Missing or invalid token", "error": str(e)}), 401
 
 # --- Register Blueprints ---
 # As requested, we follow the working file's lead: no manual '/api' addition here 
 # if Nginx handles it.
+from services.scrapers.zepto.controller import zepto_scraper_bp
+app.register_blueprint(zepto_scraper_bp, url_prefix="/api")
+
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
 app.register_blueprint(flipkart_api_bp, url_prefix="/api")
+app.register_blueprint(indiamart_scraper_bp, url_prefix="/api")
+app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
 app.register_blueprint(master_table_bp)
 app.register_blueprint(product_csv_bp)
@@ -271,16 +314,16 @@ app.register_blueprint(upload_others_csv_bp)
 app.register_blueprint(listing_master_bp, url_prefix="/api")
 app.register_blueprint(validation_dashboard_bp, url_prefix="/validation")
 app.register_blueprint(dashboard_bp, url_prefix="/stats")
-app.register_blueprint(product_master_bp, url_prefix="/product-master")
+app.register_blueprint(product_master_bp, url_prefix="/api/product-master")
 app.register_blueprint(report_aggregate_bp)
+app.register_blueprint(blinkit_scraper_bp, url_prefix="/api")
 app.register_blueprint(unmatched_data_bp, url_prefix="/api/unmatched")
 app.register_blueprint(listing_upload_bp, url_prefix="/api/listing-upload")
 app.register_blueprint(product_report_bp, url_prefix="/api/product-report")
-app.register_blueprint(zepto_api_bp, url_prefix="/api")
-
-# --- Dynamic Categories Mapping Master Blueprints ---
-app.register_blueprint(master_category_bp, url_prefix="/api/master-categories")
+app.register_blueprint(data_cleaning_bp, url_prefix="/api/cleaning")
 app.register_blueprint(category_mapping_bp, url_prefix="/api/category-mapping")
+app.register_blueprint(master_category_bp, url_prefix="/api/master-categories")
+app.register_blueprint(dynamic_tier_bp)
 
 # --- Register Listing & Product Blueprints (Batch) ---
 blueprints_listing = [
