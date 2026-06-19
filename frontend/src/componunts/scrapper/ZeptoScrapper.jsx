@@ -23,14 +23,7 @@ const ZeptoScrapper = () => {
   });
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("all");
-  const mode = "category";
-  const [categories, setCategories] = useState("");
-  const [maxCategories, setMaxCategories] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState("");
-  const [logs, setLogs] = useState([]);
+
 
   const terminalEndRef = useRef(null);
   const pollIntervalRef = useRef(null);
@@ -83,11 +76,9 @@ const ZeptoScrapper = () => {
         }
       } catch (err) {
         console.error("Error polling scraper state:", err);
-  useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    };
-  }, []);
+      }
+    }, 2000);
+  };
 
   const addLog = (message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
@@ -249,15 +240,7 @@ const ZeptoScrapper = () => {
 
   const statusDisplay = getStatusDisplay();
 
-  return (
-    <div className="bg-gray-50 min-h-screen p-6 space-y-6">
-      {/* Upper Navigation Card */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl border border-blue-gray-100 shadow-sm">
-        <div>
-          <Typography variant="h3" color="blue-gray" className="font-bold flex items-center gap-3">
-            <span className="p-2 bg-deep-purple-600 rounded-lg text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+
   const handleScrape = async (overrideCategories) => {
     setError("");
     setResult(null);
@@ -443,83 +426,6 @@ const ZeptoScrapper = () => {
         {/* Right Side: Log Console Terminal */}
         <div className="lg:col-span-7 flex flex-col">
           <Card className="shadow-lg border border-blue-gray-100 flex-1 flex flex-col bg-gray-900 text-white rounded-xl overflow-hidden h-[520px] min-h-[520px] max-h-[520px]">
-            {/* Terminal Header */}
-            <div className="space-y-2">
-              <Typography className="text-xs uppercase text-gray-500 font-bold">Desired Categories</Typography>
-              <Input
-                label="Categories to Scrape"
-                placeholder="e.g. Grocery & Staples"
-                shrink={true}
-                value={categories}
-                onChange={(e) => setCategories(e.target.value)}
-              />
-              <Typography className="text-[10px] text-gray-400 mt-1">
-                Comma-separated category names/slugs, or leave blank.
-              </Typography>
-            </div>
-
-            <div className="space-y-2">
-              <Typography className="text-xs uppercase text-gray-500 font-bold">Scope Limit (For Testing)</Typography>
-              <Input
-                label="Max Categories to Scrape"
-                placeholder="Empty for no limit (All)"
-                type="number"
-                shrink={true}
-                value={maxCategories}
-                onChange={(e) => setMaxCategories(e.target.value)}
-              />
-              <Typography className="text-[10px] text-gray-400 mt-1">
-                Limit categories crawl for rapid verification.
-              </Typography>
-            </div>
-
-            <div className="space-y-2">
-              <Button
-                onClick={() => handleScrape()}
-                fullWidth
-                disabled={loading}
-                className="bg-green-600 text-sm font-bold flex items-center justify-center gap-3 py-3"
-              >
-                {loading ? (
-                  <>
-                    <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    Scraping background jobs active...
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                    </svg>
-                    Start Zepto Scrape
-                  </>
-                )}
-              </Button>
-
-              {!loading && (
-                <Button
-                  onClick={handleScrapeAll}
-                  fullWidth
-                  variant="outlined"
-                  color="blue-gray"
-                  className="text-sm font-bold flex items-center justify-center gap-3 py-3"
-                >
-                  🧹 Scrape Defaults
-                </Button>
-              )}
-
-              {error && (
-                <div className="p-3 bg-red-50 rounded-md border border-red-100">
-                  <Typography color="red" className="text-xs font-semibold">
-                    ⚠️ Error: {error}
-                  </Typography>
-                </div>
-              )}
-            </div>
-          </CardBody>
-        </Card>
-
-        <div className="lg:col-span-7 flex flex-col">
-          <Card className="shadow-lg border border-blue-gray-100 flex-1 flex flex-col bg-gray-900 text-white rounded-xl overflow-hidden h-[520px] min-h-[520px] max-h-[520px]">
             <div className="bg-gray-800 px-4 py-3 flex justify-between items-center border-b border-gray-700 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -538,17 +444,6 @@ const ZeptoScrapper = () => {
             <div className="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-2 no-scrollbar">
               {logs.length === 0 ? (
                 <div className="text-gray-500 italic h-full flex items-center justify-center">
-                  Terminal inactive. Configure parameters and click "Start Scrape" to watch live execution logs.
-                <Typography className="text-xs text-gray-400 font-bold ml-2 font-mono">zepto-playwright-worker@logs</Typography>
-              </div>
-              <div className="bg-gray-900 text-[10px] px-2 py-0.5 rounded font-mono text-green-400 border border-green-500/20">
-                WORKER
-              </div>
-            </div>
-
-            <div className="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-2 no-scrollbar">
-              {logs.length === 0 ? (
-                <div className="text-gray-500 italic h-full flex items-center justify-center">
                   Terminal inactive. Start Zepto scrape to watch live execution logs.
                 </div>
               ) : (
@@ -557,20 +452,14 @@ const ZeptoScrapper = () => {
                     <span className="text-gray-500 select-none">[{log.timestamp}]</span>
                     <span
                       className={
-                        log.level === "ERROR"
+                        log.level === "ERROR" || log.type === "error"
                           ? "text-red-400 font-bold"
-                          : log.level === "WARNING"
+                          : log.level === "WARNING" || log.type === "warning"
                           ? "text-yellow-400"
-                          : log.message.includes("successfully") || log.message.includes("[+]") || log.message.includes("[=]")
+                          : log.type === "success" || log.message?.includes("successfully")
                           ? "text-green-400"
-                        log.type === "success"
-                          ? "text-green-400"
-                          : log.type === "error"
-                          ? "text-red-400 font-bold"
                           : log.type === "system"
                           ? "text-blue-400 font-bold"
-                          : log.type === "warning"
-                          ? "text-yellow-400"
                           : "text-gray-200"
                       }
                     >
@@ -589,4 +478,3 @@ const ZeptoScrapper = () => {
 };
 
 export default ZeptoScrapper;
-
