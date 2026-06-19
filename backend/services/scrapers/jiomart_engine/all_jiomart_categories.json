@@ -1,0 +1,387 @@
+[
+  {
+    "department_name": "Groceries",
+    "category_name": "Fresh Vegetables",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=fresh-vegetables"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Fresh Fruits",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=fresh-fruits"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Cakes, Rusk & More",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=cakes-rusk-more-l2"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Batter & Chutney",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=batter-chutney"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Breads & Chapatis",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=breads-chapatis"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Milk & Milk Products",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=milk-milk-products"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Cheese, Paneer & Tofu",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=cheese-paneer-tofu"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Ice Cream & Frozen",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=fresh-l1&l2_category=ice-cream-frozen"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Chips & Namkeens",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=chips-namkeens"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Biscuits & Cookies",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=biscuits-cookies"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Chocolates & Candies",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=chocolates-candies"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Indian Sweets",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=indian-sweets"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Drinks & Juices",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=drinks-juices"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Breakfast Cereals",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=breakfast-cereals"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Noodles, Pasta & Vermicelli",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=noodles-pasta-vermicelli"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Ready To Cook & Eat",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=ready-to-cook-eat"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Spread, Sauces & Ketchup",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=spread-sauces-ketchup"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Pickles, Chutney & Flavouring",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=pickles-chutney-flavouring"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Tea & Coffee",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=biscuits-drinks-packaged-foods&l2_category=tea-coffee"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Atta, Flours & Sooji",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=atta-flours-sooji"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Dals & Pulses",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=dals-pulses"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Rice",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=rice"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Sabudana, Poha & Murmura",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=sabudana-poha-murmura"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Edible Oils",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=edible-oils"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Masala, Spices & Mukhwas",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=masala-spices-mukhwas"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Salt, Sugar & Jaggery",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=salt-sugar-jaggery"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Wheat & Soya",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=wheat-soya"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Ghee",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=ghee"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Dry Fruits & Nuts",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=dry-fruits-nuts"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Millets & Organic",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=cooking-essentials&l2_category=millets-organic"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Hair Care",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=hair-care"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Bath & Hand Wash",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=bath-hand-wash"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Oral Care",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=oral-care"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Skin Care",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=skin-care-l2"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Feminine Hygiene",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=feminine-hygiene"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Men's Grooming",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=mens-grooming-l2"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Deo & Fragrances",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=deo-fragrances"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Health & Wellness",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=personal-care&l2_category=health-and-wellness-l2"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Face",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=beauty&l2_category=face"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Nails & Lips",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=beauty&l2_category=nails-lips"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Eyes",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=beauty&l2_category=eyes"
+  },
+  {
+    "department_name": "Beauty & Personal Care",
+    "category_name": "Beauty Accessories",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=beauty&l2_category=beauty-accessories"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Diapers & Wipes",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=mom-baby-care&l2_category=diapers-wipes"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Bath, Hygiene & Grooming",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=mom-baby-care&l2_category=bath-hygiene-grooming"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Food & Feeding",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=mom-baby-care&l2_category=food-feeding"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Dishwash",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=dishwash"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Detergents & Cleaners",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=detergents-cleaners"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Fresheners & Repellents",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=fresheners-repellents"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Home & Cleaning Tools",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=home-cleaning-tools"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Pooja Needs",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=pooja-needs"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Basic Electricals",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=basic-electricals"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Furnishing & Personal Wear",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=furnishing-personal-wear"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Bags & Travel Luggage",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=bags-travel-luggage"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Furniture",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=furniture"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Decor & Gifting",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=decor-gifting"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Games, Toys & Activities",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=games-toys-activities-l2l"
+  },
+  {
+    "department_name": "Home Care",
+    "category_name": "Home Needs",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=home&l2_category=home-needs"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Gas Stove",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=gas-stove"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Pots & Pans",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=pots-pans"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Containers & Storage",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=containers-and-storage-l2"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Flask, Bottle & Tiffin Boxes",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=flask-bottle-tiffin-boxes"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Cutting & Chopping",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=cutting-chopping"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Kitchen Tools",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=kitchen-tools"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Bakeware",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=kitchenware-l1&l2_category=bakeware"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Dining",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=tableware-l1&l2_category=dining"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Cups, Mugs & more",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=tableware-l1&l2_category=cups-mugs-and-more-l2"
+  },
+  {
+    "department_name": "Home & Kitchen",
+    "category_name": "Cutlery",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=tableware-l1&l2_category=cutlery"
+  },
+  {
+    "department_name": "Books & Stationery",
+    "category_name": "Notebooks & Paper Products",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=school-office-stationery&l2_category=notebooks-paper-products"
+  },
+  {
+    "department_name": "Books & Stationery",
+    "category_name": "Writing Instruments & Accessories",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=school-office-stationery&l2_category=writing-instruments-accessories"
+  },
+  {
+    "department_name": "Books & Stationery",
+    "category_name": "School Supplies",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=school-office-stationery&l2_category=school-supplies"
+  },
+  {
+    "department_name": "Books & Stationery",
+    "category_name": "Office Supplies",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=school-office-stationery&l2_category=office-supplies"
+  },
+  {
+    "department_name": "Books & Stationery",
+    "category_name": "Party Accessories",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=school-office-stationery&l2_category=party-accessories"
+  },
+  {
+    "department_name": "Books & Stationery",
+    "category_name": "Art, Craft & Hobby",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=school-office-stationery&l2_category=art-craft-hobby"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Food Wrapping Essentials",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=disposables&l2_category=food-wrapping-essentials"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Home Hygiene",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=disposables&l2_category=home-hygiene"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Plates & Cutlery",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=disposables&l2_category=plates-cutlery"
+  },
+  {
+    "department_name": "Groceries",
+    "category_name": "Tissues & Napkins",
+    "url": "https://www.jiomart.com/products?department=groceries&l1_category=disposables&l2_category=tissues-napkins"
+  }
+]

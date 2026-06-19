@@ -715,6 +715,12 @@ export const routes = [
             path: "/scrapper/indiamart",
             element: <IndiamartScrapper />,
           },
+          {
+            icon: <ShoppingCartIcon {...icon} />,
+            name: "Jio Mart",
+            path: "/scrapper/jiomart",
+            element: <JiomartScrapper />,
+          },
         ],
       },
       {

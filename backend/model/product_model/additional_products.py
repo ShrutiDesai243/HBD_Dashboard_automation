@@ -322,3 +322,60 @@ class Zepto(db.Model):
             "image_url": self.image_url,
         }
 
+
+class JioMartCategory(db.Model):
+    __tablename__ = 'jiomart_categories'
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    category_name = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('jiomart_categories.category_id', ondelete='SET NULL'), nullable=True)
+    category_level = db.Column(db.Integer, nullable=True)
+    category_path = db.Column(db.String(512), nullable=True)
+
+    parent = db.relationship('JioMartCategory', remote_side=[category_id], backref='children')
+
+    def to_dict(self):
+        return {
+            "category_id": self.category_id,
+            "category_name": self.category_name,
+            "slug": self.slug,
+            "parent_id": self.parent_id,
+            "category_level": self.category_level,
+            "category_path": self.category_path
+        }
+
+
+class JioMartProduct(db.Model):
+    __tablename__ = 'jiomart_products'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sku_id = db.Column(db.String(100), nullable=False)
+    product_name = db.Column(db.Text)
+    brand = db.Column(db.String(255), nullable=True)
+    price = db.Column(db.Numeric(10, 2))  # selling price
+    mrp = db.Column(db.Numeric(10, 2))
+    quantity = db.Column(db.String(100), nullable=True)
+    size = db.Column(db.String(100), nullable=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('jiomart_categories.category_id', ondelete='SET NULL'), nullable=True)
+    product_url = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.Text, nullable=True)
+    first_seen_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    last_seen_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "sku_id": self.sku_id,
+            "name": self.product_name,
+            "brand": self.brand,
+            "price": float(self.price) if self.price else 0,
+            "mrp": float(self.mrp) if self.mrp else 0,
+            "quantity": self.quantity,
+            "size": self.size,
+            "category_id": self.category_id,
+            "link": self.product_url,
+            "image_url": self.image_url,
+            "first_seen_at": self.first_seen_at.isoformat() if self.first_seen_at else None,
+            "last_seen_at": self.last_seen_at.isoformat() if self.last_seen_at else None
+        }
+
+

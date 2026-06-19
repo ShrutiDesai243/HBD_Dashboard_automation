@@ -409,6 +409,53 @@ def run_pending_migrations(app):
                 except Exception as dmart_mig_err:
                     logger.error(f"❌ DMart Category/Product MySQL migration failed: {dmart_mig_err}")
 
+                # === JioMart Category and Product Tables Schema Migration ===
+                try:
+                    # 1. Ensure jiomart_categories exists
+                    if not table_exists('jiomart_categories'):
+                        logger.info("⚠️ Table `jiomart_categories` missing in MySQL. Creating now...")
+                        conn.execute(text("""
+                            CREATE TABLE jiomart_categories (
+                                category_id INT AUTO_INCREMENT PRIMARY KEY,
+                                category_name VARCHAR(255) NOT NULL,
+                                slug VARCHAR(255) NULL,
+                                parent_id INT NULL,
+                                category_level INT NULL,
+                                category_path VARCHAR(512) NULL,
+                                CONSTRAINT fk_jiomart_categories_parent FOREIGN KEY (parent_id) 
+                                    REFERENCES jiomart_categories(category_id) ON DELETE SET NULL
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                        """))
+                        logger.info("✅ Table `jiomart_categories` created successfully.")
+
+                    # 2. Ensure jiomart_products exists
+                    if not table_exists('jiomart_products'):
+                        logger.info("⚠️ Table `jiomart_products` missing in MySQL. Creating now...")
+                        conn.execute(text("""
+                            CREATE TABLE jiomart_products (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                sku_id VARCHAR(100) NOT NULL,
+                                product_name TEXT NULL,
+                                brand VARCHAR(255) NULL,
+                                price DECIMAL(10, 2) NULL,
+                                mrp DECIMAL(10, 2) NULL,
+                                quantity VARCHAR(100) NULL,
+                                size VARCHAR(100) NULL,
+                                category_id INT NULL,
+                                product_url TEXT NULL,
+                                image_url TEXT NULL,
+                                first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                CONSTRAINT fk_jiomart_products_category FOREIGN KEY (category_id)
+                                    REFERENCES jiomart_categories(category_id) ON DELETE SET NULL,
+                                UNIQUE INDEX idx_jiomart_products_sku (sku_id)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                        """))
+                        logger.info("✅ Table `jiomart_products` created successfully.")
+
+                except Exception as jiomart_mig_err:
+                    logger.error(f"❌ JioMart Category/Product MySQL migration failed: {jiomart_mig_err}")
+
                 # === Blinkit Category Mapping Table and Schema Upgrade ===
                 try:
                     if table_exists('blinkit_mapping'):
