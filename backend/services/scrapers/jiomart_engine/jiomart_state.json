@@ -1,6 +1,6 @@
 {
   "run_id": 12,
-  "status": "running",
+  "status": "stopped",
   "total_categories": 9,
   "completed_categories": [
     18,
@@ -10,7 +10,8 @@
     19,
     21,
     23,
-    22
+    22,
+    25
   ],
   "target_categories": [
     17,
