@@ -188,33 +188,48 @@ class JioMart(db.Model):
 
 
 class Flipkart(db.Model):
-    __tablename__ = 'flipkart_products'
+    """
+    Points to flipkart_products_new — aligned with the new Scrapy scraper output.
+    BACKUP of original model: additional_products.py.bak
+    """
+    __tablename__ = 'flipkart_products_new'
     id = db.Column(db.Integer, primary_key=True)
-    asin = db.Column(db.String(100))
-    title = db.Column(db.Text)
-    imgUrl = db.Column(db.Text)
-    productUrl = db.Column(db.Text)
-    stars = db.Column(db.String(50))
-    reviews = db.Column(db.String(50))
-    price = db.Column(db.String(100))
-    listPrice = db.Column(db.String(100))
-    categoryName = db.Column(db.String(255))
-    isBestSeller = db.Column(db.String(50))
-    boughtInLastMonth = db.Column(db.String(100))
+
+    # New scraper output fields (matches flipkart_products_new table)
+    product_id   = db.Column(db.String(100), unique=True)   # was: asin
+    product_name = db.Column(db.Text)
+    brand        = db.Column(db.String(150))
+    price        = db.Column(db.Numeric(10, 2))
+    mrp          = db.Column(db.Numeric(10, 2))             # was: listPrice
+    discount     = db.Column(db.String(20))
+    rating       = db.Column(db.Float)                      # was: stars
+    reviews      = db.Column(db.String(100))
+    image_url    = db.Column(db.Text)                       # was: imgUrl
+    product_url  = db.Column(db.Text)                       # was: productUrl
+    main_category = db.Column(db.String(100))
+    subcategory  = db.Column(db.String(150))
+    leaf_category = db.Column(db.String(150))               # was: categoryName
+    spec_bullets = db.Column(db.Text)
 
     def to_dict(self):
+        # Keys kept identical to old model so frontend API contract is unchanged
         return {
             "id": self.id,
-            "asin": self.asin,
-            "name": self.title,
-            "price": self.price,
-            "list_price": self.listPrice,
-            "stars": self.stars,
+            "asin": self.product_id,
+            "name": self.product_name,
+            "price": str(self.price) if self.price is not None else None,
+            "list_price": str(self.mrp) if self.mrp is not None else None,
+            "stars": str(self.rating) if self.rating is not None else None,
             "reviews": self.reviews,
-            "category": self.categoryName,
-            "link": self.productUrl
+            "category": self.leaf_category,
+            "link": self.product_url,
+            # Extra fields the frontend can optionally use:
+            "brand": self.brand,
+            "discount": self.discount,
+            "image_url": self.image_url,
+            "main_category": self.main_category,
+            "subcategory": self.subcategory,
         }
-
 
 class IndiaMart(db.Model):
     """indiamart_products table — 46,116 rows (was wrongly pointing to india_mart).

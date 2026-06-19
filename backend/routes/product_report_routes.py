@@ -1798,6 +1798,9 @@ def get_indiamart_live_data():
         limit = request.args.get('limit', 50, type=int)
         search = request.args.get('search', '').strip()
         category = request.args.get('category', '').strip()
+        location = request.args.get('location', '').strip()
+        min_rating = request.args.get('min_rating', 0, type=float)
+        manufacturer = request.args.get('manufacturer', '').strip()
         
         with engine.connect() as conn:
             q = "FROM indiamart_products WHERE 1=1"
@@ -1808,6 +1811,15 @@ def get_indiamart_live_data():
             if category:
                 q += " AND category_name = :category"
                 params['category'] = category
+            if location:
+                q += " AND location LIKE :location"
+                params['location'] = f"%{location}%"
+            if min_rating > 0:
+                q += " AND stars >= :min_rating"
+                params['min_rating'] = min_rating
+            if manufacturer:
+                q += " AND manufacturer LIKE :manufacturer"
+                params['manufacturer'] = f"%{manufacturer}%"
                 
             total_count = conn.execute(text(f"SELECT COUNT(*) {q}"), params).scalar()
             
@@ -1859,6 +1871,41 @@ def get_indiamart_live_data():
     except Exception as e:
         print(f"[product_report] indiamart live data error: {traceback.format_exc()}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@product_report_bp.route('/indiamart/locations', methods=['GET'])
+def get_indiamart_locations():
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT DISTINCT location 
+                FROM indiamart_products 
+                WHERE location IS NOT NULL AND location != ''
+                ORDER BY location ASC
+            """)).fetchall()
+            data = [r[0] for r in rows]
+        return jsonify({"status": "success", "data": data, "total": len(data)}), 200
+    except Exception as e:
+        print(f"[product_report] indiamart locations error: {traceback.format_exc()}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@product_report_bp.route('/indiamart/manufacturers', methods=['GET'])
+def get_indiamart_manufacturers():
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT DISTINCT manufacturer 
+                FROM indiamart_products 
+                WHERE manufacturer IS NOT NULL AND manufacturer != ''
+                ORDER BY manufacturer ASC
+            """)).fetchall()
+            data = [r[0] for r in rows]
+        return jsonify({"status": "success", "data": data, "total": len(data)}), 200
+    except Exception as e:
+        print(f"[product_report] indiamart manufacturers error: {traceback.format_exc()}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @product_report_bp.route('/mapping/zepto', methods=['GET'])

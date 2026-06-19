@@ -57,10 +57,10 @@ from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
-from routes.jiomart_routes import jiomart_api_bp
 from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
+from routes.flipkart_routes import flipkart_api_bp 
 from routes.master_table import master_table_bp
 from routes.upload_product_csv import product_csv_bp
 from routes.upload_item_csv import item_csv_bp
@@ -224,6 +224,11 @@ PUBLIC_ROUTES = [
     "/api/scrape_jiomart",
     "/api/jiomart/recent_products",
     "/api/scrape_amazon",
+    "/api/scrape_flipkart",
+    "/api/scraper/zepto/start",
+    "/api/scraper/zepto/stop",
+    "/api/scraper/zepto/status",
+    "/api/scraper/zepto/logs",
     "/api/scrape_bigbasket",
     "/api/scrape_bigbasket/tasks",
     "/api/scrape_bigbasket/preview",
@@ -244,6 +249,7 @@ PUBLIC_ROUTES = [
     "/api/category-mapping/settings/platforms",
     "/api/category-mapping/settings/synonyms",
     "/api/scrape_zepto",
+    "/api/scrape_indiamart",
 ]
 
 @app.before_request
@@ -263,6 +269,7 @@ def protect_all_routes():
         normalized_path in public_paths
         or normalized_path.endswith('/fetch-data')
         or normalized_path.startswith('/api/scrape_bigbasket')
+        or normalized_path.startswith('/api/scrape_indiamart')
         or normalized_path.startswith('/api/listing-upload')
         or normalized_path.startswith('/api/product-report')
         or normalized_path.startswith('/api/report/source-')
@@ -287,11 +294,13 @@ def protect_all_routes():
 # --- Register Blueprints ---
 # As requested, we follow the working file's lead: no manual '/api' addition here 
 # if Nginx handles it.
+from services.scrapers.zepto.controller import zepto_scraper_bp
+app.register_blueprint(zepto_scraper_bp, url_prefix="/api")
+
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
-app.register_blueprint(jiomart_api_bp, url_prefix="/api")
 app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
 app.register_blueprint(master_table_bp)
@@ -350,11 +359,18 @@ if __name__ == '__main__':
         print("[SERVER] Mode: API Server Only (Background ETL disabled for manual run)")
     else:
         print("[ALL-IN-ONE] Mode: All-in-One (Starting Background Sync Tool...)")
-        ingestor = start_background_etl()
+        try:
+            ingestor = start_background_etl()
+        except FileNotFoundError as e:
+            print(f"[WARNING] Background ETL disabled: {e}")
+            ingestor = None
+        except Exception as e:
+            print(f"[ERROR] Failed to start background ETL: {e}")
+            ingestor = None
         
         # Daemonize the ingestor thread if possible
         try:
-            if hasattr(ingestor, 'daemon'):
+            if ingestor and hasattr(ingestor, 'daemon'):
                 ingestor.daemon = True
         except Exception:
             pass

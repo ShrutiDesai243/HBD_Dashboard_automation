@@ -87,6 +87,8 @@ def get_task_logs(task_id):
         log_file_path = os.path.join(backend_dir, "logs", f"dmart_task_{task_id}.log")
         if not os.path.exists(log_file_path):
             log_file_path = os.path.join(backend_dir, "logs", f"zepto_task_{task_id}.log")
+        if not os.path.exists(log_file_path):
+            log_file_path = os.path.join(backend_dir, "logs", f"flipkart_task_{task_id}.log")
             
         if not os.path.exists(log_file_path):
             matches = glob.glob(os.path.join(log_dir, f"*_task_{task_id}.log"))
@@ -122,6 +124,27 @@ def get_blinkit_global_stats():
             cc = conn.execute(text("SELECT COUNT(*) FROM blinkit_mapping")).scalar()
         from flask import jsonify
         return jsonify({"total_products": int(pc or 0), "total_categories": int(cc or 0)}), 200
+    except Exception as e:
+        from flask import jsonify
+        return jsonify({"error": str(e)}), 500
+
+@scraper_bp.route('/tasks/indiamart-stats', methods=['GET'])
+def get_indiamart_global_stats():
+    """Quick stats for IndiaMART tables — used by header status widget and dashboard."""
+    try:
+        from sqlalchemy import text, create_engine
+        from config import config
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+        with engine.connect() as conn:
+            pc = conn.execute(text("SELECT COUNT(*) FROM indiamart_products")).scalar()
+            cc = conn.execute(text("SELECT COUNT(DISTINCT category_name) FROM indiamart_mappings WHERE category_level IS NULL")).scalar()
+            mc = conn.execute(text("SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'IndiaMart'")).scalar()
+        from flask import jsonify
+        return jsonify({
+            "total_products": int(pc or 0),
+            "total_categories": int(cc or 0),
+            "total_mappings": int(mc or 0)
+        }), 200
     except Exception as e:
         from flask import jsonify
         return jsonify({"error": str(e)}), 500
