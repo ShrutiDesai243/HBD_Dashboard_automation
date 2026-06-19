@@ -90,63 +90,63 @@ def process_and_save(data):
     # Timestamp
     df["scraped_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Save category-wise
-    for (main_category, subcategory), group in df.groupby(
-        ["main_category", "subcategory"]
-    ):
-
-        if not main_category:
-            main_category = "unknown"
-
-        if not subcategory:
-            subcategory = "unknown"
-
-        main_folder = os.path.join(
-            CATEGORY_FOLDER,
-            str(main_category)
-        )
-
-        os.makedirs(
-            main_folder,
-            exist_ok=True
-        )
-
-        safe_subcategory = re.sub(
-            r'[\\/:*?"<>|]',
-            '',
-            str(subcategory)
-        )
-
-        file_path = os.path.join(
-            main_folder,
-            f"{safe_subcategory}.csv"
-        )
-
-        if os.path.exists(file_path):
-
-            existing = pd.read_csv(
-                file_path,
-                dtype={"sku_id": str}
-            )
-
-            merged = pd.concat(
-                [existing, group],
-                ignore_index=True
-            )
-
-            merged = merged.drop_duplicates(
-                subset=["sku_id"]
-            )
-
-            merged.to_csv(
-                file_path,
-                index=False
-            )
-
-        else:
-
-            group.to_csv(
-                file_path,
-                index=False
-            )
-    print("[+] Category-wise CSVs saved")
+    # Save category-wise (disabled as per direct DB upload requirement)
+    # for (main_category, subcategory), group in df.groupby(
+    #     ["main_category", "subcategory"]
+    # ):
+    # 
+    #     if not main_category:
+    #         main_category = "unknown"
+    # 
+    #     if not subcategory:
+    #         subcategory = "unknown"
+    # 
+    #     main_folder = os.path.join(
+    #         CATEGORY_FOLDER,
+    #         str(main_category)
+    #     )
+    # 
+    #     os.makedirs(
+    #         main_folder,
+    #         exist_ok=True
+    #     )
+    # 
+    #     safe_subcategory = re.sub(
+    #         r'[\\/:*?"<>|]',
+    #         '',
+    #         str(subcategory)
+    #     )
+    # 
+    #     file_path = os.path.join(
+    #         main_folder,
+    #         f"{safe_subcategory}.csv"
+    #     )
+    # 
+    #     if os.path.exists(file_path):
+    # 
+    #         existing = pd.read_csv(
+    #             file_path,
+    #             dtype={"sku_id": str}
+    #         )
+    # 
+    #         merged = pd.concat(
+    #             [existing, group],
+    #             ignore_index=True
+    #         )
+    # 
+    #         merged = merged.drop_duplicates(
+    #             subset=["sku_id"]
+    #         )
+    # 
+    #         merged.to_csv(
+    #             file_path,
+    #             index=False
+    #         )
+    # 
+    #     else:
+    # 
+    #         group.to_csv(
+    #             file_path,
+    #             index=False
+    #         )
+    print("[+] Category-wise CSVs saving bypassed (direct DB upload enabled)")
