@@ -1,9 +1,0 @@
-{
-  "source": "C:\\Users\\User\\Downloads\\Location_Master_India (3).sql",
-  "output": "scratch\\cleaned\\Location_Master_India_cleaned.sql",
-  "input_rows": 278334,
-  "output_rows": 278326,
-  "changed_rows": 3736,
-  "duplicates_removed": 8,
-  "auto_increment": 281216
-}

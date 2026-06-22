@@ -1,25 +1,24 @@
 {
-  "run_id": "run_1781515434",
-  "started_at": "2026-06-15T09:23:54.898024",
-  "last_updated": "2026-06-15T09:28:26.427313",
+  "run_id": "run_1782119618",
+  "started_at": "2026-06-22T09:13:38.194856",
+  "last_updated": "2026-06-22T09:14:37.973261",
   "pincode": "110001",
   "mode": "full",
   "phase": "completed",
   "categories_discovered": 0,
-  "categories_synced": 29,
-  "products_scraped": 60,
-  "products_inserted": 2,
-  "products_updated": 58,
+  "categories_synced": 0,
+  "products_scraped": 30,
+  "products_inserted": 0,
+  "products_updated": 30,
   "products_skipped": 0,
   "products_failed": 0,
   "duplicates_prevented": 0,
   "errors": [],
   "completed_category_ids": [
-    1,
-    17
+    4301
   ],
-  "current_category_id": 17,
+  "current_category_id": 4301,
   "current_page": 1,
-  "total_categories": 2,
+  "total_categories": 1,
   "is_complete": true
 }
