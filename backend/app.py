@@ -43,7 +43,7 @@ from model.duplicate_records_review import DuplicateRecordsReview
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
 from model.product_model.bigbasket_product_model import BigBasket
-from model.product_model.additional_products import Zepto
+from model.product_model.additional_products import Zepto, JioMartCategory, JioMartProduct
 
 # --- Dynamic Categories Mapping Master Models ---
 from model.master_category import MasterCategory
@@ -57,7 +57,6 @@ from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
-from routes.indiamart_scraper_routes import indiamart_scraper_bp
 from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
@@ -222,6 +221,8 @@ PUBLIC_ROUTES = [
     "/api/product-report/mapping/indiamart",
     "/api/product-report/mapping/zepto",
     "/api/scrape_dmart",
+    "/api/scrape_jiomart",
+    "/api/jiomart/recent_products",
     "/api/scrape_amazon",
     "/api/scrape_flipkart",
     "/api/scraper/zepto/start",
@@ -300,8 +301,6 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
-app.register_blueprint(flipkart_api_bp, url_prefix="/api")
-app.register_blueprint(indiamart_scraper_bp, url_prefix="/api")
 app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
 app.register_blueprint(master_table_bp)
@@ -348,6 +347,10 @@ for bp, prefix in blueprints_listing:
 def index():
     return jsonify({"message": "Flask API is running! Clean and Modular."})
 
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "ok", "message": "Backend is reachable"})
+
 if __name__ == '__main__':
     run_server_only = "--runserver" in sys.argv
     
@@ -391,7 +394,3 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=8001, debug=False) 
     except KeyboardInterrupt:
         shutdown()
-
-@app.route('/health')
-def health_check():
-    return jsonify({"status": "ok", "message": "Backend is reachable"})

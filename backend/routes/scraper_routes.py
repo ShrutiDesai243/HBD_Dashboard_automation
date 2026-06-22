@@ -97,9 +97,11 @@ def get_task_logs(task_id):
 
         if not os.path.exists(log_file_path):
             return jsonify({"logs": []}), 200
-            
-        with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
-            lines = f.readlines()
+        try:
+            with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+        except (PermissionError, FileNotFoundError):
+            lines = []
             
         cleaned_lines = [line.strip() for line in lines if line.strip()]
         return jsonify({"logs": cleaned_lines}), 200
