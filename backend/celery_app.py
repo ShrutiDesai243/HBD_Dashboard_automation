@@ -133,6 +133,10 @@ celery.conf.beat_schedule = {
         'task': 'tasks.gdrive.refresh_stats',
         'schedule': 300.0,
     },
+    'refresh-top-cities-every-24-hours': {
+        'task': 'tasks.refresh_top_cities.update_business_counts',
+        'schedule': 86400.0,
+    },
 }
 
 celery.autodiscover_tasks(["tasks"])
@@ -161,8 +165,7 @@ import tasks.products_task.dmart_scraper_task
 import tasks.products_task.indiamart_scraper_task
 import tasks.gdrive_task.etl_tasks
 import tasks.deep_scraper_task
-
-
+import tasks.refresh_top_cities
 # SECTION 8: Prometheus Metrics Server (starts with worker)
 @worker_ready.connect
 def start_metrics_on_worker_ready(**kwargs):
