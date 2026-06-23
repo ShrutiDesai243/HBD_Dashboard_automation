@@ -80,28 +80,16 @@ PLATFORM_CATEGORY_QUERIES = {
     },
     'Flipkart': {
         'query': """
-            SELECT DISTINCT 
-                category AS category, 
-                CONCAT_WS(' > ', 
-                    NULLIF(TRIM(subcategory), ''), 
-                    NULLIF(TRIM(sub_sub_category), ''), 
-                    NULLIF(TRIM(category_sub_sub_sub), '')
-                ) AS subcategory
-            FROM flipkart_products
-            WHERE category IS NOT NULL AND category != ''
+            SELECT DISTINCT category_path AS category, NULL AS subcategory
+            FROM flipkart_db_mapping
+            WHERE category_path IS NOT NULL AND category_path != ''
         """,
     },
     'JioMart': {
         'query': """
-            SELECT DISTINCT 
-                category AS category, 
-                CONCAT_WS(' > ', 
-                    NULLIF(TRIM(subcategory), ''), 
-                    NULLIF(TRIM(sub_sub_category), ''), 
-                    NULLIF(TRIM(category_sub_sub_sub), '')
-                ) AS subcategory
-            FROM jio_mart_products
-            WHERE category IS NOT NULL AND category != ''
+            SELECT DISTINCT category_path AS category, NULL AS subcategory
+            FROM jiomart_categories
+            WHERE category_path IS NOT NULL AND category_path != ''
         """,
     },
 }

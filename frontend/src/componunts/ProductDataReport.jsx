@@ -556,6 +556,18 @@ const PLATFORMS = {
     gradient: "linear-gradient(135deg,#db2777 0%,#701a75 100%)",
     palette: ["#db2777","#701a75","#a855f7","#9333ea","#ec4899","#ef4444","#f43f5e","#c084fc","#fbcfe8"],
   },
+  Flipkart: {
+    label: "Flipkart", emoji: "🛍️", accent: "#2874f0",
+    accentA10: "rgba(40,116,240,0.08)", accentA15: "rgba(40,116,240,0.12)", accentA20: "rgba(40,116,240,0.2)",
+    gradient: "linear-gradient(135deg,#2874f0 0%,#1e56b3 100%)",
+    palette: ["#2874f0","#1e56b3","#3b82f6","#60a5fa","#93c5fd","#ffd700","#ffe680","#1d4ed8","#dbeafe"],
+  },
+  JioMart: {
+    label: "JioMart", emoji: "🏬", accent: "#0f9d58",
+    accentA10: "rgba(15,157,88,0.08)", accentA15: "rgba(15,157,88,0.12)", accentA20: "rgba(15,157,88,0.2)",
+    gradient: "linear-gradient(135deg,#0f9d58 0%,#085c35 100%)",
+    palette: ["#0f9d58","#085c35","#22c55e","#16a34a","#4ade80","#ea4335","#fbbc05","#34d399","#86efac"],
+  },
 };
 
 /* ================================================================
@@ -2416,6 +2428,200 @@ export default function ProductDataReport() {
                           <Area type="monotone" dataKey="Market Price" stroke="#94a3b8" strokeWidth={2} fill="none" />
                         </AreaChart>
                       </ResponsiveContainer>
+                    </ChartCard>
+                  </div>
+                );
+              })()}
+
+              {/* FLIPKART: 7 Charts (12,130 products) */}
+              {platform === "Flipkart" && (() => {
+                const cats = chartData.flipkart_categories || [];
+                const subcats = chartData.flipkart_subcategories || [];
+                const brands = chartData.flipkart_brands || [];
+                const prices = chartData.flipkart_price_range || [];
+                const priceMrp = chartData.flipkart_price_vs_mrp || [];
+                const ratings = chartData.flipkart_ratings || [];
+                const discount = chartData.flipkart_discount || [];
+                return (
+                  <div className="pdr-charts-grid">
+                    <ChartCard title="Category-wise Product Count" sub="Product distribution across Flipkart main categories (12,130 products)" badge="Bar" hasData={cats.length > 0} isLoading={chartLoading && cats.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={cats} margin={{ top: 10, right: 10, left: 0, bottom: 50 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 600 }} tickLine={false} axisLine={false} angle={-35} textAnchor="end" interval={0} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="value" name="Products" radius={[6, 6, 0, 0]} barSize={26}>{cats.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Sub-Category Distribution" sub="Flipkart product spread across sub-categories" badge="Donut" hasData={subcats.length > 0} isLoading={chartLoading && subcats.length === 0}>
+                      <div style={{ position: "relative" }}>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <PieChart>
+                            <Pie data={subcats.map((d, i) => ({ ...d, fill: pt.palette[i % pt.palette.length] }))} cx="50%" cy="50%" innerRadius={65} outerRadius={105} paddingAngle={3} dataKey="value">
+                              {subcats.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}
+                            </Pie>
+                            <Tooltip content={<ChartTooltip />} />
+                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 600 }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </ChartCard>
+
+                    <ChartCard title="Top Brand Catalog Coverage" sub="Top 10 brands with highest Flipkart product listings" badge="Horizontal Bar" hasData={brands.length > 0} isLoading={chartLoading && brands.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={brands} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                          <XAxis type="number" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="count" name="Products" radius={[0, 6, 6, 0]} barSize={14}>{brands.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Price Range Distribution" sub="Flipkart product count across price brackets" badge="Histogram" hasData={prices.length > 0} isLoading={chartLoading && prices.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={prices} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="count" name="Products" fill={pt.accent} radius={[6, 6, 0, 0]} barSize={34} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Sale Price vs MRP by Category" sub="Average selling price vs market price comparison per Flipkart category" badge="Dual Area" hasData={priceMrp.length > 0} isLoading={chartLoading && priceMrp.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={priceMrp} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <defs><linearGradient id="fkSaleFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={pt.accent} stopOpacity={0.3} /><stop offset="95%" stopColor={pt.accent} stopOpacity={0} /></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} tickFormatter={v => `₹${v}`} />
+                          <Tooltip content={<ChartTooltip prefix="₹" />} />
+                          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 600 }} />
+                          <Area type="monotone" dataKey="Sale Price" stroke={pt.accent} strokeWidth={2.5} fill="url(#fkSaleFill)" />
+                          <Area type="monotone" dataKey="Market Price" stroke="#94a3b8" strokeWidth={2} fill="none" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Customer Rating Distribution" sub="Flipkart product count by star rating buckets" badge="Histogram" hasData={ratings.length > 0} isLoading={chartLoading && ratings.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={ratings} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="count" name="Products" radius={[6, 6, 0, 0]} barSize={36}>{ratings.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Discount Analysis by Category" sub="Average discount % vs MRP across Flipkart categories" badge="Area" hasData={discount.length > 0} isLoading={chartLoading && discount.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={discount} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
+                          <defs><linearGradient id="fkDiscFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={pt.accent} stopOpacity={0.3} /><stop offset="95%" stopColor={pt.accent} stopOpacity={0} /></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 600 }} tickLine={false} axisLine={false} angle={-30} textAnchor="end" interval={0} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+                          <Tooltip content={<ChartTooltip suffix="%" />} />
+                          <Area type="monotone" dataKey="Avg Discount %" stroke={pt.accent} strokeWidth={2.5} fill="url(#fkDiscFill)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+                  </div>
+                );
+              })()}
+
+              {/* JIOMART: 6 Charts (85 grocery products) */}
+              {platform === "JioMart" && (() => {
+                const cats = chartData.jiomart_categories || [];
+                const brands = chartData.jiomart_brands || [];
+                const prices = chartData.jiomart_price_range || [];
+                const priceMrp = chartData.jiomart_price_vs_mrp || [];
+                const discount = chartData.jiomart_discount || [];
+                return (
+                  <div className="pdr-charts-grid">
+                    <ChartCard title="Category-wise Product Count" sub="JioMart product distribution across grocery categories" badge="Bar" hasData={cats.length > 0} isLoading={chartLoading && cats.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={cats} margin={{ top: 10, right: 10, left: 0, bottom: 50 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 600 }} tickLine={false} axisLine={false} angle={-35} textAnchor="end" interval={0} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="value" name="Products" radius={[6, 6, 0, 0]} barSize={26}>{cats.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Top Brand Coverage" sub="Top 10 JioMart brands by product listings" badge="Horizontal Bar" hasData={brands.length > 0} isLoading={chartLoading && brands.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={brands} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                          <XAxis type="number" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="count" name="Products" radius={[0, 6, 6, 0]} barSize={14}>{brands.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Price Range Distribution" sub="JioMart product count across price segments" badge="Histogram" hasData={prices.length > 0} isLoading={chartLoading && prices.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={prices} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                          <Tooltip content={<ChartTooltip />} />
+                          <Bar dataKey="count" name="Products" fill={pt.accent} radius={[6, 6, 0, 0]} barSize={34} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Sale Price vs MRP by Category" sub="Average selling price vs market price comparison per JioMart category" badge="Dual Area" hasData={priceMrp.length > 0} isLoading={chartLoading && priceMrp.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={priceMrp} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <defs><linearGradient id="jmSaleFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={pt.accent} stopOpacity={0.3} /><stop offset="95%" stopColor={pt.accent} stopOpacity={0} /></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} tickFormatter={v => `₹${v}`} />
+                          <Tooltip content={<ChartTooltip prefix="₹" />} />
+                          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 600 }} />
+                          <Area type="monotone" dataKey="Sale Price" stroke={pt.accent} strokeWidth={2.5} fill="url(#jmSaleFill)" />
+                          <Area type="monotone" dataKey="Market Price" stroke="#94a3b8" strokeWidth={2} fill="none" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Discount Analysis by Category" sub="Average discount % vs MRP across JioMart categories" badge="Area" hasData={discount.length > 0} isLoading={chartLoading && discount.length === 0}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <AreaChart data={discount} margin={{ top: 10, right: 10, left: 0, bottom: 40 }}>
+                          <defs><linearGradient id="jmDiscFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={pt.accent} stopOpacity={0.3} /><stop offset="95%" stopColor={pt.accent} stopOpacity={0} /></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 600 }} tickLine={false} axisLine={false} angle={-30} textAnchor="end" interval={0} />
+                          <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+                          <Tooltip content={<ChartTooltip suffix="%" />} />
+                          <Area type="monotone" dataKey="Avg Discount %" stroke={pt.accent} strokeWidth={2.5} fill="url(#jmDiscFill)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Category Summary Donut" sub="JioMart grocery product distribution across categories" badge="Donut" hasData={cats.length > 0} isLoading={chartLoading && cats.length === 0}>
+                      <div style={{ position: "relative" }}>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <PieChart>
+                            <Pie data={cats.map((d, i) => ({ ...d, fill: pt.palette[i % pt.palette.length] }))} cx="50%" cy="50%" innerRadius={65} outerRadius={105} paddingAngle={3} dataKey="value">
+                              {cats.map((_, i) => <Cell key={i} fill={pt.palette[i % pt.palette.length]} />)}
+                            </Pie>
+                            <Tooltip content={<ChartTooltip />} />
+                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 600 }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
                     </ChartCard>
                   </div>
                 );

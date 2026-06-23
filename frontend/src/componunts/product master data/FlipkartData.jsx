@@ -404,7 +404,7 @@ export default function FlipkartData() {
         params.append("category", catVal.trim());
       }
       
-      const res = await api.get(`/flipkart/fetch-data?${params.toString()}`);
+      const res = await api.get(`/product-report/flipkart/data?${params.toString()}`);
       if (res.data && res.data.status === "success") {
         setData(res.data.data || []);
         setTotalPages(res.data.total_pages || 1);
@@ -418,19 +418,9 @@ export default function FlipkartData() {
     }
   }, [limit, activeSearch, activeCategory]);
 
-  // Initial load
+  // Initial load — only one fetch needed from /product-report/flipkart/data
   useEffect(() => {
     fetchData(1);
-    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8001"}/api/flipkart-products`) // CHANGE THIS URL to your specific API endpoint
-      .then((response) => response.json())
-      .then((data) => {
-        setProducts(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      });
   }, []);
 
   // ==== Event Handlers ====

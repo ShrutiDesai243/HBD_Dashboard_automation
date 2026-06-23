@@ -318,6 +318,19 @@ def run_flipkart_scrape(
                     else:
                         task.status = "COMPLETED"
                         task.progress = 100
+                        
+                        # Trigger Category Sync workflow on successful completion
+                        try:
+                            from services.sync_flipkart_mapping import sync_flipkart_db_mapping
+                            logger.info("Syncing newly scraped categories to flipkart_db_mapping...")
+                            sync_flipkart_db_mapping()
+                            
+                            from services.category_sync_service import auto_sync_platform
+                            logger.info("Triggering global category mapping auto-sync...")
+                            auto_sync_platform('Flipkart')
+                        except Exception as sync_err:
+                            logger.error(f"Post-scrape category sync failed: {sync_err}", exc_info=True)
+                            
                     db.session.commit()
                     logger.info(f"ScraperTask {task_id} marked as {task.status}")
 
