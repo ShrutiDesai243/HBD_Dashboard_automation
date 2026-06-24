@@ -49,12 +49,19 @@ def start_deep_scrape():
     data = request.json
     category = data.get('category')
     city = data.get('city')
+    state = data.get('state', '')
     platform = data.get('platform', 'Google Maps')
+
+    # Construct robust query for Google Maps
+    if platform == 'Google Maps':
+        search_query = f"{category} in {city}, {state}".strip(", ")
+    else:
+        search_query = f"{category} in {city}"
 
     # 1. Create Task in DB
     new_task = ScraperTask(
         platform=platform,
-        search_query=f"{category} in {city}",
+        search_query=search_query,
         location=city,
         status="starting"
     )
@@ -89,6 +96,8 @@ def get_task_logs(task_id):
             log_file_path = os.path.join(backend_dir, "logs", f"zepto_task_{task_id}.log")
         if not os.path.exists(log_file_path):
             log_file_path = os.path.join(backend_dir, "logs", f"flipkart_task_{task_id}.log")
+        if not os.path.exists(log_file_path):
+            log_file_path = os.path.join(backend_dir, "logs", f"google_map_task_{task_id}.log")
             
         if not os.path.exists(log_file_path):
             matches = glob.glob(os.path.join(log_dir, f"*_task_{task_id}.log"))
@@ -144,6 +153,26 @@ def get_indiamart_global_stats():
             "total_products": int(pc or 0),
             "total_categories": int(cc or 0),
             "total_mappings": int(mc or 0)
+        }), 200
+    except Exception as e:
+        from flask import jsonify
+        return jsonify({"error": str(e)}), 500
+
+@scraper_bp.route('/tasks/google-map-stats', methods=['GET'])
+def get_google_map_stats():
+    """Quick stats for Google Maps table."""
+    try:
+        from sqlalchemy import text, create_engine
+        from config import config
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+        with engine.connect() as conn:
+            # Note: We track g_map_master_table and google_Map (raw scraped)
+            total_raw = conn.execute(text("SELECT COUNT(*) FROM google_Map")).scalar()
+            total_master = conn.execute(text("SELECT COUNT(*) FROM master_table WHERE data_source = 'Google Maps'")).scalar()
+        from flask import jsonify
+        return jsonify({
+            "total_raw_scraped": int(total_raw or 0),
+            "total_master_integrated": int(total_master or 0)
         }), 200
     except Exception as e:
         from flask import jsonify
