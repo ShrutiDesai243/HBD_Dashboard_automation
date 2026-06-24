@@ -38,7 +38,7 @@ backup*.sql*
 # Generated Scraper Databases, Sheets, and Logs
 backend/output/*.db
 backend/output/exports/
-backend/output/zepto/
+backend/output/
 backend/output/dmart/
 backend/logs/
 *.db

@@ -242,6 +242,8 @@ PUBLIC_ROUTES = [
     "/api/scraper/zepto/stop",
     "/api/scraper/zepto/status",
     "/api/scraper/zepto/logs",
+    "/api/scraper/zepto/history",
+    "/api/scraper/zepto/db-stats",
     "/api/scrape_bigbasket",
     "/api/scrape_bigbasket/tasks",
     "/api/scrape_bigbasket/preview",

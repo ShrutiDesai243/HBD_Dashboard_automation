@@ -5,31 +5,18 @@ from datetime import datetime
 
 import os
 
-_zepto_dir = os.path.dirname(os.path.abspath(__file__))
-CATEGORY_FOLDER = os.path.join(_zepto_dir, "csv_output", "category_wise")
+# _zepto_dir = os.path.dirname(os.path.abspath(__file__))
+# CATEGORY_FOLDER = os.path.join(_zepto_dir, "csv_output", "category_wise")
 
 
 def process_and_save(data):
 
-    os.makedirs(CATEGORY_FOLDER, exist_ok=True)
+    # os.makedirs(CATEGORY_FOLDER, exist_ok=True)
 
     if not data:
         return
 
-    # Optional analysis and validation layer
-    try:
-        from .analysis import analyze_scraped_data
-    except ImportError:
-        try:
-            from analysis import analyze_scraped_data
-        except ImportError:
-            analyze_scraped_data = None
 
-    if analyze_scraped_data:
-        try:
-            analyze_scraped_data(data)
-        except Exception as ae:
-            print(f"[!] Error invoking analysis layer: {ae}")
 
     df = pd.DataFrame(data)
 

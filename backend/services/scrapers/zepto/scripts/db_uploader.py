@@ -74,14 +74,17 @@ def ensure_unique_sku_id(conn):
     cursor.close()
 
 
-def update_category_mapping(conn, products: List[Dict[str, Any]]):
+def update_category_mapping(conn, products: List[Dict[str, Any]]) -> tuple:
     """Automatically inserts missing main_category and subcategory entries into zepto_db_mapping.
     
     No internal commits are made to preserve transaction safety.
+    Returns (new_mappings_count, new_categories_list).
     """
     if not products:
-        return
+        return 0, []
 
+    new_mappings_count = 0
+    new_categories_list = []
     cursor = conn.cursor()
 
     # 1. Extract unique (main_category, subcategory) pairs from the scraped products
@@ -94,7 +97,7 @@ def update_category_mapping(conn, products: List[Dict[str, Any]]):
 
     if not categories:
         cursor.close()
-        return
+        return 0, []
 
     # 2. Insert missing Level 1 categories (main_category)
     for main, _ in categories:
@@ -109,6 +112,13 @@ def update_category_mapping(conn, products: List[Dict[str, Any]]):
                 "VALUES (%s, 0, 1, %s)",
                 (main, main)
             )
+            new_mappings_count += 1
+            pincode = "default"
+            for p in products:
+                if p.get("main_category") == main:
+                    pincode = p.get("pincode") or "default"
+                    break
+            new_categories_list.append({"name": main, "pincode": pincode})
             print(f"[+] Added new level 1 category mapping: {main}")
 
     # 3. Insert missing Level 2 categories (subcategory)
@@ -134,9 +144,17 @@ def update_category_mapping(conn, products: List[Dict[str, Any]]):
                 "VALUES (%s, %s, 2, %s)",
                 (sub, parent_id, path)
             )
+            new_mappings_count += 1
+            pincode = "default"
+            for p in products:
+                if p.get("main_category") == main and p.get("subcategory") == sub:
+                    pincode = p.get("pincode") or "default"
+                    break
+            new_categories_list.append({"name": path, "pincode": pincode})
             print(f"[+] Added new level 2 category mapping: {path}")
 
     cursor.close()
+    return new_mappings_count, new_categories_list
 
 
 def upload_products_to_mysql(products: List[Dict[str, Any]]):
@@ -148,7 +166,7 @@ def upload_products_to_mysql(products: List[Dict[str, Any]]):
       - Uses ON DUPLICATE KEY UPDATE for batch inserts.
     """
     if not products:
-        return
+        return 0, 0, 0, 0, [], []
 
     from datetime import datetime
 
@@ -162,10 +180,11 @@ def upload_products_to_mysql(products: List[Dict[str, Any]]):
         conn.autocommit = False
 
         # 1. Update/insert category mappings first (no commit yet)
-        update_category_mapping(conn, products)
+        new_mappings_count, new_categories = update_category_mapping(conn, products)
 
         # 2. Python-level Deduplication & Validation
         unique_batch_products = []
+        new_products = []
         seen_skus = set()
         seen_urls = set()
         seen_names = set()
@@ -200,7 +219,7 @@ def upload_products_to_mysql(products: List[Dict[str, Any]]):
         if not unique_batch_products:
             print(f"[+] DB Upload Stats: 0 inserts, 0 updates, {num_skips} skips.")
             conn.commit()
-            return
+            return 0, 0, num_skips, new_mappings_count, new_categories, new_products
 
         # 3. Check database for existing matches to prevent duplicates
         db_sku_to_sku = {}
@@ -273,6 +292,10 @@ def upload_products_to_mysql(products: List[Dict[str, Any]]):
             else:
                 final_sku = sku
                 num_inserts += 1
+                new_products.append({
+                    "name": p.get("product_name"),
+                    "pincode": p.get("pincode") or "default"
+                })
 
             # Cast datatypes and apply safety fallbacks
             try:
@@ -373,7 +396,8 @@ def upload_products_to_mysql(products: List[Dict[str, Any]]):
 
         # 7. Commit whole transaction
         conn.commit()
-        print(f"[+] DB Upload complete: {num_inserts} inserts, {num_updates} updates, {num_skips} skips.")
+        print(f"[+] DB Upload complete: {num_inserts} inserts, {num_updates} updates, {num_skips} skips, {new_mappings_count} new mappings.")
+        return num_inserts, num_updates, num_skips, new_mappings_count, new_categories, new_products
 
     except Exception as e:
         conn.rollback()
