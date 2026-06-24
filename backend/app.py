@@ -131,20 +131,33 @@ cors.init_app(app, resources={r"/*": {"origins": "*"}}, supports_credentials=Tru
 mail.init_app(app)
 
 with app.app_context():
-    try:
-        db.session.execute(db.text('SELECT 1'))
-        db_host = os.getenv('DB_HOST', 'localhost')
+    import time
+    db_success = False
+    db_host = os.getenv('DB_HOST', 'localhost')
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
         try:
-            print(f"✅ DATABASE CONNECTION: SUCCESS (Connected to {db_host})")
-        except UnicodeEncodeError:
-            print(f"[SUCCESS] DATABASE CONNECTION: Connected to {db_host}")
-    except Exception as e:
-        try:
-            print(f"❌ DATABASE CONNECTION: FAILED! Error: {e}")
-        except UnicodeEncodeError:
-            print(f"[FAILED] DATABASE CONNECTION! Error: {e}")
-
-    db.create_all()
+            db.session.execute(db.text('SELECT 1'))
+            db.create_all()
+            db_success = True
+            try:
+                print(f"✅ DATABASE CONNECTION & INITIALIZATION: SUCCESS (Connected to {db_host})")
+            except UnicodeEncodeError:
+                print(f"[SUCCESS] DATABASE CONNECTION & INITIALIZATION: Connected to {db_host}")
+            break
+        except Exception as e:
+            try:
+                print(f"⚠️ DATABASE CONNECTION ATTEMPT {attempt}/{max_retries} FAILED! Error: {e}")
+            except UnicodeEncodeError:
+                print(f"[WARNING] DATABASE CONNECTION ATTEMPT {attempt}/{max_retries} FAILED! Error: {e}")
+            if attempt < max_retries:
+                time.sleep(2)
+            else:
+                try:
+                    print(f"❌ DATABASE CONNECTION: FAILED after {max_retries} attempts!")
+                except UnicodeEncodeError:
+                    print(f"[ERROR] DATABASE CONNECTION: FAILED after {max_retries} attempts!")
+                raise e
   
   #Migration Logic...
 
@@ -230,6 +243,8 @@ PUBLIC_ROUTES = [
     "/api/scraper/zepto/stop",
     "/api/scraper/zepto/status",
     "/api/scraper/zepto/logs",
+    "/api/scraper/zepto/history",
+    "/api/scraper/zepto/db-stats",
     "/api/scrape_bigbasket",
     "/api/scrape_bigbasket/tasks",
     "/api/scrape_bigbasket/preview",

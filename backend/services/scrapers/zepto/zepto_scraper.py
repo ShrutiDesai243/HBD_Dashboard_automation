@@ -19,10 +19,10 @@ except (ImportError, ValueError):
 
 # Structured state communication hook
 try:
-    from .state import should_stop, set_current_state, increment_scraped
+    from .state import should_stop, set_current_state, increment_scraped, increment_stats, increment_categories_scraped, increment_new_categories_mapped, set_target_pincodes, add_new_categories, add_new_products
 except (ImportError, ValueError):
     try:
-        from state import should_stop, set_current_state, increment_scraped
+        from state import should_stop, set_current_state, increment_scraped, increment_stats, increment_categories_scraped, increment_new_categories_mapped, set_target_pincodes, add_new_categories, add_new_products
     except (ImportError, ValueError):
         def should_stop():
             return False
@@ -30,34 +30,22 @@ except (ImportError, ValueError):
             pass
         def increment_scraped(count=1):
             pass
-
-CATEGORIES_FILE = "categories.txt"
-PINCODES_FILE = "pincodes.txt"
-
+        def increment_stats(inserted=0, updated=0, skipped=0):
+            pass
+        def increment_categories_scraped(count=1):
+            pass
+        def increment_new_categories_mapped(count=1):
+            pass
+        def set_target_pincodes(pincodes_str):
+            pass
+        def add_new_categories(categories_list):
+            pass
+        def add_new_products(products_list):
+            pass
 
 def load_default_pincodes():
-    """Loads default pincodes from pincodes.txt or falls back to popular cities."""
-    if os.path.exists(PINCODES_FILE):
-        try:
-            with open(PINCODES_FILE, "r", encoding="utf-8") as f:
-                codes = [line.strip() for line in f if line.strip()]
-            if codes:
-                return ",".join(codes)
-        except Exception as e:
-            print(f"[!] Failed to read pincodes from {PINCODES_FILE}: {e}")
-    return "110001,400001,560001,700001,500001"
-
-
-def load_categories_from_file():
-    """Loads category keywords or URLs from categories.txt."""
-    if os.path.exists(CATEGORIES_FILE):
-        try:
-            with open(CATEGORIES_FILE, "r", encoding="utf-8") as f:
-                lines = [line.strip() for line in f if line.strip()]
-            return lines
-        except Exception as e:
-            print(f"[!] Failed to read categories from {CATEGORIES_FILE}: {e}")
-    return []
+    """Returns hardcoded default pincodes."""
+    return "400053,560034,110016,122002,500081"
 
 
 def fetch_subcategory_urls():
@@ -296,13 +284,31 @@ async def scrape_category(context, url, pincode=None):
                 p["pincode"] = pincode
         process_and_save(products)
         increment_scraped(len(products))
-        # Direct DB upload and category mapping updates
-        upload_products_to_mysql(products)
+        res = upload_products_to_mysql(products)
+        if isinstance(res, tuple):
+            if len(res) == 6:
+                num_inserts, num_updates, num_skips, new_mappings, new_categories, new_products_details = res
+                increment_stats(inserted=num_inserts, updated=num_updates, skipped=num_skips)
+                if new_mappings > 0:
+                    increment_new_categories_mapped(new_mappings)
+                    add_new_categories(new_categories)
+                if new_products_details:
+                    add_new_products(new_products_details)
+            elif len(res) == 4:
+                num_inserts, num_updates, num_skips, new_mappings = res
+                increment_stats(inserted=num_inserts, updated=num_updates, skipped=num_skips)
+                if new_mappings > 0:
+                    increment_new_categories_mapped(new_mappings)
+            elif len(res) == 3:
+                num_inserts, num_updates, num_skips = res
+                increment_stats(inserted=num_inserts, updated=num_updates, skipped=num_skips)
 
+    increment_categories_scraped(1)
     await page.close()
 
 
 async def main(args_list=None):
+    import json
     default_pincodes = load_default_pincodes()
     
     # Parse arguments programmatically or from sys.argv
@@ -310,20 +316,18 @@ async def main(args_list=None):
     parser.add_argument("--category", "-c", type=str, help="Loose category or subcategory name to scrape")
     parser.add_argument("--pincodes", "-p", type=str, default=default_pincodes,
                         help="Comma-separated list of pincodes to scrape")
+    parser.add_argument("--resume", action="store_true", help="Resume from last run state")
     args = parser.parse_args(args_list)
     
     pincodes = [p.strip() for p in args.pincodes.split(",") if p.strip()]
+    set_target_pincodes(", ".join(pincodes))
     
     category_inputs = []
     if args.category:
         category_inputs = [c.strip() for c in args.category.split(",") if c.strip()]
     else:
-        # Fallback to categories.txt
-        category_inputs = load_categories_from_file()
-        if not category_inputs:
-            print(f"[WARNING] No category keyword provided via --category flag, and {CATEGORIES_FILE} is missing or empty. Please specify a category or add keywords to {CATEGORIES_FILE}.")
-            sys.exit(1)
-        print(f"[+] Loaded category inputs from {CATEGORIES_FILE}: {category_inputs}")
+        print("[+] No category keyword provided. Defaulting to dynamically scraping all categories from sitemap.")
+        category_inputs = ["all"]
         
     all_sitemap_urls = fetch_subcategory_urls()
     
@@ -349,6 +353,41 @@ async def main(args_list=None):
             sys.exit(1)
         print(f"[+] Found {len(urls)} subcategory URLs for matching categories.")
 
+    # State file setup
+    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    state_file = os.path.join(backend_dir, "output", "zepto_scrape_state.json")
+    
+    completed_pincodes = set()
+    completed_urls = set()
+    
+    if args.resume and os.path.exists(state_file):
+        try:
+            with open(state_file, "r", encoding="utf-8") as f:
+                saved_state = json.load(f)
+            saved_cat = saved_state.get("category_input", "")
+            curr_cat = args.category or ""
+            if saved_cat.strip().lower() == curr_cat.strip().lower():
+                completed_pincodes = set(saved_state.get("completed_pincodes", []))
+                completed_urls = set(saved_state.get("completed_urls", []))
+                print(f"[+] Resuming last scrape task. Skipping {len(completed_pincodes)} pincodes and {len(completed_urls)} categories.")
+            else:
+                print(f"[+] Category input mismatch (saved: '{saved_cat}', current: '{curr_cat}'). Starting fresh.")
+        except Exception as e:
+            print(f"[!] Failed to load resume state: {e}")
+    else:
+        # Reset state file
+        try:
+            os.makedirs(os.path.dirname(state_file), exist_ok=True)
+            with open(state_file, "w", encoding="utf-8") as f:
+                json.dump({
+                    "category_input": args.category or "",
+                    "pincodes": pincodes,
+                    "completed_pincodes": [],
+                    "completed_urls": []
+                }, f, indent=2)
+        except Exception as e:
+            print(f"[!] Failed to initialize state file: {e}")
+
     if should_stop():
         print("[!] Stop signal detected before starting browser context.")
         return
@@ -360,6 +399,10 @@ async def main(args_list=None):
         )
 
         for pincode in pincodes:
+            if pincode in completed_pincodes:
+                print(f"[+] Pincode {pincode} already completed. Skipping.")
+                continue
+
             if should_stop():
                 print("[!] Stop signal detected. Exiting pincode loop.")
                 break
@@ -416,6 +459,10 @@ async def main(args_list=None):
                 
             # Scrape each subcategory using this context
             for url in urls:
+                if url in completed_urls:
+                    print(f"[+] Category URL {url} already completed. Skipping.")
+                    continue
+
                 if should_stop():
                     print("[!] Stop signal detected. Exiting category loop.")
                     break
@@ -434,6 +481,16 @@ async def main(args_list=None):
                         url,
                         pincode
                     )
+                    
+                    completed_urls.add(url)
+                    try:
+                        with open(state_file, "r", encoding="utf-8") as f:
+                            saved_state = json.load(f)
+                        saved_state["completed_urls"] = list(completed_urls)
+                        with open(state_file, "w", encoding="utf-8") as f:
+                            json.dump(saved_state, f, indent=2)
+                    except Exception:
+                        pass
                 except Exception as e:
                     print(f"[!] Category error for {url}: {e}")
                 
@@ -442,6 +499,20 @@ async def main(args_list=None):
                     break
 
             await context.close()
+            
+            # Pincode finished successfully! Mark completed.
+            if not should_stop():
+                completed_pincodes.add(pincode)
+                completed_urls.clear()
+                try:
+                    with open(state_file, "r", encoding="utf-8") as f:
+                        saved_state = json.load(f)
+                    saved_state["completed_pincodes"] = list(completed_pincodes)
+                    saved_state["completed_urls"] = []
+                    with open(state_file, "w", encoding="utf-8") as f:
+                        json.dump(saved_state, f, indent=2)
+                except Exception:
+                    pass
 
         await browser.close()
 

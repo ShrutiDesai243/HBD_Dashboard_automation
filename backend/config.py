@@ -24,6 +24,11 @@ class Config:
         "pool_size": 20,
         "max_overflow": 10,
         "pool_recycle": 280,
+        "pool_pre_ping": True, # Checks if DB is alive before the query
+        "connect_args": {
+            "connect_timeout": 60,
+            "read_timeout": 60,
+            "write_timeout": 60
         "pool_pre_ping": True,
         "connect_args": {
             "ssl": {"ssl_disabled": True}
