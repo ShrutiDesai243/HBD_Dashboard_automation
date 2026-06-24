@@ -983,6 +983,172 @@ function CityRankTab({ data }) {
 }
 
 /* ================================================================
+   CATEGORY RANK TAB
+   ================================================================ */
+function CategoryRankTab({ data }) {
+  const [categoryRankFilter, setCategoryRankFilter] = useState("All");
+  const [displayFilter, setDisplayFilter] = useState("all");
+
+  const rawRanks = data?.top_categories_business_data || [];
+
+  const filteredCategoryRankList = useMemo(() => {
+    return rawRanks.filter(cr => {
+      if (categoryRankFilter === "All") return true;
+      return String(cr.category_rank) === String(categoryRankFilter);
+    }).sort((a, b) => (a.category_rank || 99999) - (b.category_rank || 99999));
+  }, [rawRanks, categoryRankFilter]);
+
+  const uniqueTotalCount = filteredCategoryRankList.length;
+
+  const totalPendingCount = useMemo(() => {
+    let pendingCategories = 0;
+    filteredCategoryRankList.forEach(cr => {
+      const bCount = parseInt(cr.business_count || 0, 10);
+      if (bCount === 0) {
+        pendingCategories += 1;
+      }
+    });
+    return pendingCategories;
+  }, [filteredCategoryRankList]);
+
+  const totalAvailableCount = uniqueTotalCount - totalPendingCount;
+
+  const tableDisplayList = useMemo(() => {
+    if (displayFilter === "pending") {
+      return filteredCategoryRankList.filter(cr => parseInt(cr.business_count || 0, 10) === 0);
+    }
+    if (displayFilter === "available") {
+      return filteredCategoryRankList.filter(cr => parseInt(cr.business_count || 0, 10) > 0);
+    }
+    return filteredCategoryRankList;
+  }, [filteredCategoryRankList, displayFilter]);
+
+  return (
+    <div>
+      {/* Slicers Panel */}
+      <div className="rd-slicers-panel">
+        <div className="slicers-title">
+          <span>🎛️ Category Rank Filters</span>
+        </div>
+        <div className="slicers-grid">
+          <div className="slicer-card" style={{ maxWidth: "300px" }}>
+            <label>Category Rank</label>
+            <select value={categoryRankFilter} onChange={e => setCategoryRankFilter(e.target.value)} className="rd-filter-select" style={{ width: "100%" }}>
+              <option value="All">All Ranks (Show All)</option>
+              <option value="1">Rank 1</option>
+              <option value="2">Rank 2</option>
+              <option value="3">Rank 3</option>
+              <option value="4">Rank 4</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs Grid */}
+      <div className="rd-section-title">📊 Category Rank Analytics Overview</div>
+      <div className="rd-kpi-grid">
+        <div 
+          className="rd-kpi-card" 
+          style={{ 
+            "--kc": "#0984e3", 
+            cursor: "pointer",
+            border: displayFilter === "all" ? "2px solid #0984e3" : "1px solid var(--card-border)",
+            transform: displayFilter === "all" ? "translateY(-3px)" : "none",
+            boxShadow: displayFilter === "all" ? "var(--card-shadow-hover)" : "var(--card-shadow)"
+          }}
+          onClick={() => setDisplayFilter("all")}
+        >
+          <div className="kc-icon">📁</div>
+          <div className="kc-label">Unique Categories Count</div>
+          <div className="kc-val" style={{ color: "#0984e3" }}>{uniqueTotalCount.toLocaleString("en-IN")}</div>
+          <div className="kc-sub">Categories in selected rank</div>
+          <div className="kc-trend up">Based on Master Table</div>
+        </div>
+        <div 
+          className="rd-kpi-card" 
+          style={{ 
+            "--kc": "#f59e0b",
+            cursor: "pointer",
+            border: displayFilter === "pending" ? "2px solid #f59e0b" : "1px solid var(--card-border)",
+            transform: displayFilter === "pending" ? "translateY(-3px)" : "none",
+            boxShadow: displayFilter === "pending" ? "var(--card-shadow-hover)" : "var(--card-shadow)"
+          }}
+          onClick={() => setDisplayFilter("pending")}
+        >
+          <div className="kc-icon">⏳</div>
+          <div className="kc-label">Pending Categories Count</div>
+          <div className="kc-val" style={{ color: "#f59e0b" }}>{totalPendingCount.toLocaleString("en-IN")}</div>
+          <div className="kc-sub">Categories with 0 records</div>
+          <div className="kc-trend down">Action Required</div>
+        </div>
+        <div 
+          className="rd-kpi-card" 
+          style={{ 
+            "--kc": "#10b981",
+            cursor: "pointer",
+            border: displayFilter === "available" ? "2px solid #10b981" : "1px solid var(--card-border)",
+            transform: displayFilter === "available" ? "translateY(-3px)" : "none",
+            boxShadow: displayFilter === "available" ? "var(--card-shadow-hover)" : "var(--card-shadow)"
+          }}
+          onClick={() => setDisplayFilter("available")}
+        >
+          <div className="kc-icon">✅</div>
+          <div className="kc-label">Data Available Categories</div>
+          <div className="kc-val" style={{ color: "#10b981" }}>{totalAvailableCount.toLocaleString("en-IN")}</div>
+          <div className="kc-sub">Categories with &gt; 0 records</div>
+          <div className="kc-trend up">Ready for use</div>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div className="rd-section-title">📁 Tier-Wise Category Data</div>
+      <div className="rd-matrix-card">
+        <div style={{ overflowX: "auto" }}>
+          <table className="rd-matrix-table">
+            <thead>
+              <tr>
+                <th style={{ width: "10%" }}>Rank</th>
+                <th style={{ width: "50%" }}>Category Name</th>
+                <th style={{ width: "20%" }}>Master Data Count</th>
+                <th style={{ width: "20%" }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableDisplayList.length > 0 ? (
+                tableDisplayList.map((item, idx) => {
+                  const bCount = parseInt(item.business_count || 0, 10);
+                  const isPending = bCount === 0;
+                  return (
+                    <tr key={idx}>
+                      <td><span className="rd-src-badge badge-processing">Rank {item.category_rank}</span></td>
+                      <td style={{ fontWeight: 800 }}>{item.category_name}</td>
+                      <td style={{ color: "var(--accent)", fontWeight: 800 }}>{bCount.toLocaleString("en-IN")}</td>
+                      <td>
+                        {isPending ? (
+                          <span className="rd-src-badge badge-pending">Pending</span>
+                        ) : (
+                          <span className="rd-src-badge badge-completed">Data Available</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: "center", padding: "30px", color: "var(--text-secondary)" }}>
+                    No categories found for the selected rank.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================
    OVERVIEW TAB
    ================================================================ */
 function OverviewTab({ data }) {
@@ -3224,6 +3390,7 @@ export function ReportDashboard() {
   const tabs = [
     { id: "overview", icon: "🏠", label: "Overview Dashboard" },
     { id: "city_rank", icon: "🏙️", label: "Tier-Wise Analytics" },
+    { id: "category_rank", icon: "🏷️", label: "Category Rank Analytics" },
     { id: "source", icon: "📂", label: "Source-Wise Analytics" },
   ];
 
@@ -3286,6 +3453,9 @@ export function ReportDashboard() {
 
             {/* TIER-WISE CITY RANK TAB */}
             {activeTab === "city_rank" && <CityRankTab data={apiData} />}
+
+            {/* CATEGORY RANK TAB */}
+            {activeTab === "category_rank" && <CategoryRankTab data={apiData} />}
 
             {/* SOURCES TAB */}
             {activeTab === "source" && (

@@ -170,6 +170,23 @@ def get_report_aggregate():
         except Exception as e:
             print(f"[WARN] Error reading Top_cities_rank: {e}")
 
+        # ─── 6. Top Categories Rank (from Top_categories_rank table) ──────
+        top_categories_business_data = []
+        try:
+            # Check if table exists
+            if _find_table(available_tables, ["top_categories_rank"]):
+                top_categories_rank_rows = session.execute(
+                    text("SELECT category_name, category_rank, business_count FROM `Top_categories_rank` ORDER BY category_rank ASC")
+                ).fetchall()
+                for row in top_categories_rank_rows:
+                    top_categories_business_data.append({
+                        "category_name": row[0],
+                        "category_rank": row[1],
+                        "business_count": row[2]
+                    })
+        except Exception as e:
+            print(f"[WARN] Error reading Top_categories_rank: {e}")
+
         return jsonify({
             "status": "COMPLETED",
             "is_remote": is_remote,
@@ -178,6 +195,7 @@ def get_report_aggregate():
             "cities": cities,
             "categories": categories,
             "top_cities_business_data": top_cities_business_data,
+            "top_categories_business_data": top_categories_business_data,
             "schema_info": schema_info,
             "tables_found": available_tables,
             "tables_used": {

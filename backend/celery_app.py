@@ -166,15 +166,15 @@ import tasks.products_task.indiamart_scraper_task
 import tasks.gdrive_task.etl_tasks
 import tasks.deep_scraper_task
 import tasks.refresh_top_cities
-# SECTION 8: Prometheus Metrics Server (starts with worker)
-@worker_ready.connect
-def start_metrics_on_worker_ready(**kwargs):
-    """Start Prometheus metrics endpoint when the Celery worker boots."""
-    try:
-        from utils.metrics import start_metrics_server
-        start_metrics_server()
-    except Exception as e:
-        logging.warning(f"Could not start Prometheus metrics server: {e}")
+# # SECTION 8: Prometheus Metrics Server (starts with worker)
+# @worker_ready.connect
+# def start_metrics_on_worker_ready(**kwargs):
+#     """Start Prometheus metrics endpoint when the Celery worker boots."""
+#     try:
+#         from utils.metrics import start_metrics_server
+#         start_metrics_server()
+#     except Exception as e:
+#         logging.warning(f"Could not start Prometheus metrics server: {e}")
 
 
 # SECTION 7: Queue Backlog Monitor

@@ -19,7 +19,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = (
         f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
-    
+
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_size": 20,
         "max_overflow": 10,
@@ -29,6 +29,9 @@ class Config:
             "connect_timeout": 60,
             "read_timeout": 60,
             "write_timeout": 60
+        "pool_pre_ping": True,
+        "connect_args": {
+            "ssl": {"ssl_disabled": True}
         }
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False

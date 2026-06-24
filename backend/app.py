@@ -57,6 +57,7 @@ from routes.auth_route import auth_bp
 from routes.scraper_routes import scraper_bp
 from routes.amazon_routes import amazon_api_bp
 from routes.dmart_routes import dmart_api_bp
+from routes.jiomart_routes import jiomart_api_bp
 from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
@@ -316,6 +317,7 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(scraper_bp, url_prefix="/api")
 app.register_blueprint(amazon_api_bp, url_prefix="/api")
 app.register_blueprint(dmart_api_bp, url_prefix="/api")
+app.register_blueprint(jiomart_api_bp, url_prefix="/api")
 app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
 app.register_blueprint(master_table_bp)

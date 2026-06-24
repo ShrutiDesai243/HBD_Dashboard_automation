@@ -1436,11 +1436,17 @@ def refresh_report_summary():
                     ) OR main_category IS NULL
                 """))
 
+        # Also refresh Flipkart and JioMart so they stay in sync
+        try:
+            refresh_flipkart_jiomart()
+        except Exception as e:
+            print(f"[product_report] refresh_flipkart_jiomart error inside refresh: {e}")
+
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return jsonify({
             "status": "success",
-            "message": "Successfully refreshed product report summaries for Blinkit, BigBasket, DMart, IndiaMart, Zepto, and Amazon",
+            "message": "Successfully refreshed product report summaries for Blinkit, BigBasket, DMart, IndiaMart, Zepto, Amazon, Flipkart, and JioMart",
             "refreshed_at": timestamp
         }), 200
     except Exception as e:
