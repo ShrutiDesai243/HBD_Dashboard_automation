@@ -51,7 +51,8 @@ backend/logs/
 *.xlsx
 *.xls
 backend/logs/*.log
-
+docs/HBD_Dashboard_Automation_Project_Report.docx
+generate_doc.py
 # Flipkart Scrapy — generated output (not committed)
 backend/services/scrapers/flipkart_engine/output/
 backend/services/scrapers/flipkart_engine/outputs/

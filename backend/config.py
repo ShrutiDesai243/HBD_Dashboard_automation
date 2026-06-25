@@ -28,12 +28,12 @@ class Config:
         "connect_args": {
             "connect_timeout": 60,
             "read_timeout": 60,
-            "write_timeout": 60
-        "pool_pre_ping": True,
-        "connect_args": {
+            "write_timeout": 60,
             "ssl": {"ssl_disabled": True}
         }
     }
+
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # --- JWT CONFIGURATION ---
