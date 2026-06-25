@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from model.scraper_task import ScraperTask
-from flask_jwt_extended import jwt_required
 import sys
 import os
 import subprocess
@@ -9,7 +8,6 @@ import subprocess
 flipkart_api_bp = Blueprint('flipkart_api_bp', __name__)
 
 @flipkart_api_bp.route('/scrape_flipkart', methods=['POST'])
-@jwt_required()
 def scrape_flipkart():
     try:
         data = request.get_json() or {}

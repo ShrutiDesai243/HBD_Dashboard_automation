@@ -62,6 +62,7 @@ from routes.bigbasket_routes import bigbasket_api_bp
 from routes.zepto_routes import zepto_api_bp
 from routes.googlemap import googlemap_bp 
 from routes.flipkart_routes import flipkart_api_bp 
+from routes.indiamart_scraper_routes import indiamart_scraper_bp
 from routes.master_table import master_table_bp
 from routes.upload_product_csv import product_csv_bp
 from routes.upload_item_csv import item_csv_bp
@@ -286,6 +287,7 @@ def protect_all_routes():
         or normalized_path.endswith('/fetch-data')
         or normalized_path.startswith('/api/scrape_bigbasket')
         or normalized_path.startswith('/api/scrape_indiamart')
+        or normalized_path.startswith('/api/scrape_flipkart')
         or normalized_path.startswith('/api/listing-upload')
         or normalized_path.startswith('/api/product-report')
         or normalized_path.startswith('/api/report/source-')
@@ -320,6 +322,8 @@ app.register_blueprint(dmart_api_bp, url_prefix="/api")
 app.register_blueprint(jiomart_api_bp, url_prefix="/api")
 app.register_blueprint(bigbasket_api_bp, url_prefix="/api")
 app.register_blueprint(googlemap_bp, url_prefix='/api')
+app.register_blueprint(flipkart_api_bp, url_prefix="/api")
+app.register_blueprint(indiamart_scraper_bp, url_prefix="/api")
 app.register_blueprint(master_table_bp)
 app.register_blueprint(product_csv_bp)
 app.register_blueprint(item_csv_bp)
