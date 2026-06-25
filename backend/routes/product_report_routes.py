@@ -869,7 +869,7 @@ def get_product_by_id(marketplace, product_id):
                 "discount":            row["discount"] or "",
                 "stars":               float(row["stars"]) if row["stars"] is not None else None,
                 "reviews":             int(row["reviews"]) if row["reviews"] is not None else 0,
-                "rating_count":        int(row["rating_count"]) if row["rating_count"] is not None else 0,
+"rating_count":        int(row["rating_count"]) if row["rating_count"] is not None else 0,
                 "is_prime":            bool(row["is_prime"]),
                 "isBestSeller":        bool(row["is_best_seller"]),
                 "boughtInLastMonth":   int(row["bought_in_last_month"]) if row["bought_in_last_month"] is not None else 0,
@@ -911,7 +911,7 @@ def refresh_report_summary():
                 # 2. Aggregating Blinkit
                 blinkit_stats = conn.execute(text("""
                     WITH mapped_cats AS (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Blinkit' AND master_category_id IS NOT NULL AND is_active = 1
                     ),
                     resolved_blinkit AS (
@@ -925,12 +925,12 @@ def refresh_report_summary():
                         LEFT JOIN mapped_cats mc ON b.category COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
                     )
                     SELECT 
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'Blinkit' AND is_active = 1) as total_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'Blinkit' AND is_active = 1) as total_categories,
                         COUNT(*) as total_products,
                         SUM(is_mapped) as mapped_products,
                         SUM(1 - is_mapped) as unmapped_products,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'Blinkit' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'Blinkit' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'Blinkit' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'Blinkit' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
                         SUM(CASE WHEN availability = 1 THEN 1 ELSE 0 END) as available_products,
                         SUM(CASE WHEN availability = 0 THEN 1 ELSE 0 END) as out_of_stock_products,
                         COUNT(DISTINCT brand) as total_brands,
@@ -977,7 +977,7 @@ def refresh_report_summary():
                 # 3. Aggregating BigBasket (case-insensitive via DB collation)
                 bb_stats = conn.execute(text("""
                     WITH mapped_cats AS (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'BigBasket' AND master_category_id IS NOT NULL AND is_active = 1
                     ),
                     resolved_bb AS (
@@ -990,12 +990,12 @@ def refresh_report_summary():
                         LEFT JOIN mapped_cats mc ON bb.main_category COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
                     )
                     SELECT 
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'BigBasket' AND is_active = 1) as total_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'BigBasket' AND is_active = 1) as total_categories,
                         COUNT(*) as total_products,
                         SUM(is_mapped) as mapped_products,
                         SUM(1 - is_mapped) as unmapped_products,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'BigBasket' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'BigBasket' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'BigBasket' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'BigBasket' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
                         COUNT(*) as available_products,
                         0 as out_of_stock_products,
                         COUNT(DISTINCT SUBSTRING_INDEX(product_name, ' ', 1)) as total_brands,
@@ -1042,7 +1042,7 @@ def refresh_report_summary():
                 # 4. Aggregating DMart
                 dm_stats = conn.execute(text("""
                     WITH mapped_cats AS (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'DMart' AND master_category_id IS NOT NULL AND is_active = 1
                     ),
                     resolved_dm AS (
@@ -1055,12 +1055,12 @@ def refresh_report_summary():
                         LEFT JOIN mapped_cats mc ON dm.category COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
                     )
                     SELECT 
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'DMart' AND is_active = 1) as total_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'DMart' AND is_active = 1) as total_categories,
                         COUNT(*) as total_products,
                         SUM(is_mapped) as mapped_products,
                         SUM(1 - is_mapped) as unmapped_products,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'DMart' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'DMart' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'DMart' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'DMart' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
                         COUNT(*) as available_products,
                         0 as out_of_stock_products,
                         COUNT(DISTINCT brand) as total_brands,
@@ -1107,7 +1107,7 @@ def refresh_report_summary():
                 # 5. Aggregating IndiaMart
                 im_stats = conn.execute(text("""
                     WITH mapped_cats AS (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1
                     ),
                     resolved_im AS (
@@ -1117,15 +1117,18 @@ def refresh_report_summary():
                             im.manufacturer,
                             CASE WHEN mc.platform_category_raw IS NOT NULL THEN 1 ELSE 0 END as is_mapped
                         FROM indiamart_products im
-                        LEFT JOIN mapped_cats mc ON im.category_name COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
+                        LEFT JOIN indiamart_mappings imm 
+                          ON im.sub_category_name COLLATE utf8mb4_unicode_ci = imm.category_name
+                         AND imm.category_path COLLATE utf8mb4_unicode_ci LIKE CONCAT(im.category_name, '%')
+                        LEFT JOIN mapped_cats mc ON imm.category_path COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
                     )
                     SELECT 
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'IndiaMart' AND is_active = 1) as total_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'IndiaMart' AND is_active = 1) as total_categories,
                         COUNT(*) as total_products,
                         SUM(is_mapped) as mapped_products,
                         SUM(1 - is_mapped) as unmapped_products,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'IndiaMart' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'IndiaMart' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
                         COUNT(*) as available_products,
                         0 as out_of_stock_products,
                         COUNT(DISTINCT manufacturer) as total_brands,
@@ -1172,7 +1175,7 @@ def refresh_report_summary():
                 # 6. Aggregating Zepto
                 zepto_stats = conn.execute(text("""
                     WITH mapped_cats AS (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1
                     ),
                     resolved_z AS (
@@ -1185,12 +1188,12 @@ def refresh_report_summary():
                         LEFT JOIN mapped_cats mc ON z.main_category COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
                     )
                     SELECT 
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'Zepto' AND is_active = 1) as total_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'Zepto' AND is_active = 1) as total_categories,
                         COUNT(*) as total_products,
                         SUM(is_mapped) as mapped_products,
                         SUM(1 - is_mapped) as unmapped_products,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
-                        (SELECT COUNT(*) FROM platform_category_mapping WHERE platform_name = 'Zepto' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1) as completed_categories,
+                        (SELECT COUNT(DISTINCT platform_category_raw) FROM platform_category_mapping WHERE platform_name = 'Zepto' AND master_category_id IS NULL AND is_active = 1) as pending_categories,
                         COUNT(*) as available_products,
                         0 as out_of_stock_products,
                         COUNT(DISTINCT SUBSTRING_INDEX(product_name, ' ', 1)) as total_brands,
@@ -1399,21 +1402,28 @@ def refresh_report_summary():
                 # IndiaMart
                 conn.execute(text("""
                     INSERT INTO pending_category_report (marketplace_name, category_name, category_path, reason, last_refreshed_at)
-                    SELECT DISTINCT 'IndiaMart', category_name, category_name, 'Category not found in platform mapping or master category is null', NOW()
-                    FROM indiamart_products
-                    WHERE category_name COLLATE utf8mb4_unicode_ci NOT IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT DISTINCT 'IndiaMart', imm.category_name, imm.category_path, 'Category not found in platform mapping or master category is null', NOW()
+                    FROM indiamart_products im
+                    JOIN indiamart_mappings imm 
+                      ON im.sub_category_name COLLATE utf8mb4_unicode_ci = imm.category_name
+                     AND imm.category_path COLLATE utf8mb4_unicode_ci LIKE CONCAT(im.category_name, '%')
+                    WHERE imm.category_path COLLATE utf8mb4_unicode_ci NOT IN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1
-                    ) AND category_name IS NOT NULL
+                    )
                 """))
                 conn.execute(text("""
                     INSERT INTO unmapped_product_report (marketplace_name, product_id, asin, product_name, brand, category_name, price, product_url, reason, last_refreshed_at)
-                    SELECT 'IndiaMart', id, asin, product_name, manufacturer, category_name, price_numeric, productUrl, 'Product category is unmapped', NOW()
-                    FROM indiamart_products
-                    WHERE category_name COLLATE utf8mb4_unicode_ci NOT IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT 'IndiaMart', im.id, im.asin, im.product_name, im.manufacturer, im.category_name, im.price_numeric, im.productUrl, 'Product category is unmapped', NOW()
+                    FROM indiamart_products im
+                    LEFT JOIN indiamart_mappings imm 
+                      ON im.sub_category_name COLLATE utf8mb4_unicode_ci = imm.category_name
+                     AND imm.category_path COLLATE utf8mb4_unicode_ci LIKE CONCAT(im.category_name, '%')
+                    LEFT JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1
-                    ) OR category_name IS NULL
+                    ) mc ON imm.category_path COLLATE utf8mb4_unicode_ci = mc.platform_category_raw
+                    WHERE mc.platform_category_raw IS NULL OR imm.category_path IS NULL
                 """))
 
                 # Zepto
@@ -1422,7 +1432,7 @@ def refresh_report_summary():
                     SELECT DISTINCT 'Zepto', main_category, main_category, 'Category not found in platform mapping or master category is null', NOW()
                     FROM zepto
                     WHERE main_category COLLATE utf8mb4_unicode_ci NOT IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1
                     ) AND main_category IS NOT NULL
                 """))
@@ -1431,7 +1441,7 @@ def refresh_report_summary():
                     SELECT 'Zepto', sku_id, product_name, SUBSTRING_INDEX(product_name, ' ', 1), main_category, selling_price, product_url, 'Product category is unmapped', NOW()
                     FROM zepto
                     WHERE main_category COLLATE utf8mb4_unicode_ci NOT IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1
                     ) OR main_category IS NULL
                 """))
@@ -2844,7 +2854,7 @@ def get_mapping_report():
                 blinkit_total = conn.execute(text("SELECT COUNT(*) FROM blinkit")).scalar() or 0
                 blinkit_mapped = conn.execute(text("""
                     SELECT COUNT(*) FROM blinkit WHERE category COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Blinkit' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -2854,10 +2864,10 @@ def get_mapping_report():
                         0 AS sub_count, 
                         COUNT(*) AS products
                     FROM blinkit b
-                    JOIN platform_category_mapping pcm ON b.category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                    WHERE pcm.platform_name = 'Blinkit' 
-                      AND pcm.master_category_id IS NOT NULL 
-                      AND pcm.is_active = 1
+                    JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                        WHERE platform_name = 'Blinkit' AND master_category_id IS NOT NULL AND is_active = 1
+                    ) pcm ON b.category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                     GROUP BY b.category
                     ORDER BY products DESC, b.category
                 """)).mappings().fetchall()
@@ -2874,7 +2884,7 @@ def get_mapping_report():
                 bb_total = conn.execute(text("SELECT COUNT(*) FROM bigbasket")).scalar() or 0
                 bb_mapped = conn.execute(text("""
                     SELECT COUNT(*) FROM bigbasket WHERE main_category COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'BigBasket' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -2884,10 +2894,10 @@ def get_mapping_report():
                         0 AS sub_count, 
                         COUNT(*) AS products
                     FROM bigbasket b
-                    JOIN platform_category_mapping pcm ON b.main_category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                    WHERE pcm.platform_name = 'BigBasket' 
-                      AND pcm.master_category_id IS NOT NULL 
-                      AND pcm.is_active = 1
+                    JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                        WHERE platform_name = 'BigBasket' AND master_category_id IS NOT NULL AND is_active = 1
+                    ) pcm ON b.main_category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                     GROUP BY b.main_category
                     ORDER BY products DESC, b.main_category
                 """)).mappings().fetchall()
@@ -2904,7 +2914,7 @@ def get_mapping_report():
                 z_total = conn.execute(text("SELECT COUNT(*) FROM zepto")).scalar() or 0
                 z_mapped = conn.execute(text("""
                     SELECT COUNT(*) FROM zepto WHERE main_category COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -2914,10 +2924,10 @@ def get_mapping_report():
                         0 AS sub_count, 
                         COUNT(*) AS products
                     FROM zepto z
-                    JOIN platform_category_mapping pcm ON z.main_category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                    WHERE pcm.platform_name = 'Zepto' 
-                      AND pcm.master_category_id IS NOT NULL 
-                      AND pcm.is_active = 1
+                    JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                        WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1
+                    ) pcm ON z.main_category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                     GROUP BY z.main_category
                     ORDER BY products DESC, z.main_category
                 """)).mappings().fetchall()
@@ -2933,8 +2943,13 @@ def get_mapping_report():
             if marketplace in ('all', 'indiamart'):
                 im_total = conn.execute(text("SELECT COUNT(*) FROM indiamart_products")).scalar() or 0
                 im_mapped = conn.execute(text("""
-                    SELECT COUNT(*) FROM indiamart_products WHERE category_name COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT COUNT(*) 
+                    FROM indiamart_products im
+                    JOIN indiamart_mappings imm 
+                      ON im.sub_category_name COLLATE utf8mb4_unicode_ci = imm.category_name
+                     AND imm.category_path COLLATE utf8mb4_unicode_ci LIKE CONCAT(im.category_name, '%')
+                    WHERE imm.category_path COLLATE utf8mb4_unicode_ci IN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -2944,10 +2959,13 @@ def get_mapping_report():
                         0 AS sub_count, 
                         COUNT(*) AS products
                     FROM indiamart_products i
-                    JOIN platform_category_mapping pcm ON i.category_name COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                    WHERE pcm.platform_name = 'IndiaMart' 
-                      AND pcm.master_category_id IS NOT NULL 
-                      AND pcm.is_active = 1
+                    LEFT JOIN indiamart_mappings imm 
+                      ON i.sub_category_name COLLATE utf8mb4_unicode_ci = imm.category_name
+                     AND imm.category_path COLLATE utf8mb4_unicode_ci LIKE CONCAT(i.category_name, '%')
+                    JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                        WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1
+                    ) pcm ON imm.category_path COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                     GROUP BY i.category_name
                     ORDER BY products DESC, i.category_name
                 """)).mappings().fetchall()
@@ -2964,7 +2982,7 @@ def get_mapping_report():
                 dm_total = conn.execute(text("SELECT COUNT(*) FROM dmart_products")).scalar() or 0
                 dm_mapped = conn.execute(text("""
                     SELECT COUNT(*) FROM dmart_products WHERE category COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'DMart' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -2974,10 +2992,10 @@ def get_mapping_report():
                         0 AS sub_count, 
                         COUNT(*) AS products
                     FROM dmart_products d
-                    JOIN platform_category_mapping pcm ON d.category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                    WHERE pcm.platform_name = 'DMart' 
-                      AND pcm.master_category_id IS NOT NULL 
-                      AND pcm.is_active = 1
+                    JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                        WHERE platform_name = 'DMart' AND master_category_id IS NOT NULL AND is_active = 1
+                    ) pcm ON d.category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                     GROUP BY d.category
                     ORDER BY products DESC, d.category
                 """)).mappings().fetchall()
@@ -2994,7 +3012,7 @@ def get_mapping_report():
                 am_total = conn.execute(text("SELECT COUNT(*) FROM amazon_products")).scalar() or 0
                 am_mapped = conn.execute(text("""
                     SELECT COUNT(*) FROM amazon_products WHERE categoryName COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Amazon' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -3004,10 +3022,10 @@ def get_mapping_report():
                         0 AS sub_count, 
                         COUNT(*) AS products
                     FROM amazon_products a
-                    JOIN platform_category_mapping pcm ON a.categoryName COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                    WHERE pcm.platform_name = 'Amazon' 
-                      AND pcm.master_category_id IS NOT NULL 
-                      AND pcm.is_active = 1
+                    JOIN (
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                        WHERE platform_name = 'Amazon' AND master_category_id IS NOT NULL AND is_active = 1
+                    ) pcm ON a.categoryName COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                     GROUP BY a.categoryName
                     ORDER BY products DESC, a.categoryName
                 """)).mappings().fetchall()
@@ -3025,7 +3043,7 @@ def get_mapping_report():
                     fk_total = conn.execute(text("SELECT COUNT(*) FROM flipkart_products_new")).scalar() or 0
                     fk_mapped = conn.execute(text("""
                         SELECT COUNT(*) FROM flipkart_products_new WHERE main_category COLLATE utf8mb4_unicode_ci IN (
-                            SELECT platform_category_raw FROM platform_category_mapping
+                            SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                             WHERE platform_name = 'Flipkart' AND master_category_id IS NOT NULL AND is_active = 1
                         )
                     """)).scalar() or 0
@@ -3035,10 +3053,10 @@ def get_mapping_report():
                             0 AS sub_count, 
                             COUNT(*) AS products
                         FROM flipkart_products_new f
-                        JOIN platform_category_mapping pcm ON f.main_category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                        WHERE pcm.platform_name = 'Flipkart' 
-                          AND pcm.master_category_id IS NOT NULL 
-                          AND pcm.is_active = 1
+                        JOIN (
+                            SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                            WHERE platform_name = 'Flipkart' AND master_category_id IS NOT NULL AND is_active = 1
+                        ) pcm ON f.main_category COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                         GROUP BY f.main_category
                         ORDER BY products DESC, f.main_category
                     """)).mappings().fetchall()
@@ -3061,7 +3079,7 @@ def get_mapping_report():
                         SELECT COUNT(*) FROM jiomart_products jp
                         JOIN jiomart_categories jc ON jp.category_id = jc.category_id
                         WHERE jc.category_path COLLATE utf8mb4_unicode_ci IN (
-                            SELECT platform_category_raw FROM platform_category_mapping
+                            SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                             WHERE platform_name = 'JioMart' AND master_category_id IS NOT NULL AND is_active = 1
                         )
                     """)).scalar() or 0
@@ -3072,10 +3090,10 @@ def get_mapping_report():
                             COUNT(*) AS products
                         FROM jiomart_products jp
                         JOIN jiomart_categories jc ON jp.category_id = jc.category_id
-                        JOIN platform_category_mapping pcm ON jc.category_path COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
-                        WHERE pcm.platform_name = 'JioMart' 
-                          AND pcm.master_category_id IS NOT NULL 
-                          AND pcm.is_active = 1
+                        JOIN (
+                            SELECT DISTINCT platform_category_raw FROM platform_category_mapping
+                            WHERE platform_name = 'JioMart' AND master_category_id IS NOT NULL AND is_active = 1
+                        ) pcm ON jc.category_path COLLATE utf8mb4_unicode_ci = pcm.platform_category_raw
                         GROUP BY jc.category_path
                         ORDER BY products DESC, jc.category_path
                     """)).mappings().fetchall()
@@ -3109,7 +3127,7 @@ def get_live_mapping_counts():
             bl_total = conn.execute(text("SELECT COUNT(*) FROM blinkit")).scalar() or 0
             bl_mapped = conn.execute(text("""
                 SELECT COUNT(*) FROM blinkit WHERE category COLLATE utf8mb4_unicode_ci IN (
-                    SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                     WHERE platform_name = 'Blinkit' AND master_category_id IS NOT NULL AND is_active = 1
                 )
             """)).scalar() or 0
@@ -3123,7 +3141,7 @@ def get_live_mapping_counts():
             bb_total = conn.execute(text("SELECT COUNT(*) FROM bigbasket")).scalar() or 0
             bb_mapped = conn.execute(text("""
                 SELECT COUNT(*) FROM bigbasket WHERE main_category COLLATE utf8mb4_unicode_ci IN (
-                    SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                     WHERE platform_name = 'BigBasket' AND master_category_id IS NOT NULL AND is_active = 1
                 )
             """)).scalar() or 0
@@ -3137,7 +3155,7 @@ def get_live_mapping_counts():
             z_total = conn.execute(text("SELECT COUNT(*) FROM zepto")).scalar() or 0
             z_mapped = conn.execute(text("""
                 SELECT COUNT(*) FROM zepto WHERE main_category COLLATE utf8mb4_unicode_ci IN (
-                    SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                     WHERE platform_name = 'Zepto' AND master_category_id IS NOT NULL AND is_active = 1
                 )
             """)).scalar() or 0
@@ -3150,8 +3168,13 @@ def get_live_mapping_counts():
             # IndiaMart
             im_total = conn.execute(text("SELECT COUNT(*) FROM indiamart_products")).scalar() or 0
             im_mapped = conn.execute(text("""
-                SELECT COUNT(*) FROM indiamart_products WHERE category_name COLLATE utf8mb4_unicode_ci IN (
-                    SELECT platform_category_raw FROM platform_category_mapping
+                SELECT COUNT(*) 
+                FROM indiamart_products im
+                JOIN indiamart_mappings imm 
+                  ON im.sub_category_name COLLATE utf8mb4_unicode_ci = imm.category_name
+                 AND imm.category_path COLLATE utf8mb4_unicode_ci LIKE CONCAT(im.category_name, '%')
+                WHERE imm.category_path COLLATE utf8mb4_unicode_ci IN (
+                    SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                     WHERE platform_name = 'IndiaMart' AND master_category_id IS NOT NULL AND is_active = 1
                 )
             """)).scalar() or 0
@@ -3165,7 +3188,7 @@ def get_live_mapping_counts():
             dm_total = conn.execute(text("SELECT COUNT(*) FROM dmart_products")).scalar() or 0
             dm_mapped = conn.execute(text("""
                 SELECT COUNT(*) FROM dmart_products WHERE category COLLATE utf8mb4_unicode_ci IN (
-                    SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                     WHERE platform_name = 'DMart' AND master_category_id IS NOT NULL AND is_active = 1
                 )
             """)).scalar() or 0
@@ -3179,7 +3202,7 @@ def get_live_mapping_counts():
             am_total = conn.execute(text("SELECT COUNT(*) FROM amazon_products")).scalar() or 0
             am_mapped = conn.execute(text("""
                 SELECT COUNT(*) FROM amazon_products WHERE categoryName COLLATE utf8mb4_unicode_ci IN (
-                    SELECT platform_category_raw FROM platform_category_mapping
+                    SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                     WHERE platform_name = 'Amazon' AND master_category_id IS NOT NULL AND is_active = 1
                 )
             """)).scalar() or 0
@@ -3194,7 +3217,7 @@ def get_live_mapping_counts():
                 fk_total = conn.execute(text("SELECT COUNT(*) FROM flipkart_products_new")).scalar() or 0
                 fk_mapped = conn.execute(text("""
                     SELECT COUNT(*) FROM flipkart_products_new WHERE main_category COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'Flipkart' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
@@ -3214,7 +3237,7 @@ def get_live_mapping_counts():
                     SELECT COUNT(*) FROM jiomart_products jp
                     JOIN jiomart_categories jc ON jp.category_id = jc.category_id
                     WHERE jc.category_path COLLATE utf8mb4_unicode_ci IN (
-                        SELECT platform_category_raw FROM platform_category_mapping
+                        SELECT DISTINCT platform_category_raw FROM platform_category_mapping
                         WHERE platform_name = 'JioMart' AND master_category_id IS NOT NULL AND is_active = 1
                     )
                 """)).scalar() or 0
