@@ -43,7 +43,22 @@ from model.duplicate_records_review import DuplicateRecordsReview
 # --- Product Models ---
 from model.product_model.amazon_product import AmazonProduct 
 from model.product_model.bigbasket_product_model import BigBasket
-from model.product_model.additional_products import Zepto, JioMartCategory, JioMartProduct
+from model.product_model.additional_products import (
+    Blinkit,
+    DMartCategory,
+    DMart,
+    JioMart,
+    Flipkart,
+    IndiaMart,
+    Vivo,
+    Zepto,
+    JioMartCategory,
+    JioMartProduct
+)
+
+# --- Other Models ---
+from model.raw_data_model import RawGoogleMap
+from model.product_master_table import ProductMaster
 
 # --- Dynamic Categories Mapping Master Models ---
 from model.master_category import MasterCategory
@@ -145,6 +160,8 @@ with app.app_context():
                 print(f"✅ DATABASE CONNECTION & INITIALIZATION: SUCCESS (Connected to {db_host})")
             except UnicodeEncodeError:
                 print(f"[SUCCESS] DATABASE CONNECTION & INITIALIZATION: Connected to {db_host}")
+            db.session.commit()
+            db.session.remove()
             break
         except Exception as e:
             try:

@@ -1,8 +1,102 @@
 import logging
+import os
 from sqlalchemy import text, inspect
 from extensions import db
 
 logger = logging.getLogger(__name__)
+
+def ensure_dmart_sqlite_exists():
+    """Idempotently initialize local SQLite database for DMart."""
+    try:
+        from services.scrapers.dmart_engine.database import DatabaseManager
+        from services.scrapers.dmart_engine.config import DB_PATH, SCHEMA_PATH
+        
+        logger.info(f"🔄 Checking local DMart SQLite database at: {DB_PATH}")
+        with DatabaseManager(str(DB_PATH), str(SCHEMA_PATH)) as sqlite_db:
+            sqlite_db.connect()
+            logger.info("✅ DMart Local SQLite Database and schema verified/created successfully.")
+    except Exception as sqlite_err:
+        logger.error(f"❌ Failed to initialize DMart Local SQLite database: {sqlite_err}")
+
+
+def ensure_ddl_schemas_exist(app):
+    """Execute raw SQL schemas for tables not represented by SQLAlchemy models."""
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sql_files = [
+        os.path.join(backend_dir, 'sql', 'architect_schema.sql'),
+        os.path.join(backend_dir, 'sql', '002_create_dynamic_tier_tables.sql')
+    ]
+    
+    try:
+        engine = db.engine
+        with engine.connect() as conn:
+            for sql_file in sql_files:
+                if not os.path.exists(sql_file):
+                    logger.warning(f"⏩ SQL schema file not found at: {sql_file}")
+                    continue
+                    
+                logger.info(f"🔄 Executing SQL schema file: {sql_file}")
+                with open(sql_file, 'r', encoding='utf-8') as f:
+                    sql_content = f.read()
+                
+                # Split statements by semicolon
+                statements = sql_content.split(';')
+                for stmt in statements:
+                    stmt_stripped = stmt.strip()
+                    if stmt_stripped:
+                        try:
+                            conn.execute(text(stmt_stripped))
+                        except Exception as stmt_err:
+                            # Warning only, as some statements might fail if they already exist or are dialect-specific
+                            logger.debug(f"Warning executing DDL statement: {stmt_err}")
+                conn.commit()
+                logger.info(f"✅ Successfully processed schema file: {sql_file}")
+    except Exception as file_err:
+        logger.error(f"❌ Failed to process SQL schema DDL: {file_err}")
+
+
+def seed_initial_category_mappings(app):
+    """Seed initial category platforms and synonyms configuration if empty."""
+    from model.category_mapping_platforms import CategoryMappingPlatform
+    from model.category_mapping_synonyms import CategoryMappingSynonym
+    from services.category_sync_service import PLATFORM_CATEGORY_QUERIES, CATEGORY_SYNONYMS
+    
+    try:
+        # 1. Seed CategoryMappingPlatform
+        try:
+            if db.session.query(CategoryMappingPlatform).count() == 0:
+                logger.info("🌱 Seeding initial platform query configurations...")
+                for platform, config in PLATFORM_CATEGORY_QUERIES.items():
+                    p_cfg = CategoryMappingPlatform(
+                        platform_name=platform,
+                        query_sql=config['query'].strip(),
+                        is_active=True
+                    )
+                    db.session.add(p_cfg)
+                db.session.commit()
+                logger.info("✅ Platform configurations seeded successfully.")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"❌ Failed to seed CategoryMappingPlatform: {e}")
+            
+        # 2. Seed CategoryMappingSynonym
+        try:
+            if db.session.query(CategoryMappingSynonym).count() == 0:
+                logger.info("🌱 Seeding initial synonym rules...")
+                for raw, canonical in CATEGORY_SYNONYMS.items():
+                    syn = CategoryMappingSynonym(
+                        raw_value=raw,
+                        canonical_value=canonical
+                    )
+                    db.session.add(syn)
+                db.session.commit()
+                logger.info("✅ Synonym rules seeded successfully.")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"❌ Failed to seed CategoryMappingSynonym: {e}")
+    finally:
+        db.session.remove()
+
 
 def run_pending_migrations(app):
     """
@@ -10,6 +104,11 @@ def run_pending_migrations(app):
     Now includes existence checks to prevent "Table doesn't exist" crashes.
     """
     with app.app_context():
+        # --- Pre-migration Auto-creation & Seeding ---
+        ensure_dmart_sqlite_exists()
+        ensure_ddl_schemas_exist(app)
+        seed_initial_category_mappings(app)
+
         try:
             logger.info("🔄 Checking for pending DB migrations...")
             engine = db.engine
